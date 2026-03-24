@@ -172,7 +172,7 @@ The project uses a modular architecture focused on composability. For a detailed
 
 - **Recipe Parser** — Parses YAML recipe definitions with caching
 - **Resolver** — Resolves includes, extends, layers, variables, and categories
-- **Merger** — Combines multiple recipe layers (pure Go + yq fallback)
+- **Merger** — Combines multiple recipe layers (pure Go, yaml.v3-based anchor expansion)
 - **Validator** — Formal JSON Schema validation for all recipes
 - **APT Integration** — Handles package installation with batch support
 - **State Manager** — SQLite-based state persistence
@@ -204,11 +204,13 @@ The project uses a modular architecture focused on composability. For a detailed
 |---------|---------|---------|
 | `github.com/spf13/cobra` | CLI framework | Apache 2.0 |
 | `github.com/mattn/go-sqlite3` | SQLite driver | MIT |
-| `github.com/goccy/go-yaml` | YAML parsing | MIT |
+| `github.com/jmoiron/sqlx` | Ergonomic SQL (state layer) | MIT |
+| `gopkg.in/yaml.v3` | YAML parsing and anchor expansion | MIT |
 | `github.com/kaptinlin/jsonschema` | JSON Schema validation | MIT |
 | `github.com/taigrr/systemctl` | Systemd bindings | MIT |
-| `github.com/schollz/progressbar/v3` | Progress bars | MIT |
-| `github.com/briandowns/spinner` | CLI spinners | Apache 2.0 |
+| `github.com/charmbracelet/bubbles` | Spinner and progress UI components | MIT |
+| `github.com/charmbracelet/bubbletea` | TUI framework | MIT |
+| `github.com/charmbracelet/lipgloss` | Terminal styling | MIT |
 | `github.com/bluet/syspkg` | Package manager abstraction | MIT |
 
 ## Join the Movement

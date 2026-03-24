@@ -8,96 +8,135 @@ import (
 	"sync"
 	"time"
 
-	"github.com/briandowns/spinner"
+	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/olekukonko/tablewriter"
-	"github.com/schollz/progressbar/v3"
 )
 
-// Spinner wraps the spinner library for loading states
+var (
+	spinnerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	successStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
+	errorStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
+)
+
+// Spinner wraps charmbracelet/bubbles spinner frames for loading states
 type Spinner struct {
-	spinner *spinner.Spinner
+	frames []string
+	msg    string
+	done   chan struct{}
+	mu     sync.Mutex
 }
 
 // NewSpinner creates a new spinner with the given message
 func NewSpinner(message string) *Spinner {
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Suffix = " " + message
-	s.Color("cyan")
-	return &Spinner{spinner: s}
+	return &Spinner{
+		frames: spinner.Dot.Frames,
+		msg:    message,
+		done:   make(chan struct{}),
+	}
 }
 
-// Start starts the spinner
+// Start starts the spinner in a background goroutine
 func (s *Spinner) Start() {
-	s.spinner.Start()
+	go func() {
+		frame := 0
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-s.done:
+				return
+			case <-ticker.C:
+				s.mu.Lock()
+				fmt.Fprintf(os.Stderr, "\r%s %s   ", spinnerStyle.Render(s.frames[frame%len(s.frames)]), s.msg)
+				frame++
+				s.mu.Unlock()
+			}
+		}
+	}()
 }
 
 // Stop stops the spinner with a message
 func (s *Spinner) Stop(message string) {
-	s.spinner.FinalMSG = message + "\n"
-	s.spinner.Stop()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	select {
+	case <-s.done:
+	default:
+		close(s.done)
+	}
+	fmt.Fprintf(os.Stderr, "\r%-80s\r%s\n", "", message)
 }
 
 // StopWithError stops the spinner with an error message
 func (s *Spinner) StopWithError(message string) {
-	s.spinner.Color("red")
-	s.spinner.FinalMSG = fmt.Sprintf("✗ %s\n", message)
-	s.spinner.Stop()
+	s.Stop(errorStyle.Render(fmt.Sprintf("✗ %s", message)))
 }
 
 // StopWithSuccess stops the spinner with a success message
 func (s *Spinner) StopWithSuccess(message string) {
-	s.spinner.Color("green")
-	s.spinner.FinalMSG = fmt.Sprintf("✓ %s\n", message)
-	s.spinner.Stop()
+	s.Stop(successStyle.Render(fmt.Sprintf("✓ %s", message)))
 }
 
 // UpdateMessage updates the spinner message
 func (s *Spinner) UpdateMessage(message string) {
-	s.spinner.Suffix = " " + message
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.msg = message
 }
 
-// Progress wraps the progressbar library for task progress
+// Progress wraps charmbracelet/bubbles progress bar
 type Progress struct {
-	bar *progressbar.ProgressBar
+	total   int
+	current int
+	desc    string
+	bar     progress.Model
 }
 
 // NewProgress creates a new progress bar
 func NewProgress(total int, description string) *Progress {
-	bar := progressbar.NewOptions(total,
-		progressbar.OptionSetDescription(description),
-		progressbar.OptionSetWriter(os.Stderr),
-		progressbar.OptionSetWidth(40),
-		progressbar.OptionThrottle(100*time.Millisecond),
-		progressbar.OptionShowCount(),
-		progressbar.OptionShowBytes(false),
-		progressbar.OptionSetElapsedTime(false),
-		progressbar.OptionSetPredictTime(false),
-		progressbar.OptionFullWidth(),
-		progressbar.OptionSetRenderBlankState(true),
-	)
-	return &Progress{bar: bar}
+	return &Progress{
+		total: total,
+		desc:  description,
+		bar:   progress.New(progress.WithDefaultGradient(), progress.WithoutPercentage()),
+	}
 }
 
 // Add increments the progress bar
 func (p *Progress) Add(n int) {
-	p.bar.Add(n)
+	p.current += n
+	p.render()
 }
 
 // Finish completes the progress bar
 func (p *Progress) Finish() {
-	p.bar.Finish()
+	p.current = p.total
+	p.render()
+	fmt.Fprintln(os.Stderr)
 }
 
 // Set sets the current progress value
 func (p *Progress) Set(current int) {
-	p.bar.Set(current)
+	p.current = current
+	p.render()
+}
+
+func (p *Progress) render() {
+	var pct float64
+	if p.total > 0 {
+		pct = float64(p.current) / float64(p.total)
+		if pct > 1 {
+			pct = 1
+		}
+	}
+	fmt.Fprintf(os.Stderr, "\r%s %s", p.desc, p.bar.ViewAs(pct))
 }
 
 // MultiProgress manages multiple progress bars
 type MultiProgress struct {
-	mu      sync.Mutex
-	bars    []*Progress
-	current int
+	mu   sync.Mutex
+	bars []*Progress
 }
 
 // NewMultiProgress creates a new multi-progress manager
@@ -105,7 +144,7 @@ func NewMultiProgress() *MultiProgress {
 	return &MultiProgress{}
 }
 
-// Add adds a new progress bar
+// Add adds a new progress bar and returns its index
 func (m *MultiProgress) Add(total int, description string) int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -117,12 +156,12 @@ func (m *MultiProgress) Add(total int, description string) int {
 }
 
 // Update updates a specific progress bar
-func (m *MultiProgress) Update(idx int, progress int) {
+func (m *MultiProgress) Update(idx int, current int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	if idx >= 0 && idx < len(m.bars) {
-		m.bars[idx].Set(progress)
+		m.bars[idx].Set(current)
 	}
 }
 

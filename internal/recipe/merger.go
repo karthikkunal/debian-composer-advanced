@@ -6,7 +6,8 @@ import (
 	"strings"
 
 	"dario.cat/mergo"
-	yaml "github.com/goccy/go-yaml"
+	"github.com/debian-composer/debian-composer-go/internal/types"
+	"gopkg.in/yaml.v3"
 )
 
 // Merger handles deep YAML merging for recipe composition
@@ -242,6 +243,12 @@ func extractAnchorsFromFragment(content string) []string {
 		trimmed := strings.TrimSpace(line)
 		isIndented := strings.HasPrefix(line, "  ") || strings.HasPrefix(line, "\t")
 
+		// Skip _hook_* anchors - they're template definitions that can't be
+		// properly represented as top-level anchors and cause parsing errors
+		if strings.HasPrefix(trimmed, "_hook_") && strings.Contains(trimmed, ":") {
+			continue
+		}
+
 		// Check if this is a new anchor definition - finalize any in-progress collection
 		isAnchorDef := false
 		if !isIndented && strings.Contains(line, ":") && strings.Contains(line, "&") {
@@ -427,4 +434,10 @@ func DeepMerge(base, overlay []byte) ([]byte, error) {
 	}
 
 	return yaml.Marshal(baseMap)
+}
+
+// MergeRecipes deep merges two recipe structs.
+// Overlay takes precedence. Slices are appended.
+func (m *Merger) MergeRecipes(base, overlay *types.Recipe) error {
+	return mergo.Merge(base, overlay, mergo.WithOverride, mergo.WithAppendSlice)
 }
