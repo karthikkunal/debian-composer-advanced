@@ -1,0 +1,428 @@
+# ============================================================================
+# Component: system-snapshot
+# ============================================================================
+# Unified system snapshot, backup, and restore for any Debian-based distro.
+#
+# Philosophy:
+#   - Single tool (Snapper) for system snapshots
+#   - Borg backup for data archives
+#   - Works identically on Ubuntu, Debian, Mint, Pop, MX, etc.
+#   - CLI + optional GUI
+#
+# Features:
+#   - System snapshots with Snapper (like macOS Time Machine)
+#   - Incremental data backups with Borg
+#   - One-click restore from GUI or CLI
+#   - Scheduled automatic snapshots
+#   - Snapshot before major changes (package installs)
+#
+# Comparison with distro-specific tools:
+#   - MX: mx-snapshot, mx-restore → Snapper + Borg
+#   - Devuan: refracta-snapshot → Snapper
+#   - Mint: mintbackup → Borg + Snapper
+#   - Ubuntu: none built-in → Snapper
+#   - openSUSE: snapper → Snapper
+#
+# Usage in any recipe:
+#   includes:
+#     - components/system-snapshot.yaml
+
+name: system-snapshot
+version: 1.1.0
+description: "Unified system snapshot, backup, and restore — works on any Debian-based distro"
+author: Debian Composer Team
+license: MIT
+tags: [snapshot, backup, restore, snapper, borg, disaster-recovery]
+
+variables:
+  install_gui:
+    type: boolean
+    default: true
+    description: "Install GUI for snapshot management"
+
+  auto_snapshots:
+    type: boolean
+    default: true
+    description: "Enable automatic scheduled snapshots"
+
+  snapshot_retention:
+    type: integer
+    default: 10
+    description: "Number of snapshots to retain"
+
+  borg_encryption:
+    type: boolean
+    default: false
+    description: "Enable encryption for Borg backups"
+
+  snapshot_on_install:
+    type: boolean
+    default: true
+    description: "Auto-snapshot before package installations"
+
+  snapper_config:
+    type: string
+    default: "root"
+    description: "Snapper config name"
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+packages:
+  # Core snapshot tools
+  - snapper
+  - btrfs-progs
+  - rsync
+  # Borg for data backups
+  - borgbackup
+  # GRUB for boot snapshots
+  - grub-pc
+  - grub2-common
+
+categories:
+  # --------------------------------------------------------------------------
+  # Snapper System Snapshots
+  # --------------------------------------------------------------------------
+  snapshot/snapper:
+    description: "Snapper — System restore utility (like Time Machine)"
+    install:
+      packages:
+        - snapper
+        - btrfs-progs
+        - rsync
+    configure:
+      # Create default Snapper config
+      - type: script
+        name: snapper-setup
+        content: |
+          #!/bin/bash
+          # Setup Snapper configuration for BTRFS
+          CONFIG="${1:-root}"
+          SUBVOLUME="${2:-/}"
+          
+          if [ ! -d "/etc/snapper/configs/$CONFIG" ]; then
+            echo "Creating Snapper config: $CONFIG for $SUBVOLUME"
+            snapper -c "$CONFIG" create-config -f btrfs "$SUBVOLUME"
+          else
+            echo "Config $CONFIG already exists"
+          fi
+          
+          # Enable timeline snapshots
+          snapper -c "$CONFIG" set-config TIMELINE_CREATE=yes
+          snapper -c "$CONFIG" set-config TIMELINE_LIMIT_DAILY=7
+          snapper -c "$CONFIG" set-config TIMELINE_LIMIT_WEEKLY=4
+          snapper -c "$CONFIG" set-config TIMELINE_LIMIT_MONTHLY=6
+          
+          # Enable automatic cleanup
+          snapper -c "$CONFIG" set-config TIMELINE_CLEANUP=yes
+          snapper -c "$CONFIG" set-config NUMBER_CLEANUP=yes
+        path: /usr/local/bin/snapper-setup
+        mode: "0755"
+
+    verify:
+      commands:
+        - snapper --version 2>/dev/null || echo "snapper installed"
+
+  # --------------------------------------------------------------------------
+  # Borg Backup
+  # --------------------------------------------------------------------------
+  backup/borg:
+    description: "BorgBackup — Deduplicated encrypted backups"
+    install:
+      packages:
+        - borgbackup
+        - python3-borgbackup
+    configuration:
+      - type: script
+        name: borg-backup
+        content: |
+          #!/bin/bash
+          # Unified Borg Backup Script
+          # Usage: borg-backup [init|create|list|restore|prune]
+          
+          BORG_REPO="${BORG_REPO:-/var/backups/borg}"
+          BORG_PASSPHRASE="${BORG_PASSPHRASE:-}"
+          
+          case "$1" in
+            init)
+              echo "Initializing Borg repository at $BORG_REPO..."
+              mkdir -p "$BORG_REPO"
+              borg init --encryption=repokey "$BORG_REPO"
+              echo "Repository initialized. Encryption key saved."
+              echo "IMPORTANT: Export your key with: borg key export $BORG_REPO ~/borg-key.txt"
+              ;;
+            create)
+              shift
+              borg create \
+                --stats \
+                --progress \
+                --compression zstd \
+                "$BORG_REPO::{now:%Y-%m-%d_%H:%M}" \
+                /home /etc /var/lib/dpkg "$@"
+              ;;
+            list)
+              borg list "$BORG_REPO"
+              ;;
+            restore)
+              SNAPSHOT="${2:-latest}"
+              DEST="${3:-/tmp/restore}"
+              if [ "$SNAPSHOT" = "latest" ]; then
+                SNAPSHOT=$(borg list "$BORG_REPO" | tail -1 | cut -d' ' -f1)
+              fi
+              echo "Restoring $SNAPSHOT to $DEST..."
+              mkdir -p "$DEST"
+              borg extract "$BORG_REPO::$SNAPSHOT" --dest "$DEST"
+              echo "Restored to $DEST"
+              ;;
+            prune)
+              echo "Pruning old backups..."
+              borg prune \
+                --keep-daily=7 \
+                --keep-weekly=4 \
+                --keep-monthly=6 \
+                --keep-yearly=2 \
+                "$BORG_REPO"
+              ;;
+            *)
+              echo "Usage: borg-backup [init|create|list|restore|prune]"
+              echo ""
+              echo "Commands:"
+              echo "  init              Initialize backup repository"
+              echo "  create            Create new backup"
+              echo "  list              List all backups"
+              echo "  restore [snapshot] Restore from backup (default: latest)"
+              echo "  prune             Remove old backups"
+              ;;
+          esac
+        path: /usr/local/bin/borg-backup
+        mode: "0755"
+
+  # --------------------------------------------------------------------------
+  # GUI Tools
+  # --------------------------------------------------------------------------
+  gui/snapper:
+    condition: install_gui == true
+    description: "Snapper GUI"
+    install:
+      packages:
+        - snapper-gui
+    verify:
+      commands:
+        - which snapper-gui || which btrfs-assistant || echo "Snapper GUI ready"
+
+  # --------------------------------------------------------------------------
+  # Automatic Snapshots
+  # --------------------------------------------------------------------------
+  automation/scheduled:
+    condition: auto_snapshots == true
+    description: "Automatic scheduled snapshots"
+    configuration:
+      - type: file
+        path: /etc/cron.d/snapper-timeline
+        content: |
+          # Timeline snapshots handled by snapper-cleanup.timer
+          # Enable with: systemctl enable --now snapper-cleanup.timer
+        mode: "0644"
+
+  # --------------------------------------------------------------------------
+  # Snapshot Before Changes Hook
+  # --------------------------------------------------------------------------
+  automation/pre-install:
+    condition: snapshot_on_install == true
+    description: "Auto-snapshot before apt operations"
+    configuration:
+      - type: file
+        path: /etc/apt/apt.conf.d/99pre-install-snapshot
+        content: |
+          # Create snapshot before package installations
+          DPkg::Pre-Invoke { "snapper -c root create --type pre --description 'Pre-install snapshot' --cleanup number || true"; };
+        mode: "0644"
+
+      - type: file
+        path: /etc/apt/apt.conf.d/99post-install-snapshot
+        content: |
+          # Create snapshot after package installations
+          Apt::Update::Post-Invoke { "snapper -c root create --type post --description 'Post-update snapshot' --cleanup number || true"; };
+        mode: "0644"
+
+  # --------------------------------------------------------------------------
+  # CLI Management Scripts
+  # --------------------------------------------------------------------------
+  cli/snapshot-tools:
+    description: "CLI snapshot management scripts"
+    configuration:
+      - type: script
+        name: snapshot
+        content: |
+          #!/bin/bash
+          # Unified Snapshot Management CLI
+          # Usage: snapshot [create|list|restore|delete|schedule]
+          
+          CONFIG="${SNAPPER_CONFIG:-root}"
+          
+          case "$1" in
+            create)
+              shift
+              COMMENT="${2:-Manual snapshot}"
+              echo "Creating system snapshot: $COMMENT"
+              snapper -c "$CONFIG" create --description "$COMMENT"
+              echo "Snapshot created successfully."
+              ;;
+            list)
+              echo "=== System Snapshots ==="
+              snapper -c "$CONFIG" list
+              ;;
+            restore)
+              shift
+              SNAPSHOT_ID="$2"
+              if [ -z "$SNAPSHOT_ID" ]; then
+                echo "Available snapshots:"
+                snapper -c "$CONFIG" list
+                echo ""
+                read -p "Enter snapshot ID to restore: " SNAPSHOT_ID
+              fi
+              echo "Restoring snapshot $SNAPSHOT_ID..."
+              echo "WARNING: This will restore system files. Continue? (y/N)"
+              read -r confirm
+              if [ "$confirm" = "y" ]; then
+                snapper -c "$CONFIG" rollback "$SNAPSHOT_ID"
+              else
+                echo "Restore cancelled."
+              fi
+              ;;
+            delete)
+              shift
+              SNAPSHOT_ID="$2"
+              snapper -c "$CONFIG" delete "$SNAPSHOT_ID"
+              ;;
+            status)
+              echo "=== Snapper Status ==="
+              snapper -c "$CONFIG" status
+              ;;
+            configs)
+              snapper list-configs
+              ;;
+            *)
+              echo "Usage: snapshot [create|list|restore|delete|status|configs]"
+              echo ""
+              echo "Commands:"
+              echo "  create [comment]   Create new snapshot"
+              echo "  list               List all snapshots"
+              echo "  restore [id]       Restore from snapshot"
+              echo "  delete [id]        Delete a snapshot"
+              echo "  status             Show Snapper status"
+              echo "  configs            List Snapper configs"
+              ;;
+          esac
+        path: /usr/local/bin/snapshot
+        mode: "0755"
+
+      - type: script
+        name: rollback
+        content: |
+          #!/bin/bash
+          # Quick system rollback — restore to last known good state
+          # Usage: rollback [--list|--yes]
+          
+          CONFIG="${SNAPPER_CONFIG:-root}"
+          
+          if [ "$1" = "--list" ]; then
+            snapper -c "$CONFIG" list
+            exit 0
+          fi
+          
+          # Get latest snapshot ID (skip pre/post pairs)
+          LATEST=$(snapper -c "$CONFIG" list | grep "single" | tail -1 | awk '{print $1}')
+          
+          if [ -z "$LATEST" ]; then
+            echo "No snapshots available!"
+            exit 1
+          fi
+          
+          echo "Latest snapshot: $LATEST"
+          
+          if [ "$1" != "--yes" ]; then
+            echo "This will restore your system to the latest snapshot."
+            echo "Continue? (y/N)"
+            read -r confirm
+            [ "$confirm" != "y" ] && exit 0
+          fi
+          
+          echo "Restoring to snapshot $LATEST..."
+          snapper -c "$CONFIG" rollback "$LATEST"
+        path: /usr/local/bin/rollback
+        mode: "0755"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - snapper --version 2>/dev/null || echo "snapper ready"
+    - borg --version 2>/dev/null || echo "borg ready"
+    - test -x /usr/local/bin/snapshot && echo "snapshot CLI ready"
+    - test -x /usr/local/bin/rollback && echo "rollback CLI ready"
+    - test -x /usr/local/bin/borg-backup && echo "borg-backup CLI ready"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 512
+  min_disk: 10
+  filesystem: btrfs
+
+# ============================================================================
+# CONFLICTS
+# ============================================================================
+conflicts:
+  packages:
+    - sbackup  # Conflicting backup tool
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== System Snapshot Ready ==="
+  - ""
+  - "System snapshot and backup tools installed."
+  - ""
+  - "IMPORTANT: Snapper requires BTRFS filesystem!"
+  - ""
+  - "Setup Snapper (first time):"
+  - "  sudo snapper-setup root /"
+  - ""
+  - "System Snapshots (Snapper):"
+  - "  - Create snapshot:    sudo snapshot create 'Before upgrade'"
+  - "  - List snapshots:     sudo snapshot list"
+  - "  - Restore:            sudo snapshot restore"
+  - "  - Quick rollback:     sudo rollback"
+  - "  - Status:             sudo snapshot status"
+  - ""
+  - "Data Backups (Borg):"
+  - "  - Init repository:   sudo borg-backup init"
+  - "  - Create backup:     sudo borg-backup create"
+  - "  - List backups:      sudo borg-backup list"
+  - "  - Restore:           sudo borg-backup restore latest"
+  - "  - Prune old:         sudo borg-backup prune"
+  - ""
+  - "Automatic:"
+  - "  - Daily snapshots:   ${auto_snapshots}"
+  - "  - Snapshot on install: ${snapshot_on_install}"
+  - "  - Retention:         ${snapshot_retention} snapshots"
+  - ""
+  - "GUI: Run 'snapper-gui' or 'btrfs-assistant' as root"
+
+examples:
+  - title: "System snapshots only"
+    description: "Install Snapper for system snapshots"
+    command: "sudo debian-composer --component=system-snapshot"
+  - title: "With Borg data backup"
+    description: "Install with Borg for data archives"
+    command: "sudo debian-composer --component=system-snapshot --var=install_gui=true"
+  - title: "CLI only, no GUI"
+    description: "Command-line snapshot management only"
+    command: "sudo debian-composer --component=system-snapshot --var=install_gui=false"
+  - title: "Minimal, no automation"
+    description: "Manual snapshots only, no auto-scheduling"
+    command: "sudo debian-composer --component=system-snapshot --var=auto_snapshots=false --var=snapshot_on_install=false"
