@@ -1,0 +1,26 @@
+#!/bin/bash
+# postrm - Post removal script for debian-composer package
+set -e
+
+# Clean up on purge
+if [ "$1" = "purge" ]; then
+    echo "Removing Debian Composer configuration data..."
+    
+    # Remove state directory
+    if [ -d /var/lib/debian-composer ]; then
+        rm -rf /var/lib/debian-composer
+        echo "Removed /var/lib/debian-composer"
+    fi
+    
+    # Remove workspace symlink
+    if [ -L /workspace/kitchen ]; then
+        rm -f /workspace/kitchen
+        echo "Removed symlink /workspace/kitchen"
+    fi
+    
+    echo ""
+    echo "Debian Composer configuration data removed."
+    echo "Note: User-created recipes in /workspace are preserved."
+fi
+
+exit 0

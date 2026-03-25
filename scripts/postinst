@@ -1,0 +1,30 @@
+#!/bin/bash
+# postinst - Post installation script for debian-composer package
+set -e
+
+echo "Setting up Debian Composer..."
+
+# Create state directory
+mkdir -p /var/lib/debian-composer
+chmod 755 /var/lib/debian-composer
+chown root:root /var/lib/debian-composer
+
+# Create workspace symlink if /workspace exists
+if [ -d /workspace ]; then
+    if [ ! -e /workspace/kitchen ]; then
+        ln -sf /usr/share/debian-composer/kitchen /workspace/kitchen
+        echo "Created symlink: /workspace/kitchen -> /usr/share/debian-composer/kitchen"
+    fi
+fi
+
+# Set proper permissions on kitchen directory
+if [ -d /usr/share/debian-composer/kitchen ]; then
+    chmod -R 755 /usr/share/debian-composer/kitchen
+fi
+
+echo ""
+echo "Debian Composer installed successfully!"
+echo "Run 'debian-composer --help' to get started."
+echo ""
+
+exit 0

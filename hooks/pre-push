@@ -1,0 +1,19 @@
+#!/bin/bash
+# Pre-push Hook - Go implementation
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GO_BINARY="$SCRIPT_DIR/cmd/pre-push/pre-push"
+GO_SOURCE="$SCRIPT_DIR/cmd/pre-push/main.go"
+
+# Build if needed or source is newer
+if [[ ! -f "$GO_BINARY" ]] || [[ "$GO_SOURCE" -nt "$GO_BINARY" ]]; then
+    echo "Building pre-push hook..."
+    mkdir -p "$(dirname "$GO_BINARY")"
+    (cd "$(dirname "$GO_SOURCE")" && go build -o "$GO_BINARY" .) 2>/dev/null || {
+        echo "Error: Failed to build pre-push hook" >&2
+        exit 1
+    }
+fi
+
+exec "$GO_BINARY"

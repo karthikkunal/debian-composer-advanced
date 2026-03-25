@@ -5,10 +5,19 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/jaypipes/ghw"
 	ghwblock "github.com/jaypipes/ghw/pkg/block"
 	gosutilmem "github.com/shirou/gopsutil/v3/mem"
+)
+
+var (
+	cache     *Info
+	cacheTime time.Time
+	cacheMu   sync.RWMutex
+	cacheTTL  = 5 * time.Minute
 )
 
 // Info contains hardware detection results
@@ -95,7 +104,31 @@ type PlatformInfo struct {
 }
 
 // Detect performs hardware detection using ghw and gopsutil libraries
+// Results are cached for 5 minutes to improve performance
 func Detect() (*Info, error) {
+	cacheMu.RLock()
+	if cache != nil && time.Since(cacheTime) < cacheTTL {
+		cached := cache
+		cacheMu.RUnlock()
+		return cached, nil
+	}
+	cacheMu.RUnlock()
+
+	info, err := detectUncached()
+	if err != nil {
+		return info, err
+	}
+
+	cacheMu.Lock()
+	cache = info
+	cacheTime = time.Now()
+	cacheMu.Unlock()
+
+	return info, nil
+}
+
+// detectUncached performs the actual hardware detection with parallel goroutines
+func detectUncached() (*Info, error) {
 	info := &Info{}
 
 	host, err := ghw.Host()
@@ -105,13 +138,53 @@ func Detect() (*Info, error) {
 		return info, fmt.Errorf("hardware detection: %w", err)
 	}
 
-	info.CPU = detectCPU(host)
-	info.Memory = detectMemory()
-	info.GPUs = detectGPU(host)
-	info.Disks = detectDisk(host)
-	info.Network = detectNetwork(host)
-	info.USB = detectUSB(host)
-	info.Platform = detectPlatform(host)
+	var wg sync.WaitGroup
+	var cpu CPUInfo
+	var mem MemoryInfo
+	var gpus []GPUInfo
+	var disks []DiskInfo
+	var nets []NetworkInfo
+	var usbs []USBInfo
+	var platform PlatformInfo
+
+	wg.Add(7)
+	go func() {
+		defer wg.Done()
+		cpu = detectCPU(host)
+	}()
+	go func() {
+		defer wg.Done()
+		mem = detectMemory()
+	}()
+	go func() {
+		defer wg.Done()
+		gpus = detectGPU(host)
+	}()
+	go func() {
+		defer wg.Done()
+		disks = detectDisk(host)
+	}()
+	go func() {
+		defer wg.Done()
+		nets = detectNetwork(host)
+	}()
+	go func() {
+		defer wg.Done()
+		usbs = detectUSB(host)
+	}()
+	go func() {
+		defer wg.Done()
+		platform = detectPlatform(host)
+	}()
+	wg.Wait()
+
+	info.CPU = cpu
+	info.Memory = mem
+	info.GPUs = gpus
+	info.Disks = disks
+	info.Network = nets
+	info.USB = usbs
+	info.Platform = platform
 
 	return info, nil
 }
