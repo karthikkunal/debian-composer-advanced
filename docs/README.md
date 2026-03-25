@@ -174,7 +174,7 @@ The project uses a modular architecture focused on composability. For a detailed
 - **Resolver** — Resolves includes, extends, layers, variables, and categories
 - **Merger** — Combines multiple recipe layers (pure Go, yaml.v3-based anchor expansion)
 - **Validator** — Formal JSON Schema validation for all recipes
-- **APT Integration** — Handles package installation with batch support
+- **Package Manager Integration** — Handles package installation with batch support (apt, nala, flatpak, snap, etc.)
 - **State Manager** — SQLite-based state persistence
 - **Hardware Detection** — Parallel hardware detection using system tools
 - **Snapper Manager** — System snapshot management with timeline and compare
@@ -185,7 +185,7 @@ The project uses a modular architecture focused on composability. For a detailed
 
 | Package | Description |
 |---------|-------------|
-| `internal/apt` | APT package management wrapper |
+| `internal/apt` | Package manager integration (apt, nala, flatpak, snap, etc.) |
 | `internal/cli` | CLI command definitions (Cobra) |
 | `internal/hardware` | Hardware detection (lshw, lspci, dmidecode) |
 | `internal/recipe` | Recipe parsing and resolution |

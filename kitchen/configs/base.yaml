@@ -1,0 +1,85 @@
+# ============================================================================
+# Base Configuration Template
+# ============================================================================
+# Version: 1.0.0
+#
+# Base configuration that other configs can extend.
+# Provides common settings and packages for all environments.
+#
+# Usage:
+#   This config is meant to be extended by other configs.
+#   Do not apply directly.
+# ============================================================================
+
+name: base
+version: 1.0.0
+description: Base configuration template (do not apply directly)
+environment: base
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  environment: base
+  debug: false
+  verbose: false
+
+  # Package management
+  preferred_package_manager: nala  # apt, nala
+  enable_nonfree: true
+  enable_contrib: true
+
+# ============================================================================
+# PACKAGES
+# ============================================================================
+packages:
+  # Essential utilities
+  - vim
+  - curl
+  - wget
+  - git
+  - sudo
+  - bash-completion
+
+  # System tools
+  - htop
+  - rsync
+  - tree
+  - jq
+  - xz-utils
+
+  # Network
+  - net-tools
+  - dnsutils
+  - iputils-ping
+
+  # Security
+  - ca-certificates
+  - gnupg
+
+# ============================================================================
+# SETTINGS
+# ============================================================================
+settings:
+  # Package manager
+  package_manager:
+    preferred: apt
+    auto_remove: true
+    auto_clean: false
+
+  # Repositories
+  repositories:
+    main: true
+    contrib: true
+    non_free: true
+    non_free_firmware: true
+
+# ============================================================================
+# HOOKS
+# ============================================================================
+hooks:
+  pre_apply:
+    - echo "Applying base configuration..."
+
+  post_apply:
+    - echo "Base configuration applied"

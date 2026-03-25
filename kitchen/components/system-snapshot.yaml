@@ -229,7 +229,7 @@ categories:
   # --------------------------------------------------------------------------
   automation/pre-install:
     condition: snapshot_on_install == true
-    description: "Auto-snapshot before apt operations"
+    description: "Auto-snapshot before apt/nala operations"
     configuration:
       - type: file
         path: /etc/apt/apt.conf.d/99pre-install-snapshot

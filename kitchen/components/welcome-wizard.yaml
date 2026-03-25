@@ -1,0 +1,257 @@
+# ============================================================================
+# Component: welcome-wizard
+# ============================================================================
+# First-run welcome wizard for any Debian-based distro.
+#
+# Features:
+#   - Welcome screen on first boot
+#   - System information display
+#   - Quick setup (language, keyboard, updates)
+#   - Tips and documentation links
+#   - Driver/hardware status
+#
+# Comparison with distro-specific tools:
+#   - MX: mx-welcome
+#   - Mint: mint-meta-firststeps
+#   - Ubuntu: gnome-initial-setup
+#   - Pop: COSMIC first-run
+#   - Sparky: sparky-tips
+#
+# Usage in any recipe:
+#   includes:
+#     - components/welcome-wizard.yaml
+
+name: welcome-wizard
+version: 1.0.0
+description: "First-run welcome wizard — works on any Debian-based distro"
+author: Debian Composer Team
+license: MIT
+tags: [welcome, first-run, setup, wizard, user-experience]
+
+variables:
+  distro_name:
+    type: string
+    default: "Debian"
+    description: "Name shown in welcome screen"
+
+  welcome_message:
+    type: string
+    default: "Welcome to your new system!"
+    description: "Custom welcome message"
+
+  auto_launch:
+    type: boolean
+    default: true
+    description: "Launch welcome wizard on first boot"
+
+  show_tips:
+    type: boolean
+    default: true
+    description: "Show daily tips"
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+packages:
+  - zenity
+  - yad
+  - notification-daemon
+
+categories:
+  # --------------------------------------------------------------------------
+  # Welcome Script
+  # --------------------------------------------------------------------------
+  wizard/core:
+    description: "Welcome wizard core"
+    configuration:
+      - type: script
+        name: welcome
+        content: |
+          #!/bin/bash
+          # Universal Welcome Wizard for Debian-based distros
+          
+          DISTRO_NAME="${distro_name:-Debian}"
+          WELCOME_MSG="${welcome_message:-Welcome to your new system!}"
+          CONFIG_DIR="$HOME/.config/welcome-wizard"
+          MARKER_FILE="$CONFIG_DIR/.firstrun-done"
+          
+          # Create config dir
+          mkdir -p "$CONFIG_DIR"
+          
+          # Show welcome dialog
+          show_welcome() {
+            zenity --info \
+              --title="Welcome to $DISTRO_NAME" \
+              --text="<big><b>$WELCOME_MSG</b></big>\n\n\
+  <b>Quick Setup</b>\n\
+  • Run 'sudo {{preferred_package_manager}} update && sudo {{preferred_package_manager}} upgrade' to update\n\
+  • Run 'driver-detect' to check hardware\n\
+  • Run 'snapshot create' before major changes\n\n\
+  <b>Useful Commands</b>\n\
+  • <tt>hw-detect</tt> — Hardware information\n\
+  • <tt>driver-detect</tt> — Check drivers\n\
+  • <tt>snapshot create</tt> — Create system snapshot\n\
+  • <tt>neofetch</tt> — System info\n\n\
+  <b>Documentation</b>\n\
+  • Type 'help' for more commands" \
+              --width=500 \
+              --height=400
+          }
+          
+          # Show tips
+          show_tip() {
+            local tips=(
+              "Tip: Use 'Ctrl+R' for reverse search in terminal"
+              "Tip: 'sudo {{preferred_package_manager}} autoremove' cleans unused packages"
+              "Tip: 'htop' shows system resources in a nice view"
+              "Tip: 'ncdu' analyzes disk usage"
+              "Tip: 'fzf' provides fuzzy finder for files"
+              "Tip: 'btop' is a modern alternative to htop"
+              "Tip: Use 'alias ll='ls -la'' for quick listing"
+              "Tip: 'bat' is a better 'cat' with syntax highlighting"
+              "Tip: 'eza' is a modern replacement for 'ls'"
+              "Tip: 'zoxide' remembers frequently used directories"
+            )
+            local tip="${tips[$RANDOM % ${#tips[@]}]}"
+            notify-send "💡 $DISTRO_NAME Tip" "$tip"
+          }
+          
+          # Main
+          case "$1" in
+            tip) show_tip ;;
+            *)
+              if [ ! -f "$MARKER_FILE" ]; then
+                show_welcome
+                touch "$MARKER_FILE"
+              else
+                show_welcome
+              fi
+              ;;
+          esac
+        path: /usr/local/bin/welcome
+        mode: "0755"
+
+      - type: script
+        name: system-tips
+        content: |
+          #!/bin/bash
+          # Show random system tips
+          
+          TIPS=(
+            "Use 'Ctrl+R' for reverse search in bash history"
+            "Run 'sudo {{preferred_package_manager}} autoremove' to clean unused packages"
+            "Use 'htop' instead of 'top' for better process viewing"
+            "'ncdu' analyzes disk usage interactively"
+            "'bat' is a better 'cat' with syntax highlighting"
+            "'eza' is a modern replacement for 'ls'"
+            "'zoxide' remembers your directories and lets you jump quickly"
+            "'fzf' provides fuzzy finder for files, history, etc."
+            "'rg' (ripgrep) is faster than grep"
+            "'fd' is a faster alternative to find"
+            "'duf' is a better 'df' with colors"
+            "'dust' is a better 'du' with visualization"
+            "'tldr' shows simplified man pages"
+            "Use 'Ctrl+A' to go to line start, 'Ctrl+E' for end"
+            "Use 'Ctrl+W' to delete word in terminal"
+            "'jq' parses JSON from command line"
+            "'httpie' is a user-friendly curl alternative"
+            "Use '&&' to chain commands: 'cd dir && ls'"
+            "'tmux' keeps sessions alive after disconnect"
+            "'zsh' with 'oh-my-zsh' enhances shell experience"
+          )
+          
+          tip="${TIPS[$RANDOM % ${#TIPS[@]}]}"
+          echo "💡 Tip: $tip"
+        path: /usr/local/bin/system-tips
+        mode: "0755"
+
+  # --------------------------------------------------------------------------
+  # Auto-start Configuration
+  # --------------------------------------------------------------------------
+  wizard/autostart:
+    condition: auto_launch == true
+    description: "Auto-launch welcome on first boot"
+    configuration:
+      - type: file
+        path: /etc/xdg/autostart/welcome-wizard.desktop
+        content: |
+          [Desktop Entry]
+          Type=Application
+          Name=Welcome Wizard
+          Exec=/usr/local/bin/welcome
+          Hidden=false
+          NoDisplay=false
+          X-GNOME-Autostart-enabled=true
+          X-KDE-autostart-after=panel
+          X-MATE-Autostart-enabled=true
+          Comment=Show welcome wizard on first boot
+        mode: "0644"
+
+      - type: file
+        path: /etc/profile.d/welcome-tip.sh
+        content: |
+          # Show tip on terminal login (once per day)
+          if [ -n "$PS1" ] && [ -t 1 ]; then
+            TIP_FILE="/tmp/.last-tip-$(date +%Y%m%d)"
+            if [ ! -f "$TIP_FILE" ]; then
+              echo ""
+              system-tips
+              echo ""
+              touch "$TIP_FILE"
+            fi
+          fi
+        mode: "0644"
+
+  # --------------------------------------------------------------------------
+  # Tips System
+  # --------------------------------------------------------------------------
+  wizard/tips:
+    condition: show_tips == true
+    description: "Daily tips system"
+    configuration:
+      - type: file
+        path: /etc/cron.daily/welcome-tips
+        content: |
+          #!/bin/bash
+          # Clean tip marker file daily
+          rm -f /tmp/.last-tip-$(date -d "yesterday" +%Y%m%d) 2>/dev/null
+        mode: "0755"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - test -x /usr/local/bin/welcome && echo "welcome wizard ready"
+    - test -x /usr/local/bin/system-tips && echo "system-tips ready"
+    - which zenity >/dev/null 2>&1 && echo "zenity available"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 256
+  min_disk: 1
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== Welcome Wizard Ready ==="
+  - ""
+  - "First-run welcome wizard installed."
+  - ""
+  - "Commands:"
+  - "  - Show welcome:    welcome"
+  - "  - Get a tip:       system-tips"
+  - ""
+  - "The welcome wizard will appear on first boot."
+  - "Daily tips will show in terminal on login."
+
+examples:
+  - title: "Welcome wizard with auto-launch"
+    description: "Install with first-boot welcome"
+    command: "sudo debian-composer --component=welcome-wizard"
+  - title: "Custom distro name"
+    description: "Personalized welcome for custom distro"
+    command: "sudo debian-composer --component=welcome-wizard --var=distro_name=MyDistro"

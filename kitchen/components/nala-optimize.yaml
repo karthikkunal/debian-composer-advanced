@@ -1,0 +1,66 @@
+# ============================================================================
+# Component: nala-optimize
+# ============================================================================
+# Optimize apt mirrors using nala fetch
+#
+# Usage:
+#   Include this component in your recipe:
+#     includes:
+#       - components/nala-optimize.yaml
+
+name: nala-optimize
+version: 1.0.0
+description: "Select fastest mirrors with nala fetch (requires nala)"
+author: Debian Composer Team
+license: MIT
+tags: [nala, mirror, network, optimization]
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  optimize_mirrors:
+    type: boolean
+    default: true
+    description: "Run nala fetch to select fastest mirrors"
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages: []  # nala already installed by essential-tools
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Mirror Optimization
+  # --------------------------------------------------------------------------
+  optimize/mirrors:
+    description: "Select fastest mirrors with nala fetch"
+    condition: optimize_mirrors == true && preferred_package_manager == "nala"
+    configuration:
+      - type: script
+        name: nala-fetch-optimize
+        content: |
+          #!/bin/bash
+          # Run nala fetch to select fastest mirrors
+          echo "Selecting fastest mirrors with nala fetch..."
+          sudo nala fetch
+        path: /usr/local/bin/nala-fetch-optimize
+        mode: "0755"
+    verify:
+      commands:
+        - test -x /usr/local/bin/nala-fetch-optimize
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== Nala Mirror Optimization ==="
+  - ""
+  - "If nala is installed, you can optimize mirrors with:"
+  - "  sudo nala fetch"
+  - "Or run: sudo nala-fetch-optimize"
+  - ""

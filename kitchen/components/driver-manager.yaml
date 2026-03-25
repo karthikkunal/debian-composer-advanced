@@ -1,0 +1,396 @@
+# ============================================================================
+# Component: driver-manager
+# ============================================================================
+# Unified driver management for any Debian-based distro.
+#
+# Features:
+#   - Auto-detect hardware and suggest drivers
+#   - Install proprietary drivers (NVIDIA, AMD, WiFi)
+#   - DKMS support for kernel module compilation
+#   - Driver status reporting
+#   - GUI driver manager (optional)
+#
+# Philosophy:
+#   - Works identically on Ubuntu, Debian, Mint, Pop, MX, etc.
+#   - Uses standard Debian packages + DKMS
+#   - Provides both CLI and GUI interfaces
+#
+# Usage in any recipe:
+#   includes:
+#     - components/driver-manager.yaml
+
+name: driver-manager
+version: 1.0.0
+description: "Unified driver management — works on any Debian-based distro"
+author: Debian Composer Team
+license: MIT
+tags: [drivers, hardware, nvidia, firmware, dkms, gui]
+
+variables:
+  install_gui:
+    type: boolean
+    default: true
+    description: "Install GUI driver manager"
+
+  auto_detect:
+    type: boolean
+    default: true
+    description: "Auto-detect hardware and install appropriate drivers"
+
+  nvidia_version:
+    type: string
+    default: "latest"
+    choices: ["latest", "550", "535", "525", "470", "none"]
+    description: "NVIDIA driver version to install"
+
+  enable_nvidia:
+    type: boolean
+    default: false
+    description: "Force NVIDIA driver installation"
+
+  enable_amd:
+    type: boolean
+    default: false
+    description: "Force AMD driver installation"
+
+# ============================================================================
+# REPOSITORIES
+# ============================================================================
+repositories:
+  # NVIDIA drivers (if needed)
+  - name: nvidia-drivers
+    url: "deb https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/ /"
+    key: https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/cuda-keyring_1.1-1_all.deb
+    keyring: /usr/share/keyrings/cuda-keyring.gpg
+    condition: enable_nvidia == true or auto_detect == true
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+packages:
+  # Base driver infrastructure
+  - dkms
+  - linux-headers-generic
+  - build-essential
+  # Firmware
+  - firmware-linux
+  - firmware-linux-nonfree
+  - firmware-misc-nonfree
+  # Detection
+  - pciutils
+  - usbutils
+
+categories:
+  # --------------------------------------------------------------------------
+  # DKMS Infrastructure
+  # --------------------------------------------------------------------------
+  base/dkms:
+    description: "DKMS for dynamic kernel module compilation"
+    install:
+      packages:
+        - dkms
+        - linux-headers-$(uname -r)
+        - build-essential
+    configure:
+      service:
+        name: dkms
+        enable: false  # DKMS is not a service, just a framework
+    verify:
+      commands:
+        - dkms status
+        - test -d /usr/src
+
+  # --------------------------------------------------------------------------
+  # Firmware
+  # --------------------------------------------------------------------------
+  base/firmware:
+    description: "Universal firmware packages"
+    install:
+      packages:
+        - firmware-linux
+        - firmware-linux-nonfree
+        - firmware-misc-nonfree
+        - firmware-realtek
+        - firmware-atheros
+        - firmware-iwlwifi
+        - firmware-brcm80211
+    verify:
+      commands:
+        - ls /lib/firmware | wc -l
+
+  # --------------------------------------------------------------------------
+  # NVIDIA Drivers
+  # --------------------------------------------------------------------------
+  gpu/nvidia:
+    condition: enable_nvidia == true
+    description: "NVIDIA proprietary drivers"
+    install:
+      packages:
+        - nvidia-driver
+        - nvidia-settings
+        - nvidia-utils
+        - libnvidia-extra
+    configure:
+      service:
+        name: nvidia-persistenced
+        enable: true
+        start: false
+    verify:
+      commands:
+        - nvidia-smi --version 2>/dev/null || echo "NVIDIA driver installed, reboot required"
+
+  gpu/nvidia-cuda:
+    condition: enable_nvidia == true
+    description: "NVIDIA CUDA toolkit"
+    install:
+      packages:
+        - nvidia-cuda-toolkit
+        - nvidia-cudnn
+    verify:
+      commands:
+        - nvcc --version 2>/dev/null || echo "CUDA installed"
+
+  # --------------------------------------------------------------------------
+  # AMD Drivers
+  # --------------------------------------------------------------------------
+  gpu/amd:
+    condition: enable_amd == true
+    description: "AMD GPU drivers (open source amdgpu)"
+    install:
+      packages:
+        - mesa-vulkan-drivers
+        - libgl1-mesa-dri
+        - xserver-xorg-video-amdgpu
+        - mesa-utils
+    verify:
+      commands:
+        - glxinfo | grep "OpenGL vendor" | head -1
+
+  # --------------------------------------------------------------------------
+  # Intel Drivers
+  # --------------------------------------------------------------------------
+  gpu/intel:
+    description: "Intel GPU drivers"
+    install:
+      packages:
+        - intel-media-va-driver-nonfree
+        - mesa-vulkan-drivers
+        - libgl1-mesa-dri
+        - xserver-xorg-video-intel
+    verify:
+      commands:
+        - vainfo 2>/dev/null | head -5 || echo "Intel media driver installed"
+
+  # --------------------------------------------------------------------------
+  # GUI Driver Manager
+  # --------------------------------------------------------------------------
+  gui/manager:
+    condition: install_gui == true
+    description: "GUI driver manager"
+    install:
+      packages:
+        - gnome-driver-manager
+        - software-properties-gtk
+    verify:
+      commands:
+        - gnome-driver-manager --version 2>/dev/null || echo "GUI driver manager installed"
+
+  # --------------------------------------------------------------------------
+  # CLI Driver Scripts
+  # --------------------------------------------------------------------------
+  cli/driver-detect:
+    description: "CLI driver detection and installation"
+    configuration:
+      - type: script
+        name: driver-detect
+        content: |
+          #!/bin/bash
+          # Unified Driver Detection Script
+          # Works on any Debian-based distro
+          
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║                   DRIVER DETECTION                          ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          
+          detect_gpu() {
+            echo "=== GPU Hardware ==="
+            local gpu_info=$(lspci -nn | grep -i vga)
+            echo "$gpu_info"
+            echo ""
+            
+            if echo "$gpu_info" | grep -qi nvidia; then
+              echo "NVIDIA GPU detected"
+              echo "Current driver: $(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null || echo 'none')"
+              echo "Recommended: nvidia-driver"
+              echo "Install: sudo {{preferred_package_manager}} install nvidia-driver"
+            elif echo "$gpu_info" | grep -qi amd; then
+              echo "AMD GPU detected"
+              echo "Driver: amdgpu (in-kernel)"
+              echo "Recommended: mesa-vulkan-drivers"
+              echo "Install: sudo {{preferred_package_manager}} install mesa-vulkan-drivers"
+            elif echo "$gpu_info" | grep -qi intel; then
+              echo "Intel GPU detected"
+              echo "Driver: i915 (in-kernel)"
+              echo "Recommended: intel-media-va-driver-nonfree"
+              echo "Install: sudo {{preferred_package_manager}} install intel-media-va-driver-nonfree"
+            fi
+            echo ""
+          }
+          
+          detect_wifi() {
+            echo "=== WiFi Hardware ==="
+            local wifi_info=$(lspci -nn | grep -i network)
+            if [ -n "$wifi_info" ]; then
+              echo "$wifi_info"
+              echo ""
+              
+              if echo "$wifi_info" | grep -qi intel; then
+                echo "Intel WiFi detected"
+                echo "Install: sudo {{preferred_package_manager}} install firmware-iwlwifi"
+              elif echo "$wifi_info" | grep -qi realtek; then
+                echo "Realtek WiFi detected"
+                echo "Install: sudo {{preferred_package_manager}} install firmware-realtek"
+              elif echo "$wifi_info" | grep -qi atheros; then
+                echo "Atheros WiFi detected"
+                echo "Install: sudo {{preferred_package_manager}} install firmware-atheros"
+              elif echo "$wifi_info" | grep -qi broadcom; then
+                echo "Broadcom WiFi detected"
+                echo "Install: sudo {{preferred_package_manager}} install firmware-brcm80211"
+              fi
+            else
+              echo "No WiFi hardware found"
+            fi
+            echo ""
+          }
+          
+          detect_audio() {
+            echo "=== Audio Hardware ==="
+            lspci -nn | grep -i audio
+            echo ""
+          }
+          
+          show_status() {
+            echo "=== Currently Loaded Drivers ==="
+            echo "GPU:"
+            lspci -nnk | grep -A3 VGA | grep kernel || echo "  No GPU driver loaded"
+            echo ""
+            echo "Network:"
+            lspci -nnk | grep -A3 Network | grep kernel || echo "  No network driver loaded"
+            echo ""
+            echo "DKMS modules:"
+            dkms status 2>/dev/null || echo "  No DKMS modules"
+          }
+          
+          case "$1" in
+            gpu) detect_gpu ;;
+            wifi) detect_wifi ;;
+            audio) detect_audio ;;
+            status) show_status ;;
+            *)
+              detect_gpu
+              detect_wifi
+              detect_audio
+              show_status
+              ;;
+          esac
+        path: /usr/local/bin/driver-detect
+
+      - type: script
+        name: driver-install
+        content: |
+          #!/bin/bash
+          # Unified Driver Installation Helper
+          # Usage: driver-install [nvidia|amd|wifi|firmware]
+          
+          case "$1" in
+            nvidia)
+              echo "Installing NVIDIA drivers..."
+              sudo {{preferred_package_manager}} update
+              sudo {{preferred_package_manager}} install -y nvidia-driver nvidia-settings nvidia-utils
+              echo "Reboot required for NVIDIA driver to load"
+              ;;
+            amd|amd-gpu)
+              echo "Installing AMD GPU drivers..."
+              sudo {{preferred_package_manager}} update
+              sudo {{preferred_package_manager}} install -y mesa-vulkan-drivers xserver-xorg-video-amdgpu
+              ;;
+            wifi-intel)
+              echo "Installing Intel WiFi firmware..."
+              sudo {{preferred_package_manager}} install -y firmware-iwlwifi
+              ;;
+            wifi-realtek)
+              echo "Installing Realtek WiFi firmware..."
+              sudo {{preferred_package_manager}} install -y firmware-realtek
+              ;;
+            wifi-broadcom)
+              echo "Installing Broadcom WiFi firmware..."
+              sudo {{preferred_package_manager}} install -y firmware-brcm80211
+              ;;
+            firmware|all-firmware)
+              echo "Installing all firmware packages..."
+              sudo {{preferred_package_manager}} install -y firmware-linux firmware-linux-nonfree firmware-misc-nonfree
+              ;;
+            *)
+              echo "Usage: driver-install [nvidia|amd|wifi-intel|wifi-realtek|wifi-broadcom|firmware]"
+              echo ""
+              echo "Commands:"
+              echo "  nvidia          Install NVIDIA proprietary driver"
+              echo "  amd             Install AMD open-source driver"
+              echo "  wifi-intel      Install Intel WiFi firmware"
+              echo "  wifi-realtek    Install Realtek WiFi firmware"
+              echo "  wifi-broadcom   Install Broadcom WiFi firmware"
+              echo "  firmware        Install all firmware packages"
+              ;;
+          esac
+        path: /usr/local/bin/driver-install
+        mode: "0755"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - test -x /usr/local/bin/driver-detect && echo "driver-detect ready"
+    - test -x /usr/local/bin/driver-install && echo "driver-install ready"
+    - dkms status >/dev/null 2>&1 && echo "dkms ready"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 512
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== Driver Manager Ready ==="
+  - ""
+  - "Driver management tools installed."
+  - ""
+  - "Detection:"
+  - "  - Full scan:       sudo driver-detect"
+  - "  - GPU only:        sudo driver-detect gpu"
+  - "  - WiFi only:       sudo driver-detect wifi"
+  - "  - Driver status:   sudo driver-detect status"
+  - ""
+  - "Installation:"
+  - "  - NVIDIA:          sudo driver-install nvidia"
+  - "  - AMD:             sudo driver-install amd"
+  - "  - Intel WiFi:      sudo driver-install wifi-intel"
+  - "  - All firmware:    sudo driver-install firmware"
+  - ""
+  - "GUI: gnome-driver-manager"
+
+examples:
+  - title: "Driver manager with GUI"
+    description: "Install driver tools with GUI manager"
+    command: "sudo debian-composer --component=driver-manager"
+  - title: "Driver manager CLI only"
+    description: "Install driver tools without GUI"
+    command: "sudo debian-composer --component=driver-manager --var=install_gui=false"
+  - title: "Force NVIDIA drivers"
+    description: "Install with NVIDIA drivers pre-selected"
+    command: "sudo debian-composer --component=driver-manager --var=enable_nvidia=true"

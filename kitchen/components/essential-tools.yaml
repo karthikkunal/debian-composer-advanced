@@ -1,0 +1,181 @@
+# ============================================================================
+# Essential Tools Component
+# ============================================================================
+# Core utilities that should be on every Debian system
+#
+# Reusable component for any recipe needing essential CLI tools
+#
+# Usage:
+#   Include this component in your recipe:
+#     includes:
+#       - essential-tools.yaml
+
+name: essential-tools
+version: 1.0.0
+description: Essential CLI tools - vim, curl, wget, git, htop, rsync, jq, nala, build-essential
+author: Debian Composer Team
+license: MIT
+tags: [essential, cli, tools, base]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  install_vim:
+    type: boolean
+    default: true
+    description: "Install vim (enhanced vi)"
+  install_nala:
+    type: boolean
+    default: true
+    description: "Install nala (modern apt frontend)"
+  install_build_essentials:
+    type: boolean
+    default: true
+    description: "Install build-essential for compiling software"
+  optimize_mirrors:
+    type: boolean
+    default: true
+    description: "Run nala fetch to select fastest mirrors (requires nala)"
+  nala_parallel_downloads:
+    type: integer
+    default: 3
+    description: "Number of parallel downloads per mirror"
+  nala_fetch_timeout:
+    type: integer
+    default: 30
+    description: "Timeout in seconds for mirror fetching"
+  nala_fetch_retries:
+    type: integer
+    default: 3
+    description: "Number of retries for mirror fetching"
+  nala_language:
+    type: string
+    default: ""
+    description: "Language override for nala UI (e.g., 'en', 'es'); empty for system default"
+  nala_scrolling_text:
+    type: boolean
+    default: true
+    description: "Enable scrolling text during dpkg operations"
+  nala_color:
+    type: boolean
+    default: true
+    description: "Enable colored output"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Text editor (enhanced vi)
+    - vim
+    # HTTP clients
+    - curl
+    - wget
+    # Version control
+    - git
+    # System monitoring
+    - htop
+    # File synchronization
+    - rsync
+    # JSON processing
+    - jq
+    # Modern apt frontend (conditional)
+    - nala
+    # Build tools (conditional)
+    - build-essential
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  optimize/mirrors:
+    description: "Select fastest mirrors with nala fetch"
+    condition: optimize_mirrors == true && install_nala == true
+    configuration:
+      - type: script
+        name: nala-fetch-optimize
+        content: |
+          #!/bin/bash
+          # Run nala fetch to select fastest mirrors
+          echo "Selecting fastest mirrors with nala fetch..."
+          sudo nala fetch
+        path: /usr/local/bin/nala-fetch-optimize
+        mode: "0755"
+    verify:
+      commands:
+        - test -x /usr/local/bin/nala-fetch-optimize
+  config/nala:
+    description: "Configure nala options"
+    condition: install_nala == true
+    configuration:
+      - type: script
+        name: nala-config-set
+        content: |
+          #!/bin/bash
+          # Set nala configuration options
+          echo "Configuring nala..."
+          sudo nala config set Nala::parallel_downloads {{nala_parallel_downloads}}
+          sudo nala config set Nala::fetch_timeout {{nala_fetch_timeout}}
+          sudo nala config set Nala::fetch_retries {{nala_fetch_retries}}
+          if [ -n "{{nala_language}}" ]; then
+            sudo nala config set Nala::language {{nala_language}}
+          fi
+          sudo nala config set Nala::scrolling_text {{nala_scrolling_text}}
+          sudo nala config set Nala::color {{nala_color}}
+          echo "Nala configuration applied."
+        path: /usr/local/bin/nala-config-set
+        mode: "0755"
+    verify:
+      commands:
+        - test -x /usr/local/bin/nala-config-set
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - vim --version
+    - curl --version
+    - wget --version
+    - git --version
+    - htop --version
+    - rsync --version
+    - jq --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 256
+  min_disk: 1
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Essential tools installed successfully"
+  - "Editor: vim (run 'vimtutor' to learn)"
+  - "HTTP: curl, wget"
+  - "Version control: git"
+  - "Monitoring: htop"
+  - "File sync: rsync"
+  - "JSON: jq"
+  - "Package manager: nala (use 'sudo nala upgrade')"
+  - "Mirror optimization: sudo nala fetch (if optimize_mirrors=true)"
+  - "Nala configuration: parallel downloads, timeouts, language (see variables)"
