@@ -1,0 +1,74 @@
+# nfpm.yaml - Debian Composer package configuration
+# See: https://nfpm.goreleaser.com/
+
+name: "debian-composer"
+arch: "${GOARCH}"
+platform: "linux"
+version: "${VERSION}"
+section: "utils"
+priority: "optional"
+maintainer: "Debian Composer Team <team@debian-composer.org>"
+description: |
+  Debian Composer - Bring composability to the Debian ecosystem
+  Enabling true cross-distro innovation through modular, reusable
+  system configurations.
+  
+  Features:
+  - YAML-based Recipes
+  - Recipe Composition (Include, Extend, Layer)
+  - Deep Merging with stackable layers
+  - Schema Validation
+  - Conditional Installation
+  - SQLite State Management
+vendor: "Debian Composer"
+homepage: "https://github.com/debian-composer/debian-composer-go"
+license: "MIT"
+
+# Package dependencies
+depends:
+  - apt
+  - ca-certificates
+  - curl
+  - gnupg
+  - yq
+  - jq
+recommends:
+  - snapper
+  - btrfs-progs
+
+# Package scripts
+scripts:
+  postinstall: scripts/postinst
+  preremove: scripts/postrm
+
+# Files to include
+contents:
+  # Main binary
+  - src: ./bin/debian-composer-go
+    dst: /usr/bin/debian-composer
+    file_info:
+      mode: 0755
+
+  # Kitchen recipes directory
+  - src: ./kitchen
+    dst: /usr/share/debian-composer/kitchen
+    file_info:
+      mode: 0755
+    packager: deb
+
+  # State directory (created on install)
+  - dst: /var/lib/debian-composer
+    type: dir
+    file_info:
+      mode: 0755
+    packager: deb
+
+# Deb-specific configuration
+deb:
+  # Custom deb fields
+  fields:
+    X-Debian-Composer-Version: "${VERSION}"
+
+# RPM configuration (for future cross-distro support)
+rpm:
+  summary: "Debian Composer - System configuration composability tool"
