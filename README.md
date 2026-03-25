@@ -3,7 +3,7 @@
 > **Compose your ideal Debian system with modular, reusable recipes.**
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/debian-composer/debian-composer-go)](https://golang.org/)
-[![License](https://img.shields.io/github/license/debian-composer/debian-composer-go)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/debian-composer/debian-composer-go)](https://github.com/debian-composer/debian-composer-go/releases)
 
 ## 🚀 Overview
@@ -289,7 +289,9 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and recent changes.
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) file for details.
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)** — see the [LICENSE](LICENSE) file for details.
+
+The GPL-3.0 license ensures that Debian Composer remains free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation. This copyleft license guarantees that derivative works must also be distributed under the same license terms, protecting the freedom of all users.
 
 ## 🙏 Acknowledgments
 
