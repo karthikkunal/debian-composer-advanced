@@ -1,0 +1,352 @@
+# ============================================================================
+# AI Inference Component
+# ============================================================================
+# Local AI inference stack — all open source
+#
+# Inference tools:
+# - Ollama: Local LLM runner (MIT) — easiest way to run LLMs
+# - llama.cpp: High-efficiency inference engine (MIT) — C/C++ based
+# - vLLM: Production-grade serving (Apache 2.0) — high throughput
+# - Open WebUI: Browser-based chat interface (MIT) — replaces ChatGPT UI
+#
+# AI engineering tools:
+# - OpenCode: AI coding assistant (MIT) — agentic coding in terminal
+# - Hugging Face CLI: Model download/management (Apache 2.0)
+# - GitLab CLI: glab — GitLab commands from terminal (MIT)
+#
+# All tools support both NVIDIA CUDA and AMD ROCm backends.
+# Open source stack only — no proprietary inference engines.
+#
+# Requires: gpu-compute (for GPU acceleration) and uv-python
+
+name: ai-inference
+version: 1.0.0
+description: "AI inference + engineering tools — Ollama, llama.cpp, OpenCode, HF CLI, glab"
+author: Debian Composer Team
+license: MIT
+tags: [ai, llm, inference, ollama, llama-cpp, vllm, opencode, huggingface, gitlab, open-source]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  ollama_port:
+    type: port
+    default: 11434
+    description: "Ollama API port"
+
+  openwebui_port:
+    type: port
+    default: 3000
+    description: "Open WebUI port"
+
+  install_ollama:
+    type: boolean
+    default: true
+    description: "Install Ollama local LLM runner"
+
+  install_llamacpp:
+    type: boolean
+    default: true
+    description: "Install llama.cpp inference engine"
+
+  install_vllm:
+    type: boolean
+    default: false
+    description: "Install vLLM production serving engine (requires significant VRAM)"
+
+  install_openwebui:
+    type: boolean
+    default: true
+    description: "Install Open WebUI browser interface"
+
+  default_model:
+    type: string
+    default: "llama3.2:8b"
+    description: "Default model to pre-pull via Ollama"
+
+  install_opencode:
+    type: boolean
+    default: true
+    description: "Install OpenCode AI coding assistant"
+
+  install_huggingface_cli:
+    type: boolean
+    default: true
+    description: "Install Hugging Face CLI (huggingface_hub)"
+
+  install_glab:
+    type: boolean
+    default: true
+    description: "Install GitLab CLI (glab)"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - gpu-compute
+    - uv-python
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Ollama — easiest local LLM runner (MIT)
+  # --------------------------------------------------------------------------
+  ollama/runner:
+    condition: install_ollama == true
+    description: "Ollama local LLM runner"
+    <<: *api_service_template
+    packages: []
+    repositories:
+      - name: ollama
+        url: "deb https://ollama.com/debian stable main"
+        key: https://ollama.com/public-key.asc
+    install:
+      packages:
+        - ollama
+    configure:
+      <<: *api_service_template
+      service:
+        name: ollama
+        enable: true
+        start: false  # Starts on first use
+      environment:
+        OLLAMA_HOST: "0.0.0.0:${ollama_port}"
+        OLLAMA_ORIGINS: "*"
+    verify:
+      commands:
+        - ollama --version
+        - curl -sf http://localhost:${ollama_port}/api/tags 2>/dev/null || echo "Ollama API not running (starts on demand)"
+
+  # --------------------------------------------------------------------------
+  # llama.cpp — high-efficiency inference engine (MIT)
+  # --------------------------------------------------------------------------
+  llama/cpp:
+    condition: install_llamacpp == true
+    description: "llama.cpp inference engine with GPU acceleration"
+    install:
+      packages:
+        - build-essential
+        - cmake
+        - git
+    hooks:
+      post_install:
+        - type: command
+          command: |
+            cd /tmp && \
+            git clone https://github.com/ggml-org/llama.cpp.git && \
+            cd llama.cpp && \
+            mkdir build && cd build && \
+            cmake .. -DGGML_CUDA=ON 2>/dev/null || cmake .. && \
+            cmake --build . --config Release -j$(nproc) && \
+            cp bin/llama-* /usr/local/bin/ 2>/dev/null || \
+            cp build/bin/llama-* /usr/local/bin/ 2>/dev/null || \
+            echo "llama.cpp build complete"
+          description: "Build llama.cpp with GPU support"
+    verify:
+      commands:
+        - llama-cli --version 2>/dev/null || llama --version 2>/dev/null || echo "llama.cpp installed"
+
+  # --------------------------------------------------------------------------
+  # vLLM — production-grade serving (Apache 2.0)
+  # --------------------------------------------------------------------------
+  vllm/server:
+    condition: install_vllm == true
+    description: "vLLM high-throughput inference server"
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: "$HOME/.local/bin/uv pip install vllm"
+          description: "Install vLLM via UV (fast resolution)"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv pip show vllm 2>/dev/null | grep -q Version"
+
+  # --------------------------------------------------------------------------
+  # Open WebUI — browser-based chat (MIT)
+  # --------------------------------------------------------------------------
+  openwebui/interface:
+    condition: install_openwebui == true
+    description: "Open WebUI browser interface for LLM chat"
+    <<: *api_service_template
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: "$HOME/.local/bin/uv tool install open-webui"
+          description: "Install Open WebUI via UV tool system"
+    configure:
+      <<: *api_service_template
+      service:
+        name: open-webui
+        enable: true
+        start: false  # User starts when needed
+      environment:
+        PORT: "${openwebui_port}"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv tool list | grep -i open-webui"
+
+  # --------------------------------------------------------------------------
+  # OpenCode — AI coding assistant (MIT)
+  # --------------------------------------------------------------------------
+  opencode/assistant:
+    condition: install_opencode == true
+    description: "OpenCode AI coding assistant for agentic development"
+    install:
+      packages:
+        - nodejs  # Required for some OpenCode integrations
+    hooks:
+      post_install:
+        - type: command
+          command: "$HOME/.local/bin/uv tool install opencode"
+          description: "Install OpenCode via UV tool system"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv tool list | grep -i opencode"
+
+  # --------------------------------------------------------------------------
+  # Hugging Face CLI — model management (Apache 2.0)
+  # --------------------------------------------------------------------------
+  huggingface/cli:
+    condition: install_huggingface_cli == true
+    description: "Hugging Face CLI for model download and management"
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: "$HOME/.local/bin/uv tool install huggingface_hub[cli]"
+          description: "Install Hugging Face CLI via UV tool system"
+        - type: command
+          command: "mkdir -p $HOME/.cache/huggingface"
+          description: "Create Hugging Face cache directory"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv tool list | grep -i huggingface"
+        - "$HOME/.local/bin/huggingface-cli --version 2>/dev/null || echo 'HF CLI installed'"
+
+  # --------------------------------------------------------------------------
+  # GitLab CLI — glab (MIT)
+  # --------------------------------------------------------------------------
+  gitlab/cli:
+    condition: install_glab == true
+    description: "GitLab CLI (glab) for merge requests, issues, CI/CD"
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: "$HOME/.local/bin/uv tool install gitlab-cli"
+          description: "Install GitLab CLI via UV tool system"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv tool list | grep -i gitlab"
+
+  # --------------------------------------------------------------------------
+  # Default model pull
+  # --------------------------------------------------------------------------
+  models/default:
+    condition: install_ollama == true && default_model != ""
+    description: "Pre-pull default model: ${default_model}"
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: "ollama pull ${default_model} &"  # Background — large download
+          description: "Pre-pull ${default_model} in background"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 8192
+  min_disk: 30
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== Local AI Inference Stack Ready ==="
+  - ""
+  - "Inference tools (open source):"
+  - "  - Ollama: Local LLM runner"
+  - "  - llama.cpp: C/C++ inference engine"
+  - "  - vLLM: Production serving (${install_vllm})"
+  - "  - Open WebUI: Browser chat interface"
+  - ""
+  - "AI engineering tools:"
+  - "  - OpenCode: AI coding assistant (${install_opencode})"
+  - "  - Hugging Face CLI: Model download/management (${install_huggingface_cli})"
+  - "  - GitLab CLI (glab): Merge requests, issues, CI/CD (${install_glab})"
+  - ""
+  - "Quick start:"
+  - "  ollama run ${default_model}        # Start chatting in terminal"
+  - "  ollama list                        # List downloaded models"
+  - "  ollama serve                       # Start API server"
+  - ""
+  - "Hugging Face:"
+  - "  huggingface-cli download meta-llama/Llama-3.2-8B"
+  - "  huggingface-cli login             # Authenticate for gated models"
+  - "  huggingface-cli repo create my-model"
+  - ""
+  - "GitLab:"
+  - "  glab auth login                    # Authenticate with GitLab"
+  - "  glab mr list                       # List merge requests"
+  - "  glab mr create                     # Create merge request"
+  - ""
+  - "OpenCode:"
+  - "  opencode                           # Start AI coding session"
+  - ""
+  - "Web interfaces:"
+  - "  Ollama API:     http://localhost:${ollama_port}"
+  - "  Open WebUI:     http://localhost:${openwebui_port}"
+  - ""
+  - "GPU backends:"
+  - "  NVIDIA: CUDA auto-detected"
+  - "  AMD: ROCm auto-detected"
+  - ""
+  - "Project usage (in your UV venv):"
+  - "  uv pip install openai  # Use Ollama's OpenAI-compatible API"
+  - "  uv pip install vllm    # For production serving"
+  - "  uv pip install transformers accelerate  # Hugging Face stack"
+  - ""
+  - "Download more models:"
+  - "  ollama pull llama3.1:70b        # Large model (requires 40GB+ VRAM)"
+  - "  ollama pull mistral:7b          # Medium model"
+  - "  ollama pull phi3:3.8b           # Small model (runs on CPU)"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: "Minimal Ollama only"
+    description: "Just Ollama with default model"
+    command: |
+      sudo debian-composer --component=ai-inference \
+        --var=install_llamacpp=false \
+        --var=install_vllm=false \
+        --var=install_openwebui=false
+
+  - title: "Full inference stack"
+    description: "All inference tools + Open WebUI"
+    command: "sudo debian-composer --component=ai-inference"
+
+  - title: "Production serving with vLLM"
+    description: "Include vLLM for high-throughput serving"
+    command: "sudo debian-composer --component=ai-inference --var=install_vllm=true"

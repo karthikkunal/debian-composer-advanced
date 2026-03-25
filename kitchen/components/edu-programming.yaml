@@ -1,0 +1,64 @@
+# ============================================================================
+# Education Programming Component
+# ============================================================================
+# Programming education tools for schools and universities
+#
+# Reusable component for any recipe needing programming education tools
+
+name: edu-programming
+version: 1.0.0
+description: Programming education tools for students
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, programming, python, learning, ide]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Python education
+    - python3
+    - idle-python3
+    - thonny
+    - python3-pip
+    - python3-venv
+    # General IDEs
+    - geany
+    - bluej
+    - greenfoot
+    # Web-based
+    - nodejs
+    - npm
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - python3 --version
+    - thonny --version
+    - geany --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Programming Education: Thonny IDE recommended for beginners"
+  - "Python: Run 'python3' to start interpreter"
+  - "BlueJ: Java learning environment for students"

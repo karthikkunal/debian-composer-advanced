@@ -1,0 +1,133 @@
+# ============================================================================
+# Education Specialization Mixin
+# ============================================================================
+# Adds education tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=student --mixin=education
+#   sudo debian-composer --persona=desktop --mixin=education
+
+name: mixin-education
+version: 1.0.0
+description: Education tools - teaching, quizzes, classroom management
+author: Debian Composer Team
+license: MIT
+tags: [mixin, education, teaching, classroom, learning]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_classroom:
+    type: boolean
+    default: true
+    description: "Install classroom management tools"
+  enable_quiz:
+    type: boolean
+    default: true
+    description: "Install quiz and assessment tools"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - gcompris
+  - tuxmath
+  - tuxtype
+  - kstars
+  - stellarium
+  - kalzium
+  - geogebra
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  kids:
+    <<: *service_template
+    description: "Educational games for kids"
+    install:
+      packages:
+        - gcompris
+        - tuxmath
+        - tuxtype
+    verify:
+      commands:
+        - gcompris --version 2>&1 || true
+
+  science:
+    <<: *service_template
+    description: "Science education"
+    install:
+      packages:
+        - kstars
+        - stellarium
+        - kalzium
+    verify:
+      commands:
+        - kstars --version 2>&1 || true
+
+  math:
+    <<: *service_template
+    description: "Mathematics tools"
+    install:
+      packages:
+        - geogebra
+        - octave
+    verify:
+      commands:
+        - geogebra --version 2>&1 || true
+
+  classroom:
+    condition: enable_classroom == true
+    <<: *service_template
+    description: "Classroom management"
+    install:
+      packages:
+        - epoptes
+        - veyon
+    verify:
+      commands:
+        - veyon-cli --version 2>&1 || true
+
+  quiz:
+    condition: enable_quiz == true
+    <<: *service_template
+    description: "Quiz and assessment"
+    install:
+      packages:
+        - moodle
+        - examxml
+    verify:
+      commands:
+        - moodle --version 2>&1 || true
+
+  language:
+    <<: *service_template
+    description: "Language learning"
+    install:
+      packages:
+        - klettres
+        - parley
+    verify:
+      commands:
+        - klettres --version 2>&1 || true
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Education Mixin Applied ==="
+  - "Classroom: ${enable_classroom}"
+  - "Quiz: ${enable_quiz}"
+  - ""
+  - "Kids: GCompris, TuxMath, TuxType"
+  - "Science: KStars, Stellarium, Kalzium"
+  - "Math: GeoGebra, Octave"

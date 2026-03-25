@@ -1,0 +1,23 @@
+# AI/ML Layer
+# AI and machine learning tools
+
+name: ai
+version: 1.0.0
+description: AI and machine learning tools
+order: 6
+author: Debian Composer Team
+license: MIT
+
+components:
+  - ollama
+
+requires_layer:
+  - runtime
+
+requirements:
+  min_ram: 4096
+  min_disk: 20
+
+post_install:
+  - "AI layer installed"
+  - "Run 'ollama run llama3.2' to start LLM"

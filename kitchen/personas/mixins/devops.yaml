@@ -1,0 +1,159 @@
+# ============================================================================
+# DevOps Specialization Mixin
+# ============================================================================
+# Adds DevOps tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=sysadmin --mixin=devops
+#   sudo debian-composer --base=server --role=admin --mixin=devops
+
+name: mixin-devops
+version: 1.0.0
+description: DevOps tools - CI/CD, containers, orchestration, monitoring
+author: Debian Composer Team
+license: MIT
+tags: [mixin, devops, kubernetes, docker, ci-cd, monitoring]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_kubernetes:
+    type: boolean
+    default: true
+    description: "Install Kubernetes tools"
+  enable_monitoring:
+    type: boolean
+    default: true
+    description: "Install monitoring stack"
+  enable_ci:
+    type: boolean
+    default: false
+    description: "Install CI/CD tools"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - docker.io
+  - docker-compose
+  - docker-buildx
+  - kubectl
+  - helm
+  - ansible
+  - terraform
+  - vagrant
+  - prometheus
+  - grafana
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  containers:
+    <<: *service_template
+    description: "Container runtime"
+    install:
+      packages:
+        - docker.io
+        - docker-compose
+        - docker-buildx
+    configure:
+      service:
+        name: docker
+        enable: true
+    verify:
+      commands:
+        - docker --version
+        - docker compose version
+
+  kubernetes:
+    condition: enable_kubernetes == true
+    <<: *service_template
+    description: "Kubernetes tools"
+    install:
+      packages:
+        - kubectl
+        - helm
+        - k9s
+        - minikube
+    verify:
+      commands:
+        - kubectl version --client
+        - helm version
+
+  iac:
+    <<: *service_template
+    description: "Infrastructure as Code"
+    install:
+      packages:
+        - terraform
+        - ansible
+        - vagrant
+    verify:
+      commands:
+        - terraform --version
+        - ansible --version
+
+  monitoring:
+    condition: enable_monitoring == true
+    <<: *service_template
+    description: "Monitoring stack"
+    install:
+      packages:
+        - prometheus
+        - grafana
+        - alertmanager
+    configure:
+      service:
+        - name: prometheus
+          enable: true
+        - name: grafana-server
+          enable: true
+    verify:
+      commands:
+        - prometheus --version
+        - grafana-server --version
+
+  cicd:
+    condition: enable_ci == true
+    <<: *service_template
+    description: "CI/CD tools"
+    install:
+      packages:
+        - jenkins
+        - gitlab-runner
+    verify:
+      commands:
+        - java -version 2>&1 || true
+
+  logging:
+    <<: *service_template
+    description: "Logging tools"
+    install:
+      packages:
+        - loki
+        - promtail
+    verify:
+      commands:
+        - loki --version 2>&1 || true
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== DevOps Mixin Applied ==="
+  - "Kubernetes: ${enable_kubernetes}"
+  - "Monitoring: ${enable_monitoring}"
+  - "CI/CD: ${enable_ci}"
+  - ""
+  - "Docker: sudo usermod -aG docker $USER"
+  - "Grafana: http://localhost:3000 (admin/admin)"
+  - "Prometheus: http://localhost:9090"

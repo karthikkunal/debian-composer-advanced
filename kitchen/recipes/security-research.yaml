@@ -1,0 +1,287 @@
+# ============================================================================
+# Security Research Environment
+# ============================================================================
+# Penetration testing, security analysis, and forensics tools
+#
+# Uses YAML anchors, merge keys, variables, and conditions
+#
+# Usage:
+#   sudo debian-composer --recipe=security-research --category=network
+#   sudo debian-composer --recipe=security-research --var=security_focus=forensics
+
+name: security-research
+version: 1.0.0
+description: Security research, penetration testing, and forensics environment
+author: Debian Composer Team
+license: MIT
+tags: [security, pentesting, forensics, research, ethical-hacking]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  # Security focus
+  security_focus:
+    type: string
+    default: general
+    choices: [general, network, web, forensics, wireless, reverse-engineering]
+    description: Primary security focus area
+
+  # Network security
+  enable_network:
+    type: boolean
+    default: true
+    description: Enable network security tools
+
+  # Web security
+  enable_web:
+    type: boolean
+    default: true
+    description: Enable web application security tools
+
+  # Forensics
+  enable_forensics:
+    type: boolean
+    default: false
+    description: Enable digital forensics tools
+
+  # Wireless
+  enable_wireless:
+    type: boolean
+    default: false
+    description: Enable wireless security tools (requires compatible hardware)
+
+  # Reverse engineering
+  enable_re:
+    type: boolean
+    default: false
+    description: Enable reverse engineering tools
+
+# ============================================================================
+# DEFAULT PACKAGES
+# ============================================================================
+packages:
+  - git
+  - curl
+  - wget
+  - python3
+  - python3-pip
+  - build-essential
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Network Security (conditional)
+  # --------------------------------------------------------------------------
+  network/scanning:
+    condition: enable_network == true
+    <<: *service_template
+    description: "Network scanning and enumeration"
+    install:
+      packages:
+        - nmap
+        - masscan
+        - netcat
+    verify:
+      commands:
+        - nmap --version
+
+  network/analysis:
+    condition: enable_network == true
+    <<: *service_template
+    description: "Network traffic analysis"
+    install:
+      packages:
+        - wireshark
+        - tcpdump
+        - tshark
+    verify:
+      commands:
+        - wireshark --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Web Security (conditional)
+  # --------------------------------------------------------------------------
+  web/proxy:
+    condition: enable_web == true
+    <<: *service_template
+    description: "Web proxy tools"
+    install:
+      packages:
+        - burpsuite
+        - owasp-zap
+        - mitmproxy
+    verify:
+      commands:
+        - zap.sh --version 2>&1 | head -1
+
+  web/scanning:
+    condition: enable_web == true
+    <<: *service_template
+    description: "Web vulnerability scanning"
+    install:
+      packages:
+        - nikto
+        - sqlmap
+        - gobuster
+        - dirb
+    verify:
+      commands:
+        - nikto -Version
+
+  # --------------------------------------------------------------------------
+  # Forensics (conditional)
+  # --------------------------------------------------------------------------
+  forensics/disk:
+    condition: enable_forensics == true
+    <<: *service_template
+    description: "Disk forensics"
+    install:
+      packages:
+        - autopsy
+        - sleuthkit
+        - foremost
+        - scalpel
+    verify:
+      commands:
+        - autopsy --version 2>&1 | head -1
+
+  forensics/memory:
+    condition: enable_forensics == true and hardware ram >= 16384
+    <<: *service_template
+    description: "Memory forensics"
+    install:
+      packages:
+        - volatility
+        - rekall
+    verify:
+      commands:
+        - volatility --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Wireless (conditional on hardware)
+  # --------------------------------------------------------------------------
+  wireless/audit:
+    condition: enable_wireless == true and hardware has_wifi
+    <<: *service_template
+    description: "Wireless security auditing"
+    install:
+      packages:
+        - aircrack-ng
+        - kismet
+        - reaver
+        - wifite
+    verify:
+      commands:
+        - aircrack-ng --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Reverse Engineering (conditional)
+  # --------------------------------------------------------------------------
+  re/disassemblers:
+    condition: enable_re == true
+    <<: *service_template
+    description: "Disassemblers and debuggers"
+    install:
+      packages:
+        - gdb
+        - radare2
+        - ghidra
+    verify:
+      commands:
+        - gdb --version | head -1
+
+  re/decompilers:
+    condition: enable_re == true and hardware ram >= 8192
+    <<: *service_template
+    description: "Decompilers"
+    install:
+      packages:
+        - ghidra
+        - r2dec-r2
+    verify:
+      commands:
+        - r2 -v 2>&1 | head -1
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  network-complete:
+    description: "Complete network security"
+    categories:
+      - network/scanning
+      - network/analysis
+
+  web-complete:
+    description: "Complete web security"
+    categories:
+      - web/proxy
+      - web/scanning
+
+  forensics-complete:
+    description: "Complete forensics toolkit"
+    categories:
+      - forensics/disk
+      - forensics/memory
+
+  pentest-complete:
+    description: "Complete penetration testing"
+    categories:
+      - network/scanning
+      - network/analysis
+      - web/proxy
+      - web/scanning
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 8192
+  min_disk: 50
+  gpu: false
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "=== Security Research Environment Complete ==="
+  - "Focus: ${security_focus}"
+  - "Network Security: ${enable_network}"
+  - "Web Security: ${enable_web}"
+  - "Forensics: ${enable_forensics}"
+  - "Wireless: ${enable_wireless}"
+  - "Reverse Engineering: ${enable_re}"
+  - ""
+  - "⚠️  Use these tools responsibly and legally"
+  - "Network: Use nmap for network discovery"
+  - "Web: Burp Suite for web application testing"
+  - "Forensics: Autopsy for disk analysis"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Network Security
+    description: Install network security tools
+    command: sudo debian-composer --recipe=security-research --var=security_focus=network
+  - title: Web Security
+    description: Install web application security tools
+    command: sudo debian-composer --recipe=security-research --var=security_focus=web
+  - title: Forensics
+    description: Install forensics tools
+    command: sudo debian-composer --recipe=security-research --var=enable_forensics=true
+  - title: Complete Setup
+    description: Install all security tools
+    command: sudo debian-composer --recipe=security-research

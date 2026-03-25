@@ -1,0 +1,151 @@
+# ============================================================================
+# Gaming Specialization Mixin
+# ============================================================================
+# Adds gaming enhancements to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=gamer --mixin=gaming
+#   sudo debian-composer --base=desktop --role=gamer --mixin=gaming
+
+name: mixin-gaming
+version: 1.0.0
+description: Gaming enhancements - platforms, overlays, performance
+author: Debian Composer Team
+license: MIT
+tags: [mixin, gaming, steam, lutris, emulation]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_steam:
+    type: boolean
+    default: true
+    description: "Install Steam"
+  enable_emulation:
+    type: boolean
+    default: true
+    description: "Install emulation platforms"
+  enable_overlays:
+    type: boolean
+    default: true
+    description: "Install performance overlays"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - steam
+  - lutris
+  - wine
+  - protonup-qt
+  - mangohud
+  - gamemode
+  - libgamemode0
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  steam:
+    condition: enable_steam == true
+    <<: *service_template
+    description: "Steam platform"
+    install:
+      packages:
+        - steam
+        - steam-installer
+    verify:
+      commands:
+        - steam --version 2>&1 || true
+
+  lutris:
+    <<: *service_template
+    description: "Lutris game manager"
+    install:
+      packages:
+        - lutris
+    verify:
+      commands:
+        - lutris --version
+
+  wine:
+    <<: *service_template
+    description: "Wine compatibility layer"
+    install:
+      packages:
+        - wine
+        - wine64
+        - winetricks
+    verify:
+      commands:
+        - wine --version
+
+  proton:
+    <<: *service_template
+    description: "Proton tools"
+    install:
+      packages:
+        - protonup-qt
+        - protontricks
+    verify:
+      commands:
+        - protontricks --version 2>&1 || true
+
+  overlays:
+    condition: enable_overlays == true
+    <<: *service_template
+    description: "Performance overlays"
+    install:
+      packages:
+        - mangohud
+        - gamemode
+        - libgamemode0
+    verify:
+      commands:
+        - gamemoded --version
+
+  emulation:
+    condition: enable_emulation == true
+    <<: *service_template
+    description: "Game emulation"
+    install:
+      packages:
+        - dolphin-emu
+        - ppsspp
+        - rpcs3
+        - cemu
+    verify:
+      commands:
+        - dolphin-emu --version 2>&1 || true
+
+  retro:
+    <<: *service_template
+    description: "Retro gaming"
+    install:
+      packages:
+        - retroarch
+        - libretro-core-*
+    verify:
+      commands:
+        - retroarch --version 2>&1 || true
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Gaming Mixin Applied ==="
+  - "Steam: ${enable_steam}"
+  - "Emulation: ${enable_emulation}"
+  - "Overlays: ${enable_overlays}"
+  - ""
+  - "GameMode: gamemoderun %command% in Steam"
+  - "MangoHud: MANGOHUD=1 %command%"
+  - "Proton: Use ProtonUp-Qt to install GE-Proton"

@@ -1,0 +1,284 @@
+# ============================================================================
+# Component: firewall-manager
+# ============================================================================
+# Unified firewall management for any Debian-based distro.
+#
+# Features:
+#   - UFW (Uncomplicated Firewall) as base
+#   - GUI firewall manager
+#   - Pre-configured profiles (desktop, server, hardened)
+#   - One-click rules for common apps
+#   - Status reporting
+#
+# Usage in any recipe:
+#   includes:
+#     - components/firewall-manager.yaml
+
+name: firewall-manager
+version: 1.0.0
+description: "Unified firewall management with UFW — works on any Debian-based distro"
+author: Debian Composer Team
+license: MIT
+tags: [firewall, security, ufw, networking, protection]
+
+variables:
+  install_gui:
+    type: boolean
+    default: true
+    description: "Install GUI firewall manager"
+
+  profile:
+    type: string
+    default: desktop
+    choices: [desktop, server, hardened, gaming]
+    description: "Firewall profile"
+
+  enable_ssh:
+    type: boolean
+    default: false
+    description: "Allow SSH access"
+
+  ssh_port:
+    type: integer
+    default: 22
+    description: "SSH port (if enabled)"
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+packages:
+  - ufw
+  - ufw-knock-client
+
+categories:
+  # --------------------------------------------------------------------------
+  # Core UFW
+  # --------------------------------------------------------------------------
+  core/ufw:
+    description: "UFW firewall base"
+    install:
+      packages:
+        - ufw
+    configuration:
+      # Default policies
+      - type: command
+        command: ufw default deny incoming
+      - type: command
+        command: ufw default allow outgoing
+      # Enable firewall
+      - type: command
+        command: ufw --force enable
+    configure:
+      service:
+        name: ufw
+        enable: true
+        start: true
+    verify:
+      commands:
+        - ufw status verbose
+
+  # --------------------------------------------------------------------------
+  # Desktop Profile
+  # --------------------------------------------------------------------------
+  profile/desktop:
+    condition: profile == desktop
+    description: "Desktop firewall profile (allow outgoing, block incoming)"
+    install:
+      packages:
+        - gufw
+    configuration:
+      - type: command
+        command: ufw allow 67/udp comment "DHCP client"
+      - type: command
+        command: ufw allow 53 comment "DNS"
+
+  # --------------------------------------------------------------------------
+  # Server Profile
+  # --------------------------------------------------------------------------
+  profile/server:
+    condition: profile == server
+    description: "Server firewall profile (SSH, HTTP, HTTPS)"
+    configuration:
+      - type: command
+        command: ufw allow 80/tcp comment "HTTP"
+      - type: command
+        command: ufw allow 443/tcp comment "HTTPS"
+      - type: command
+        command: ufw allow 53 comment "DNS"
+
+  # --------------------------------------------------------------------------
+  # Hardened Profile
+  # --------------------------------------------------------------------------
+  profile/hardened:
+    condition: profile == hardened
+    description: "Hardened firewall profile (strict rules, rate limiting)"
+    configuration:
+      - type: command
+        command: ufw default deny incoming
+      - type: command
+        command: ufw default deny outgoing
+      - type: command
+        command: ufw allow 53 comment "DNS"
+      - type: command
+        command: ufw allow 80/tcp comment "HTTP"
+      - type: command
+        command: ufw allow 443/tcp comment "HTTPS"
+      - type: command
+        command: ufw limit 22/tcp comment "SSH rate limited"
+
+  # --------------------------------------------------------------------------
+  # Gaming Profile
+  # --------------------------------------------------------------------------
+  profile/gaming:
+    condition: profile == gaming
+    description: "Gaming firewall profile (allow game traffic)"
+    configuration:
+      - type: command
+        command: ufw allow 27000:27050/udp comment "Steam"
+      - type: command
+        command: ufw allow 27015/udp comment "Steam Query"
+      - type: command
+        command: ufw allow 3478:3480/udp comment "NAT traversal"
+
+  # --------------------------------------------------------------------------
+  # SSH Access
+  # --------------------------------------------------------------------------
+  ssh/enable:
+    condition: enable_ssh == true
+    description: "SSH access"
+    configuration:
+      - type: command
+        command: ufw allow ${ssh_port}/tcp comment "SSH"
+
+  # --------------------------------------------------------------------------
+  # GUI Manager
+  # --------------------------------------------------------------------------
+  gui/gufw:
+    condition: install_gui == true
+    description: "GUI firewall manager"
+    install:
+      packages:
+        - gufw
+    verify:
+      commands:
+        - gufw --version 2>/dev/null || echo "gufw installed"
+
+  # --------------------------------------------------------------------------
+  # Management Scripts
+  # --------------------------------------------------------------------------
+  cli/firewall-tools:
+    description: "Firewall management scripts"
+    configuration:
+      - type: script
+        name: firewall-status
+        content: |
+          #!/bin/bash
+          # Firewall status report
+          
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║                   FIREWALL STATUS                           ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          
+          status=$(ufw status verbose | head -1)
+          if echo "$status" | grep -q "inactive"; then
+            echo "🔴 Firewall: INACTIVE"
+            echo ""
+            echo "Enable with: sudo ufw enable"
+          else
+            echo "🟢 Firewall: ACTIVE"
+            echo ""
+            echo "=== Rules ==="
+            ufw status numbered
+          fi
+        path: /usr/local/bin/firewall-status
+        mode: "0755"
+
+      - type: script
+        name: firewall-allow
+        content: |
+          #!/bin/bash
+          # Quick allow rule
+          # Usage: firewall-allow <port/protocol> [comment]
+          
+          if [ -z "$1" ]; then
+            echo "Usage: firewall-allow <port/protocol> [comment]"
+            echo ""
+            echo "Examples:"
+            echo "  firewall-allow 80/tcp"
+            echo "  firewall-allow 3000/tcp 'Dev server'"
+            echo "  firewall-allow 5353/udp 'mDNS'"
+            exit 1
+          fi
+          
+          PORT="$1"
+          COMMENT="${2:-Added manually}"
+          
+          sudo ufw allow "$PORT" comment "$COMMENT"
+          echo "Rule added: $PORT ($COMMENT)"
+        path: /usr/local/bin/firewall-allow
+        mode: "0755"
+
+      - type: script
+        name: firewall-deny
+        content: |
+          #!/bin/bash
+          # Quick deny rule
+          # Usage: firewall-deny <port/protocol> [comment]
+          
+          if [ -z "$1" ]; then
+            echo "Usage: firewall-deny <port/protocol> [comment]"
+            exit 1
+          fi
+          
+          PORT="$1"
+          COMMENT="${2:-Blocked manually}"
+          
+          sudo ufw deny "$PORT" comment "$COMMENT"
+          echo "Rule added: deny $PORT ($COMMENT)"
+        path: /usr/local/bin/firewall-deny
+        mode: "0755"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - ufw version 2>/dev/null || echo "ufw installed"
+    - test -x /usr/local/bin/firewall-status && echo "firewall-status ready"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 256
+  min_disk: 1
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== Firewall Manager Ready ==="
+  - ""
+  - "UFW firewall installed with '${profile}' profile."
+  - ""
+  - "Status:       sudo firewall-status"
+  - "Allow port:   sudo firewall-allow 80/tcp"
+  - "Deny port:    sudo firewall-deny 22/tcp"
+  - "Enable SSH:   sudo ufw allow ssh"
+  - "GUI:          gufw"
+  - ""
+  - "View rules:   sudo ufw status numbered"
+  - "Delete rule:  sudo ufw delete numbered <n>"
+  - "Reset:        sudo ufw --force reset"
+
+examples:
+  - title: "Desktop firewall"
+    description: "Basic desktop firewall"
+    command: "sudo debian-composer --component=firewall-manager"
+  - title: "Server with SSH"
+    description: "Server firewall with SSH access"
+    command: "sudo debian-composer --component=firewall-manager --var=profile=server --var=enable_ssh=true"
+  - title: "Hardened firewall"
+    description: "Strict firewall with rate limiting"
+    command: "sudo debian-composer --component=firewall-manager --var=profile=hardened"

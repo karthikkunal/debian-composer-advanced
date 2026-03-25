@@ -1,0 +1,92 @@
+# ============================================================================
+# Example: Composed Configuration
+# ============================================================================
+# Version: 1.0.0
+#
+# Demonstrates config composition by extending multiple parent configs.
+# This config combines dev + personal settings for a developer workstation.
+# ============================================================================
+
+name: developer-workstation
+version: 1.0.0
+description: Developer workstation (dev + personal combined)
+environment: personal
+
+# ============================================================================
+# EXTENDS (Multiple parent configs)
+# ============================================================================
+# Order matters: later configs override earlier ones
+extends:
+  - base
+  - dev
+  - personal
+
+# ============================================================================
+# VARIABLES (Overrides from parent configs)
+# ============================================================================
+variables:
+  environment: personal
+  debug: false  # Override dev's debug=true
+
+  # Developer-specific personalization
+  enable_gaming: true
+  enable_creative: true
+  preferred_ide: vscode
+
+# ============================================================================
+# PACKAGES (Additions to parent configs)
+# ============================================================================
+packages:
+  # Additional developer tools
+  - docker-compose
+  - kubectl
+  - terraform
+
+  # Additional personal tools
+  - obs-studio
+  - streamlink
+
+# ============================================================================
+# RECIPES (Combined from parents + additions)
+# ============================================================================
+recipes:
+  - debian-dev-tools
+  - docker-dev
+  - components/non-debian
+
+# ============================================================================
+# SETTINGS (Merged with parent settings)
+# ============================================================================
+settings:
+  # Override dev settings for personal use
+  ide:
+    auto_save: true
+    format_on_save: true
+    lint_on_save: false  # Override dev's true
+
+  # Personal additions
+  streaming:
+    enabled: true
+    platform: twitch
+    quality: 1080p
+
+# ============================================================================
+# HOOKS
+# ============================================================================
+hooks:
+  pre_apply:
+    - echo "Setting up developer workstation..."
+    - echo "Combining development and personal configurations"
+
+  post_apply:
+    - echo "Developer workstation ready!"
+    - echo ""
+    - echo "Development tools:"
+    - echo "  - VS Code with extensions"
+    - echo "  - Docker and Kubernetes"
+    - echo "  - Python, Node.js, Rust toolchains"
+    - echo ""
+    - echo "Personal tools:"
+    - echo "  - Steam for gaming"
+    - echo "  - OBS for streaming"
+    - echo "  - Communication apps"

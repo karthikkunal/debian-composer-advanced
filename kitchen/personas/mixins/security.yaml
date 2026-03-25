@@ -1,0 +1,141 @@
+# ============================================================================
+# Security Specialization Mixin
+# ============================================================================
+# Adds security tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=researcher --mixin=security
+#   sudo debian-composer --base=server --role=admin --mixin=security
+
+name: mixin-security
+version: 1.0.0
+description: Security tools - penetration testing, auditing, forensics
+author: Debian Composer Team
+license: MIT
+tags: [mixin, security, pentesting, auditing, forensics]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_pentest:
+    type: boolean
+    default: true
+    description: "Install penetration testing tools"
+  enable_forensics:
+    type: boolean
+    default: false
+    description: "Install forensics tools"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - nmap
+  - wireshark
+  - john
+  - hashcat
+  - sqlmap
+  - nikto
+  - openssl
+  - gnupg
+  - keepassxc
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  pentest:
+    condition: enable_pentest == true
+    <<: *service_template
+    description: "Penetration testing"
+    install:
+      packages:
+        - nmap
+        - sqlmap
+        - nikto
+        - burpsuite
+    verify:
+      commands:
+        - nmap --version
+
+  network-security:
+    <<: *service_template
+    description: "Network security tools"
+    install:
+      packages:
+        - wireshark
+        - tcpdump
+        - netcat-openbsd
+    verify:
+      commands:
+        - wireshark --version 2>&1 || true
+
+  password:
+    <<: *service_template
+    description: "Password tools"
+    install:
+      packages:
+        - john
+        - hashcat
+        - keepassxc
+    verify:
+      commands:
+        - john --version
+        - keepassxc --version 2>&1 || true
+
+  crypto:
+    <<: *service_template
+    description: "Cryptography tools"
+    install:
+      packages:
+        - openssl
+        - gnupg
+        - veracrypt
+    verify:
+      commands:
+        - openssl version
+
+  forensics:
+    condition: enable_forensics == true
+    <<: *service_template
+    description: "Digital forensics"
+    install:
+      packages:
+        - autopsy
+        - sleuthkit
+        - binwalk
+    verify:
+      commands:
+        - autopsy 2>&1 || true
+
+  wireless:
+    <<: *service_template
+    description: "Wireless security"
+    install:
+      packages:
+        - aircrack-ng
+        - reaver
+        - kismet
+    verify:
+      commands:
+        - aircrack-ng -h 2>&1 | head -1 || true
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Security Mixin Applied ==="
+  - "Pentest: ${enable_pentest}"
+  - "Forensics: ${enable_forensics}"
+  - ""
+  - "WARNING: These tools are for authorized testing only"
+  - "Password manager: KeePassXC"
+  - "Network analysis: Wireshark, tcpdump"

@@ -1,0 +1,81 @@
+# ============================================================================
+# GIS Server Component
+# ============================================================================
+# GIS server components (GeoServer, MapServer)
+#
+# Reusable component for any recipe needing GIS server
+
+name: gis-server
+version: 1.0.0
+description: GIS server components
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [gis, server, geoserver, mapserver, wms]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  geoserver_port:
+    type: port
+    default: 8080
+    description: GeoServer HTTP port
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # WMS servers
+    - mapserver
+    - geoserver
+    - qgis-server
+    - mapproxy
+    # Map caching
+    - mapcache
+    - tilecache
+    - tilestache
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  hooks:
+    post_install:
+      - type: command
+        command: "systemctl enable geoserver"
+        description: "Enable GeoServer"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - mapserver --version
+    - geoserver --version 2>&1 | head -1
+  services_running:
+    - geoserver
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 8192
+  min_disk: 50
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "GeoServer: Web map server at http://localhost:${geoserver_port}/geoserver"
+  - "MapServer: OGC compliant map server"
+  - "QGIS Server: QGIS-based WMS server"
+  - "MapCache: Tile caching solution"

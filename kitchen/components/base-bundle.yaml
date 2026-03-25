@@ -1,0 +1,27 @@
+# Base Layer
+# Foundation layer - required by all other layers
+
+name: base
+version: 1.0.0
+description: Foundation packages required by all systems
+order: 1
+author: Debian Composer Team
+license: MIT
+
+components:
+  - base
+
+packages:
+  - git
+  - curl
+  - wget
+  - ca-certificates
+  - gnupg
+  - apt-transport-https
+
+requirements:
+  min_ram: 0
+  min_disk: 0
+
+post_install:
+  - "Base layer installed"

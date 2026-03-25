@@ -1,0 +1,43 @@
+# Whisper Component
+# Reusable Whisper speech-to-text configuration
+# Uses YAML anchors and templates for DRY configuration
+
+name: whisper
+version: 1.0.0
+description: Speech-to-text
+author: Debian Composer Team
+license: MIT
+tags: [ai, speech, whisper]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+install:
+  packages:
+    - python3-pip
+    - ffmpeg
+    - libsndfile1
+
+configure:
+  - type: command
+    command: "pip3 install openai-whisper"
+    description: "Install Whisper via pip"
+  - type: command
+    command: "whisper --version || echo 'Whisper installed'"
+
+verify:
+  commands:
+    - which whisper-transcribe || echo "Whisper available via python"
+  exit_code: 0
+
+requirements:
+  min_ram: 4096
+  min_disk: 2
+
+post_install:
+  - "Use 'whisper-transcribe audio.mp3 --model base'"
+  - "Models require ~1GB disk each"

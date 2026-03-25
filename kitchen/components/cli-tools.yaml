@@ -1,0 +1,78 @@
+# ============================================================================
+# CLI Tools Component
+# ============================================================================
+# Modern replacements for standard CLI tools
+#
+# Reusable component for any recipe needing modern CLI utilities
+
+name: cli-tools
+version: 1.0.0
+description: Modern replacements for standard CLI tools
+author: Debian Composer Team
+license: MIT
+tags: [cli, modern-cli, jq, httpie, tree]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # JSON processor
+    - jq
+    # HTTP client
+    - httpie
+    # Directory tree viewer
+    - tree
+    # File type detector
+    - file
+    # WHOIS lookup
+    - whois
+    # Network utilities
+    - inetutils
+    # System information
+    - inxi
+    # Pacman info export (Arch utility, useful for migration)
+    - expac
+    # XML processor
+    - xmlstarlet
+    # Image manipulation
+    - imagemagick
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - jq --version
+    - http --version
+    - tree --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 256
+  min_disk: 2
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "CLI Tools: Modern utilities installed"
+  - "JSON: Use 'jq' for JSON processing"
+  - "HTTP: Use 'http' command for HTTP requests"

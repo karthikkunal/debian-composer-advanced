@@ -1,0 +1,75 @@
+# ============================================================================
+# XFCE Desktop Component
+# ============================================================================
+# XFCE - Lightweight, fast, and stable desktop environment
+#
+# Reusable component for any recipe needing XFCE desktop
+#
+# Usage:
+#   sudo debian-composer --recipe=my-recipe --component=xfce-desktop
+
+name: xfce-desktop
+version: 1.0.0
+description: XFCE desktop - Lightweight, fast, and stable
+author: Debian Composer Team
+license: MIT
+tags: [desktop, xfce, lightweight, gui]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages: *desktop_xfce
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  display_manager:
+    service: lightdm
+    enable: true
+  hooks:
+    post_configure:
+      - type: command
+        command: "update-desktop-database 2>/dev/null || true"
+        description: "Update desktop database"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - xfce4-panel --version
+  files_exist:
+    - /usr/share/xsessions/xfce.desktop
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_minimal
+  min_ram: 1024
+  min_disk: 8
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "XFCE: Select XFCE session at login"
+  - "Display Manager: LightDM enabled"
+  - "Lightweight: Great for older hardware"
+  - "Customize: Use XFCE settings manager"

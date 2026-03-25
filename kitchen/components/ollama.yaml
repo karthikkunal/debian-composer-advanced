@@ -1,0 +1,99 @@
+# Ollama Component
+# Reusable Ollama local LLM runner configuration with variables
+#
+# Template variables: ${ollama_port}, ${ollama_model}, ${enable_gpu}
+# Uses YAML anchors and templates for DRY configuration
+
+name: ollama
+version: 1.0.0
+description: Local LLM runner with configurable options
+author: Debian Composer Team
+license: MIT
+tags: [ai, llm, ollama]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  ollama_port:
+    type: port
+    default: 11434
+    description: Ollama API port
+
+  ollama_model:
+    type: string
+    default: llama3.2
+    description: Default model to pull
+
+  enable_gpu:
+    type: boolean
+    default: true
+    description: Enable GPU acceleration if available
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+  packages:
+    - curl
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    - ollama
+  repositories:
+    - name: ollama
+      url: "deb https://ollama.com/debian stable main"
+      key: https://ollama.com/public-key.asc
+
+# ============================================================================
+# CONFIGURE - Using api service template with overrides
+# ============================================================================
+configure:
+  <<: *api_service_template
+  service:
+    name: ollama
+    enable: true
+    start: true
+  environment:
+    OLLAMA_HOST: "0.0.0.0:${ollama_port}"
+    OLLAMA_ORIGINS: "*"
+  validation:
+    - type: service
+      name: ollama
+      state: active
+    - type: port
+      port: ${ollama_port}
+      protocol: tcp
+
+# ============================================================================
+# VERIFY - Using ollama verification template with overrides
+# ============================================================================
+verify:
+  <<: *verify_ollama
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 4096
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Run 'ollama run ${ollama_model}' to start"
+  - "API available at http://localhost:${ollama_port}"
+  - "GPU Acceleration: ${enable_gpu}"

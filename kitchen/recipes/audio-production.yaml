@@ -1,0 +1,152 @@
+# ============================================================================
+# Audio Production Specialization Mixin
+# ============================================================================
+# Adds audio production tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=creative --mixin=audio-production
+#   sudo debian-composer --base=desktop --role=creator --mixin=audio-production
+
+name: mixin-audio-production
+version: 1.0.0
+description: Audio production tools - DAW, plugins, recording
+author: Debian Composer Team
+license: MIT
+tags: [mixin, audio, music, daw, recording, production]
+kind: mixin
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/audio.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_plugins:
+    type: boolean
+    default: true
+    description: "Install LV2/VST plugins"
+  enable_instruments:
+    type: boolean
+    default: true
+    description: "Install software instruments"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - ardour
+  - audacity
+  - reaper
+  - qtractor
+  - hydrogen
+  - carla
+  - jalv
+  - pavucontrol
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  daw:
+    <<: *service_template
+    description: "Digital Audio Workstations"
+    install:
+      packages:
+        - ardour
+        - qtractor
+        - reaper
+    verify:
+      commands:
+        - ardour --version 2>&1 || true
+
+  editing:
+    <<: *service_template
+    description: "Audio editing"
+    install:
+      packages:
+        - audacity
+        - ocenaudio
+    verify:
+      commands:
+        - audacity --version
+
+  plugins:
+    condition: enable_plugins == true
+    <<: *service_template
+    description: "Audio plugins (LV2, VST)"
+    install:
+      packages:
+        - calf-plugins
+        - tap-plugins
+        - swh-plugins
+        - lsp-plugins
+        - x42-plugins
+    verify:
+      commands:
+        - lv2info 2>&1 | head -3 || true
+
+  instruments:
+    condition: enable_instruments == true
+    <<: *service_template
+    description: "Software instruments"
+    install:
+      packages:
+        - fluidsynth
+        - fluid-soundfont-gm
+        - zynaddsubfx
+    verify:
+      commands:
+        - fluidsynth --version
+
+  drum-machine:
+    <<: *service_template
+    description: "Drum machines"
+    install:
+      packages:
+        - hydrogen
+        - drumkv1
+    verify:
+      commands:
+        - hydrogen --version 2>&1 || true
+
+  host:
+    <<: *service_template
+    description: "Plugin hosts"
+    install:
+      packages:
+        - carla
+        - jalv
+    verify:
+      commands:
+        - carla --version 2>&1 || true
+
+  midi:
+    <<: *service_template
+    description: "MIDI tools"
+    install:
+      packages:
+        - qjackctl
+        - a2jmidid
+        - patchage
+    verify:
+      commands:
+        - qjackctl --version 2>&1 || true
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Audio Production Mixin Applied ==="
+  - "Plugins: ${enable_plugins}"
+  - "Instruments: ${enable_instruments}"
+  - ""
+  - "DAW: Ardour, Qtractor, Reaper"
+  - "Editor: Audacity"
+  - "Start JACK: qjackctl"
+  - "Soundfonts: /usr/share/sounds/sf2/"

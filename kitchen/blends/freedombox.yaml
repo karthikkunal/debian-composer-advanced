@@ -1,0 +1,354 @@
+# ============================================================================
+# FreedomBox Pure Blend - Personal Server
+# ============================================================================
+# Version: 1.0.0
+#
+# FreedomBox Pure Blend configuration for personal servers running free
+# software for private, personal communications. Provides self-hosted
+# alternatives to cloud services including email, chat, file sharing,
+# wikis, and more.
+#
+# Usage:
+#   # Install complete FreedomBox
+#   sudo debian-composer --blend=freedombox
+#
+#   # Install with specific services
+#   sudo debian-composer --blend=freedombox --var=server_focus=communication
+#   sudo debian-composer --blend=freedombox --var=server_focus=cloud
+#   sudo debian-composer --blend=freedombox --var=server_focus=wiki
+#
+#   # Install with VPN support
+#   sudo debian-composer --blend=freedombox --var=enable_vpn=true
+#
+#   # Home server setup
+#   sudo debian-composer --blend=freedombox --stack=home-server
+#
+# References:
+#   - FreedomBox: https://freedombox.org/
+#   - FreedomBox Wiki: https://wiki.debian.org/FreedomBox/
+# ============================================================================
+
+name: freedombox
+version: 1.0.0
+description: FreedomBox Pure Blend - Personal server for private communications
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://freedombox.org/
+tags: [blend, freedombox, personal-server, privacy, self-hosted, decentralization]
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: server
+  target_audience: [privacy-enthusiasts, self-hosters, personal-server-users]
+  difficulty: intermediate
+  min_ram: 2048
+  min_disk: 20
+  recommended_disk: 50
+  gpu_required: false
+  gpu_recommended: false
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies: []
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  server_focus:
+    type: string
+    default: all
+    choices: [all, communication, cloud, wiki, social, privacy]
+    description: Primary server focus
+
+  enable_email:
+    type: boolean
+    default: true
+    description: Enable email server
+
+  enable_chat:
+    type: boolean
+    default: true
+    description: Enable chat/messaging
+
+  enable_cloud:
+    type: boolean
+    default: true
+    description: Enable cloud file storage
+
+  enable_wiki:
+    type: boolean
+    default: true
+    description: Enable wiki/CMS
+
+  enable_vpn:
+    type: boolean
+    default: true
+    description: Enable VPN (WireGuard)
+
+  enable_tor:
+    type: boolean
+    default: true
+    description: Enable Tor services
+
+  enable_backup:
+    type: boolean
+    default: true
+    description: Enable backup services
+
+  enable_monitoring:
+    type: boolean
+    default: false
+    description: Enable system monitoring
+
+# ============================================================================
+# CATEGORIES - Using freedombox package
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # Complete FreedomBox installation
+  # --------------------------------------------------------------------------
+  freedombox/complete:
+    <<: *service_template
+    description: "Complete FreedomBox installation"
+    install:
+      packages:
+        - *freedombox_all
+    configure:
+      services:
+        - name: apache2
+          enable: true
+          start: true
+        - name: tor
+          enable: true
+        - name: postfix
+          enable: true
+    verify:
+      commands:
+        - freedombox-manage --version 2>&1 | head -1
+        - apache2 -v 2>&1 | head -1
+        - tor --version 2>&1 | head -1
+        - postfix --version 2>&1 | head -1
+
+  freedombox/network:
+    condition: enable_vpn == true or server_focus == privacy or server_focus == all
+    <<: *service_template
+    description: "Network services (VPN, Tor)"
+    install:
+      packages:
+        - *freedombox_all
+    configure:
+      services:
+        - name: wg-quick
+          enable: true
+        - name: tor
+          enable: true
+          start: true
+    verify:
+      commands:
+        - wg --version 2>&1 | head -1
+
+  freedombox/communication:
+    condition: enable_email == true or server_focus == communication or server_focus == all
+    <<: *service_template
+    description: "Communication (email, chat)"
+    install:
+      packages:
+        - *freedombox_all
+    configure:
+      services:
+        - name: postfix
+          enable: true
+          start: true
+        - name: dovecot
+          enable: true
+          start: true
+    verify:
+      commands:
+        - postfix --version 2>&1 | head -1
+
+  freedombox/cloud:
+    condition: enable_cloud == true or server_focus == cloud or server_focus == all
+    <<: *service_template
+    description: "Cloud storage (Nextcloud, Syncthing)"
+    install:
+      packages:
+        - *freedombox_all
+    verify:
+      commands:
+        - nextcloud-status 2>&1 | head -1
+
+  freedombox/wiki:
+    condition: enable_wiki == true or server_focus == wiki or server_focus == all
+    <<: *service_template
+    description: "Wiki/CMS services"
+    install:
+      packages:
+        - *freedombox_all
+    verify:
+      commands:
+        - mediawiki --version 2>&1 | head -1
+
+  freedombox/security:
+    <<: *service_template
+    description: "Security (firewall, fail2ban)"
+    install:
+      packages:
+        - *freedombox_all
+    configure:
+      services:
+        - name: ufw
+          enable: true
+        - name: fail2ban
+          enable: true
+          start: true
+    verify:
+      commands:
+        - ufw --version 2>&1 | head -1
+
+  freedombox/backup:
+    condition: enable_backup == true
+    <<: *service_template
+    description: "Backup services"
+    install:
+      packages:
+        - *freedombox_all
+    verify:
+      commands:
+        - borg --version 2>&1 | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  complete:
+    description: "Complete FreedomBox setup"
+    categories:
+      - web/server
+      - web/reverse-proxy
+      - network/wireguard
+      - network/tor
+      - communication/email
+      - communication/chat
+      - cloud/nextcloud
+      - cloud/syncthing
+      - wiki/mediawiki
+      - security/firewall
+      - security/encryption
+      - backup/tools
+
+  home-server:
+    description: "Home personal server"
+    categories:
+      - web/server
+      - network/wireguard
+      - communication/email
+      - cloud/nextcloud
+      - cloud/syncthing
+      - security/firewall
+      - backup/tools
+
+  privacy-focused:
+    description: "Privacy-focused setup"
+    categories:
+      - web/server
+      - network/wireguard
+      - network/tor
+      - network/i2p
+      - security/firewall
+      - security/encryption
+      - communication/chat
+
+  communication-server:
+    description: "Communication server"
+    categories:
+      - web/server
+      - communication/email
+      - communication/chat
+      - security/firewall
+      - security/encryption
+
+  cloud-server:
+    description: "Cloud storage server"
+    categories:
+      - web/server
+      - web/reverse-proxy
+      - cloud/nextcloud
+      - cloud/syncthing
+      - backup/tools
+      - security/firewall
+
+  wiki-server:
+    description: "Wiki and collaboration server"
+    categories:
+      - web/server
+      - wiki/mediawiki
+      - wiki/dokuwiki
+      - social/gitea
+      - security/firewall
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_freedombox
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== FreedomBox Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Server Focus: ${server_focus}"
+  - "  Email: ${enable_email}"
+  - "  Chat: ${enable_chat}"
+  - "  Cloud: ${enable_cloud}"
+  - "  Wiki: ${enable_wiki}"
+  - "  VPN: ${enable_vpn}"
+  - "  Tor: ${enable_tor}"
+  - "  Backup: ${enable_backup}"
+  - ""
+  - "Initial Setup:"
+  - "  1. Configure hostname: hostnamectl set-hostname your.domain"
+  - "  2. Setup SSL: certbot --apache -d your.domain"
+  - "  3. Configure firewall: ufw enable"
+  - "  4. Setup WireGuard: wg genkey | tee privatekey | wg pubkey > publickey"
+  - ""
+  - "Web Interfaces:"
+  - "  - Nextcloud: https://your.domain/nextcloud"
+  - "  - Roundcube: https://your.domain/webmail"
+  - "  - Wiki: https://your.domain/mediawiki"
+  - ""
+  - "Resources:"
+  - "  - FreedomBox: https://freedombox.org/"
+  - "  - Wiki: https://wiki.debian.org/FreedomBox/"
+  - "  - Manual: https://wiki.debian.org/FreedomBox/Manual"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Complete FreedomBox
+    description: Install all FreedomBox services
+    command: sudo debian-composer --blend=freedombox --stack=complete
+
+  - title: Home Server
+    description: Install home personal server
+    command: sudo debian-composer --blend=freedombox --stack=home-server
+
+  - title: Privacy Server
+    description: Install privacy-focused setup with Tor
+    command: sudo debian-composer --blend=freedombox --stack=privacy-focused --var=enable_tor=true
+
+  - title: Cloud Server
+    description: Install Nextcloud and file sync
+    command: sudo debian-composer --blend=freedombox --stack=cloud-server --var=enable_cloud=true

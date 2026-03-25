@@ -1,0 +1,29 @@
+# Base System Component
+# Common base packages required by most recipes
+#
+# This component uses anchors from fragments/base-anchors.yaml
+
+name: base
+version: 1.0.0
+description: Base system packages
+author: Debian Composer Team
+license: MIT
+tags: [base, system]
+
+# Include anchor definitions for recipes that use this component
+# Note: Anchors are defined in fragments/base-anchors.yaml
+# Recipes should include: fragments/base-anchors.yaml to use anchors
+
+install:
+  packages: *python_base  # Uses anchor: [python3, python3-pip, python3-venv]
+
+# Additional base packages can be added via anchor extension
+# .extended_base: &extended_base [*base_packages, *python_base]
+
+requirements:
+  <<: *req_minimal
+  min_ram: 0
+  min_disk: 0
+
+post_install:
+  - "Base packages installed"

@@ -1,0 +1,140 @@
+# ============================================================================
+# AI/ML Specialization Mixin
+# ============================================================================
+# Adds AI/ML development tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=developer --mixin=ai-ml
+#   sudo debian-composer --persona=researcher --mixin=ai-ml
+
+name: mixin-ai-ml
+version: 1.0.0
+description: AI/ML development tools - PyTorch, TensorFlow, CUDA
+author: Debian Composer Team
+license: MIT
+tags: [mixin, ai, ml, deep-learning, cuda]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/ollama.yaml
+  - components/whisper.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_cuda:
+    type: boolean
+    default: auto
+    description: "Enable CUDA support (auto-detects NVIDIA GPU)"
+  enable_rocm:
+    type: boolean
+    default: false
+    description: "Enable ROCm support (AMD GPU)"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - python3-pip
+  - python3-venv
+  - python3-dev
+  - python3-numpy
+  - python3-scipy
+  - python3-matplotlib
+  - python3-pandas
+  - python3-scikit-learn
+  - jupyter-notebook
+  - jupyterlab
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  ml-frameworks:
+    <<: *service_template
+    description: "Machine learning frameworks"
+    install:
+      packages:
+        - python3-pytorch
+        - python3-tensorflow
+        - python3-keras
+        - python3-opencv
+    verify:
+      commands:
+        - python3 -c "import torch; print(f'PyTorch {torch.__version__}')"
+
+  jupyter:
+    <<: *service_template
+    description: "Jupyter notebooks"
+    install:
+      packages:
+        - jupyter-notebook
+        - jupyterlab
+        - python3-ipykernel
+    verify:
+      commands:
+        - jupyter --version
+
+  cuda:
+    condition: enable_cuda == true
+    <<: *service_template
+    description: "NVIDIA CUDA support"
+    install:
+      packages:
+        - nvidia-cuda-toolkit
+        - nvidia-driver
+        - nvidia-smi
+    verify:
+      commands:
+        - nvidia-smi --query-gpu=name --format=csv,noheader 2>&1 || true
+
+  rocm:
+    condition: enable_rocm == true
+    <<: *service_template
+    description: "AMD ROCm support"
+    install:
+      packages:
+        - rocm-libs
+        - rocm-smi-lib
+    verify:
+      commands:
+        - rocm-smi 2>&1 || true
+
+  llm-tools:
+    <<: *service_template
+    description: "Local LLM tools"
+    install:
+      packages:
+        - ollama
+        - llama-cpp-python
+    verify:
+      commands:
+        - ollama --version 2>&1 || true
+
+  speech:
+    <<: *service_template
+    description: "Speech recognition"
+    install:
+      packages:
+        - whisper
+        - python3-speechrecognition
+    verify:
+      commands:
+        - whisper --version 2>&1 || true
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== AI/ML Mixin Applied ==="
+  - "CUDA: ${enable_cuda}"
+  - "ROCm: ${enable_rocm}"
+  - ""
+  - "Test PyTorch: python3 -c 'import torch; print(torch.cuda.is_available())'"
+  - "Start Jupyter: jupyter lab"
+  - "Local LLM: ollama run llama2"

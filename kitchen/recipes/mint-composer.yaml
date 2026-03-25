@@ -1,0 +1,304 @@
+# ============================================================================
+# Distro: mint-composer
+# ============================================================================
+# Transform a clean Debian install into Linux Mint-inspired system.
+# Linux Mint is based on Ubuntu with Cinnamon, MATE, or Xfce.
+#
+# Usage:
+#   sudo debian-composer --distro=mint-composer
+#   sudo debian-composer --distro=mint-composer --var=edition=cinnamon
+#   sudo debian-composer --distro=mint-composer --stack=complete
+
+name: mint-composer
+version: 1.0.0
+description: "Transform Debian into Linux Mint-inspired system"
+author: Debian Composer Team
+license: MIT
+tags: [distro, linux-mint, cinnamon, ubuntu-based, desktop, user-friendly]
+kind: distro
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  ubuntu_release:
+    type: string
+    default: noble
+    choices: [noble, jammy]
+    description: "Ubuntu base release (noble=24.04, jammy=22.04)"
+
+  edition:
+    type: string
+    default: cinnamon
+    choices: [cinnamon, mate, xfce]
+    description: "Mint edition (desktop environment)"
+
+  enable codecs:
+    type: boolean
+    default: true
+    description: "Install multimedia codecs"
+
+  enable_backports:
+    type: boolean
+    default: false
+    description: "Enable Mint backports repository"
+
+  language_pack:
+    type: string
+    default: en
+    choices: [en, de, fr, es, pt, it, nl, ru, zh, ja]
+    description: "Language pack for localized apps"
+
+repositories:
+  - name: linuxmint-main
+    url: "deb https://packages.linuxmint.com ${ubuntu_release} main upstream import"
+    key: "https://packages.linuxmint.com/public.key"
+    keyring: /usr/share/keyrings/mint-archive-keyring.gpg
+
+  - name: ubuntu-main
+    url: "deb http://archive.ubuntu.com/ubuntu ${ubuntu_release} main restricted universe multiverse"
+    key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C"
+
+  - name: ubuntu-security
+    url: "deb http://security.ubuntu.com/ubuntu ${ubuntu_release}-security main restricted universe multiverse"
+
+packages:
+  - mint-keyring
+  - mint-meta-codecs
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - mint-themes
+  - mint-x-icons
+  - mint-y-icons
+
+categories:
+  desktop/cinnamon:
+    condition: edition == cinnamon
+    description: "Cinnamon desktop (Mint flagship)"
+    install:
+      packages:
+        - mint-meta-cinnamon
+        - cinnamon
+        - cinnamon-control-center
+        - cinnamon-desktop-environment
+        - cinnamon-screensaver
+        - cinnamon-translations
+        - nemo
+        - nemo-fileroller
+        - lightdm
+        - slick-greeter
+    verify:
+      commands:
+        - cinnamon --version
+
+  desktop/mate:
+    condition: edition == mate
+    description: "MATE desktop"
+    install:
+      packages:
+        - mint-meta-mate
+        - mate-desktop-environment
+        - mate-control-center
+        - mate-notification-daemon
+        - caja
+        - caja-open-terminal
+        - lightdm
+        - slick-greeter
+    verify:
+      commands:
+        - mate-session --version 2>&1 | head -1 || true
+
+  desktop/xfce:
+    condition: edition == xfce
+    description: "Xfce desktop"
+    install:
+      packages:
+        - mint-meta-xfce
+        - xfce4
+        - xfce4-goodies
+        - xfce4-terminal
+        - thunar
+        - lightdm
+        - slick-greeter
+    verify:
+      commands:
+        - xfce4-session --version
+
+  apps/core:
+    description: "Core Mint applications"
+    install:
+      packages:
+        - mintinstall
+        - mintupdate
+        - mintbackup
+        - mintdrivers
+        - mintreport
+        - mintstick
+        - webapp-manager
+    verify:
+      commands:
+        - mintinstall --version 2>&1 | head -1 || true
+
+  apps/cinnamon-extras:
+    condition: edition == cinnamon
+    description: "Cinnamon-specific applications"
+    install:
+      packages:
+        - cinnamon-applets
+        - cinnamon-settings-applets
+        - cinnamon-diagnostics
+        - folder-color-switcher
+    verify:
+      commands:
+        - cinnamon-settings applets 2>&1 | head -1 || true
+
+  multimedia/codecs:
+    condition: enable_codecs == true
+    description: "Multimedia codecs and applications"
+    install:
+      packages:
+        - mint-meta-codecs
+        - vlc
+        - rhythmbox
+        - celluloid
+        - drawing
+        - hypnotix
+        - ffmpeg
+        - libavcodec-extra
+    verify:
+      commands:
+        - vlc --version 2>&1 | head -1 || true
+
+  themes/mint-themes:
+    description: "Mint themes and icons"
+    install:
+      packages:
+        - mint-themes
+        - mint-x-icons
+        - mint-y-icons
+        - mint-l-theme
+        - mint-l-icons
+    verify:
+      commands:
+        - ls /usr/share/themes/Mint-Y
+
+  repo/backports:
+    condition: enable_backports == true
+    description: "Mint backports repository"
+    install:
+      repositories:
+        - name: linuxmint-backports
+          url: "deb https://packages.linuxmint.com ${ubuntu_release} backport"
+          trusted: true
+
+  locale/${language_pack}:
+    description: "Language pack for ${language_pack}"
+    install:
+      packages:
+        - language-pack-${language_pack}
+        - language-pack-gnome-${language_pack}
+        - hunspell-${language_pack}
+
+  tools/graphics:
+    description: "Graphics drivers management"
+    install:
+      packages:
+        - mint-drivers
+        - nvidia-driver-555
+        - mesa-vulkan-drivers
+        - xserver-xorg-video-all
+
+stacks:
+  default:
+    description: "Linux Mint Cinnamon (flagship)"
+    categories:
+      - desktop/cinnamon
+      - apps/core
+      - apps/cinnamon-extras
+      - multimedia/codecs
+      - themes/mint-themes
+
+  mate:
+    description: "Linux Mint MATE"
+    categories:
+      - desktop/mate
+      - apps/core
+      - multimedia/codecs
+      - themes/mint-themes
+
+  xfce:
+    description: "Linux Mint Xfce"
+    categories:
+      - desktop/xfce
+      - apps/core
+      - multimedia/codecs
+      - themes/mint-themes
+
+  complete:
+    description: "Linux Mint complete installation"
+    categories:
+      - desktop/cinnamon
+      - apps/core
+      - apps/cinnamon-extras
+      - multimedia/codecs
+      - themes/mint-themes
+      - tools/graphics
+
+  minimal:
+    description: "Linux Mint minimal"
+    categories:
+      - desktop/cinnamon
+      - apps/core
+      - themes/mint-themes
+
+  localized:
+    description: "Localized Linux Mint"
+    categories:
+      - desktop/cinnamon
+      - apps/core
+      - multimedia/codecs
+      - themes/mint-themes
+      - locale/${language_pack}
+
+requirements:
+  min_ram: 2048
+  min_disk: 20
+
+conflicts:
+  packages:
+    - ubuntu-desktop
+
+post_install:
+  - "=== Mint Composer installed ==="
+  - ""
+  - "Your system is now Linux Mint-inspired."
+  - "Base: Ubuntu ${ubuntu_release}"
+  - "Edition: ${edition}"
+  - ""
+  - "Mint applications:"
+  - "  - Software Manager: mintinstall"
+  - "  - Update Manager: mintupdate"
+  - "  - Driver Manager: mintdrivers"
+  - "  - Backup Tool: mintbackup"
+  - "  - ISO Writer: mintstick"
+  - ""
+  - "Customization:"
+  - "  - Themes: cinnamon-settings themes"
+  - "  - Applets: cinnamon-settings applets"
+  - "  - Extensions: cinnamon-settings extensions"
+
+examples:
+  - title: "Linux Mint Cinnamon (default)"
+    command: "sudo debian-composer --distro=mint-composer"
+  - title: "Linux Mint MATE"
+    command: "sudo debian-composer --distro=mint-composer --stack=mate"
+  - title: "Linux Mint Xfce"
+    command: "sudo debian-composer --distro=mint-composer --stack=xfce"
+  - title: "Linux Mint complete"
+    command: "sudo debian-composer --distro=mint-composer --stack=complete"
+  - title: "Linux Mint German"
+    command: "sudo debian-composer --distro=mint-composer --var=language_pack=de --stack=localized"

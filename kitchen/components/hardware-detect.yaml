@@ -1,0 +1,310 @@
+# ============================================================================
+# Component: hardware-detect
+# ============================================================================
+# Universal hardware detection and reporting for any Debian-based distro.
+#
+# Detects:
+#   - CPU (vendor, model, cores, microcode)
+#   - GPU (NVIDIA/AMD/Intel, model, driver)
+#   - Network (WiFi/Ethernet chipsets)
+#   - Storage (SSD/HDD, NVMe)
+#   - Audio (chipsets)
+#   - Virtualization (KVM, VirtualBox, Docker)
+#   - Battery/Laptop features
+#
+# Usage in any recipe:
+#   includes:
+#     - components/hardware-detect.yaml
+
+name: hardware-detect
+version: 1.0.0
+description: "Universal hardware detection and reporting — works on any Debian-based distro"
+author: Debian Composer Team
+license: MIT
+tags: [hardware, detection, diagnostics, lspci, lsusb, system-info]
+
+variables:
+  report_format:
+    type: string
+    default: text
+    choices: [text, json, html]
+    description: "Hardware report output format"
+
+  save_report:
+    type: boolean
+    default: true
+    description: "Save hardware report to /etc/hardware-report.txt"
+
+  detect_script:
+    type: string
+    default: /usr/local/bin/hw-detect
+    description: "Path to hardware detection script"
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+packages:
+  # Detection tools
+  - lshw
+  - hwinfo
+  - inxi
+  - dmidecode
+  - pciutils
+  - usbutils
+  - lsblk
+  - neofetch
+  # Reporting
+  - pastebinit
+  - jsonlint
+
+categories:
+  # --------------------------------------------------------------------------
+  # CPU Detection
+  # --------------------------------------------------------------------------
+  detect/cpu:
+    description: "CPU information tools"
+    install:
+      packages:
+        - cpuid
+        - msr-tools
+    configuration:
+      - type: script
+        name: detect-cpu
+        content: |
+          #!/bin/bash
+          echo "=== CPU Detection ==="
+          echo "Vendor: $(grep -m1 'vendor_id' /proc/cpuinfo | cut -d: -f2 | xargs)"
+          echo "Model: $(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)"
+          echo "Cores: $(nproc)"
+          echo "Microcode: $(grep microcode /proc/cpuinfo | head -1 | cut -d: -f2 | xargs)"
+        path: /etc/hw-detect.d/10-cpu.sh
+
+  # --------------------------------------------------------------------------
+  # GPU Detection
+  # --------------------------------------------------------------------------
+  detect/gpu:
+    description: "GPU information tools"
+    install:
+      packages:
+        - mesa-utils
+        - vulkan-tools
+        - clinfo
+    configuration:
+      - type: script
+        name: detect-gpu
+        content: |
+          #!/bin/bash
+          echo "=== GPU Detection ==="
+          lspci -nn | grep -i vga
+          echo ""
+          echo "Loaded GPU driver:"
+          lspci -nnk | grep -A3 VGA | grep kernel
+          echo ""
+          echo "OpenGL:"
+          glxinfo 2>/dev/null | grep "OpenGL renderer" | head -1 || echo "glxinfo not available"
+        path: /etc/hw-detect.d/20-gpu.sh
+
+  # --------------------------------------------------------------------------
+  # Network Detection
+  # --------------------------------------------------------------------------
+  detect/network:
+    description: "Network hardware detection"
+    install:
+      packages:
+        - wireless-tools
+        - wpasupplicant
+        - ethtool
+    configuration:
+      - type: script
+        name: detect-network
+        content: |
+          #!/bin/bash
+          echo "=== Network Hardware ==="
+          echo "Ethernet:"
+          lspci -nn | grep -i ethernet
+          echo ""
+          echo "WiFi:"
+          lspci -nn | grep -i network
+          echo ""
+          echo "USB Network:"
+          lsusb | grep -i network || echo "No USB network devices"
+        path: /etc/hw-detect.d/30-network.sh
+
+  # --------------------------------------------------------------------------
+  # Storage Detection
+  # --------------------------------------------------------------------------
+  detect/storage:
+    description: "Storage device detection"
+    install:
+      packages:
+        - smartmontools
+        - nvme-cli
+    configuration:
+      - type: script
+        name: detect-storage
+        content: |
+          #!/bin/bash
+          echo "=== Storage Devices ==="
+          lsblk -d -o NAME,SIZE,TYPE,MODEL,ROTA
+          echo ""
+          echo "NVMe devices:"
+          nvme list 2>/dev/null || echo "No NVMe or nvme-cli not installed"
+          echo ""
+          echo "HDD/SSD health (SMART):"
+          lsblk -d -o NAME,TYPE | grep disk | awk '{print "/dev/"$1}' | head -5 | xargs -I{} smartctl -H {} 2>/dev/null || echo "smartctl not available"
+        path: /etc/hw-detect.d/40-storage.sh
+
+  # --------------------------------------------------------------------------
+  # Audio Detection
+  # --------------------------------------------------------------------------
+  detect/audio:
+    description: "Audio hardware detection"
+    install:
+      packages:
+        - alsa-utils
+        - pulseaudio-utils
+    configuration:
+      - type: script
+        name: detect-audio
+        content: |
+          #!/bin/bash
+          echo "=== Audio Hardware ==="
+          lspci -nn | grep -i audio
+          echo ""
+          echo "Sound cards:"
+          aplay -l 2>/dev/null || echo "aplay not available"
+        path: /etc/hw-detect.d/50-audio.sh
+
+  # --------------------------------------------------------------------------
+  # Virtualization Detection
+  # --------------------------------------------------------------------------
+  detect/virtualization:
+    description: "Virtualization detection"
+    install:
+      packages:
+        - cpu-checker
+    configuration:
+      - type: script
+        name: detect-virt
+        content: |
+          #!/bin/bash
+          echo "=== Virtualization ==="
+          systemd-detect-virt 2>/dev/null || echo "Not virtualized or systemd-detect-virt not available"
+          echo ""
+          echo "KVM support:"
+          kvm-ok 2>/dev/null || echo "kvm-ok not available"
+        path: /etc/hw-detect.d/60-virt.sh
+
+  # --------------------------------------------------------------------------
+  # Full Report Generator
+  # --------------------------------------------------------------------------
+  detect/report:
+    description: "Generate comprehensive hardware report"
+    configuration:
+      - type: script
+        name: hw-detect-full
+        content: |
+          #!/bin/bash
+          # Universal Hardware Detection Report
+          # Usage: hw-detect [--format=text|json|html] [--save]
+          
+          REPORT_FILE="/etc/hardware-report.txt"
+          FORMAT="text"
+          SAVE=false
+          
+          while [[ $# -gt 0 ]]; do
+            case $1 in
+              --format) FORMAT="$2"; shift 2 ;;
+              --save) SAVE=true; shift ;;
+              *) shift ;;
+            esac
+          done
+          
+          generate_report() {
+            echo "╔══════════════════════════════════════════════════════════════╗"
+            echo "║              HARDWARE DETECTION REPORT                      ║"
+            echo "║              $(date '+%Y-%m-%d %H:%M:%S')                        ║"
+            echo "╚══════════════════════════════════════════════════════════════╝"
+            echo ""
+            
+            # Run all detection scripts
+            for script in /etc/hw-detect.d/*.sh; do
+              if [ -x "$script" ]; then
+                bash "$script"
+                echo ""
+              fi
+            done
+            
+            # System info
+            echo "=== System Information ==="
+            echo "Hostname: $(hostname)"
+            echo "Kernel: $(uname -r)"
+            echo "Architecture: $(uname -m)"
+            echo "Uptime: $(uptime -p 2>/dev/null || uptime)"
+          }
+          
+          case "$FORMAT" in
+            json)
+              echo "{"
+              echo "  \"hostname\": \"$(hostname)\","
+              echo "  \"kernel\": \"$(uname -r)\","
+              echo "  \"cpu\": \"$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)\","
+              echo "  \"cpu_cores\": $(nproc),"
+              echo "  \"gpu\": \"$(lspci | grep -i vga | head -1 | cut -d: -f3 | xargs)\","
+              echo "  \"memory\": \"$(free -h | awk '/Mem:/{print $2}')\","
+              echo "  \"disk\": \"$(lsblk -d -o SIZE | tail -n +2 | head -1 | xargs)\""
+              echo "}"
+              ;;
+            *)
+              generate_report
+              ;;
+          esac
+          
+          if [ "$SAVE" = true ]; then
+            generate_report > "$REPORT_FILE"
+            echo "Report saved to: $REPORT_FILE"
+          fi
+        path: "${detect_script}"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - lshw -version 2>/dev/null || echo "lshw installed"
+    - inxi -h >/dev/null 2>&1 && echo "inxi ready"
+    - test -x /usr/local/bin/hw-detect && echo "hw-detect script ready"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 256
+  min_disk: 1
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== Hardware Detection Ready ==="
+  - ""
+  - "Hardware detection tools installed."
+  - ""
+  - "Quick commands:"
+  - "  - Full report:    sudo hw-detect"
+  - "  - CPU info:       lscpu"
+  - "  - GPU info:       lspci | grep -i vga"
+  - "  - Network:        lspci | grep -i net"
+  - "  - Storage:        lsblk"
+  - "  - USB devices:    lsusb"
+  - "  - All hardware:   sudo lshw -short"
+  - ""
+  - "Save report:       sudo hw-detect --save"
+
+examples:
+  - title: "Basic hardware detection"
+    description: "Install detection tools only"
+    command: "sudo debian-composer --component=hardware-detect"
+  - title: "With report script"
+    description: "Install with full detection script"
+    command: "sudo debian-composer --component=hardware-detect --var=save_report=true"

@@ -1,0 +1,195 @@
+# ============================================================================
+# Production Environment Configuration
+# ============================================================================
+# Version: 1.0.0
+#
+# A production-ready server/workstation setup with:
+# - Security hardening
+# - Monitoring and logging
+# - Performance optimization
+# - Minimal GUI footprint
+#
+# Usage:
+#   debian-composer --config=prod
+#   debian-composer --config=production
+# ============================================================================
+
+name: prod
+version: 1.0.0
+description: Production environment configuration
+environment: prod
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  environment: prod
+  debug: false
+  verbose: false
+
+  # Security
+  enable_firewall: true
+  enable_fail2ban: true
+  enable_auditd: true
+
+  # Monitoring
+  enable_monitoring: true
+  enable_logging: true
+
+  # Services
+  enable_docker: true
+  enable_web_server: false
+  enable_database: false
+
+# ============================================================================
+# EXTENDS
+# ============================================================================
+extends:
+  - base
+
+# ============================================================================
+# PACKAGES
+# ============================================================================
+packages:
+  # Core system
+  - vim-tiny
+  - curl
+  - wget
+  - git
+  - htop
+  - iotop
+  - nethogs
+
+  # Security
+  - ufw
+  - fail2ban
+  - auditd
+  - unattended-upgrades
+  - needrestart
+
+  # Monitoring
+  - prometheus-node-exporter
+  - logrotate
+  - rsyslog
+
+  # Network
+  - net-tools
+  - dnsutils
+  - iputils-ping
+  - mtr
+  - tcpdump
+
+  # Docker (optional)
+  - name: docker-ce
+    condition: enable_docker == true
+  - name: docker-ce-cli
+    condition: enable_docker == true
+
+  # Web server (optional)
+  - name: nginx
+    condition: enable_web_server == true
+
+  # Database (optional)
+  - name: postgresql
+    condition: enable_database == true
+
+# ============================================================================
+# RECIPES
+# ============================================================================
+recipes:
+  - homelab
+
+# ============================================================================
+# SETTINGS
+# ============================================================================
+settings:
+  # Security settings
+  security:
+    ssh_root_login: false
+    ssh_password_auth: false
+    ssh_key_auth: true
+    firewall_default: deny
+
+  # Performance
+  performance:
+    swappiness: 10
+    file_max: 65536
+    tcp_keepalive: true
+
+  # Logging
+  logging:
+    level: info
+    retention_days: 30
+    remote_syslog: false
+
+  # Updates
+  updates:
+    automatic_security: true
+    automatic_all: false
+    reboot_required: notify
+
+# ============================================================================
+# HOOKS
+# ============================================================================
+hooks:
+  pre_apply:
+    - echo "Applying production configuration..."
+    - echo "WARNING: This will modify security settings"
+
+  post_apply:
+    - echo "Production configuration applied"
+    - echo "Review security settings in /etc/ssh/sshd_config"
+    - echo "Check firewall status: ufw status"
+    - echo "Enable monitoring: systemctl enable prometheus-node-exporter"
+
+# ============================================================================
+# SERVICES
+# ============================================================================
+services:
+  - name: ssh
+    enabled: true
+    state: started
+
+  - name: ufw
+    enabled: true
+    state: started
+
+  - name: fail2ban
+    enabled: true
+    state: started
+
+  - name: docker
+    enabled: true
+    state: started
+    condition: enable_docker == true
+
+  - name: prometheus-node-exporter
+    enabled: true
+    state: started
+    condition: enable_monitoring == true
+
+# ============================================================================
+# SECURITY RULES
+# ============================================================================
+security:
+  # Firewall rules
+  firewall:
+    - name: Allow SSH
+      port: 22
+      protocol: tcp
+      source: any
+
+    - name: Allow HTTPS
+      port: 443
+      protocol: tcp
+      source: any
+      condition: enable_web_server == true
+
+  # SSH hardening
+  sshd_config:
+    PermitRootLogin: "no"
+    PasswordAuthentication: "no"
+    PubkeyAuthentication: "yes"
+    MaxAuthTries: "3"
+    ClientAliveInterval: "300"
+    ClientAliveCountMax: "2"

@@ -1,0 +1,27 @@
+# Container Layer
+# Container runtimes and orchestration
+
+name: container
+version: 1.0.0
+description: Container runtime and orchestration tools
+order: 5
+author: Debian Composer Team
+license: MIT
+
+components: []
+
+packages:
+  - docker.io
+  - docker-compose
+  - podman
+
+requires_layer:
+  - base
+
+requirements:
+  min_ram: 2048
+  min_disk: 5
+
+post_install:
+  - "Container layer installed"
+  - "Docker: ensure service is enabled"

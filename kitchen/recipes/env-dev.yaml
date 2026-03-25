@@ -1,0 +1,193 @@
+# ============================================================================
+# Development Environment Configuration
+# ============================================================================
+# Version: 1.0.0
+#
+# A complete development environment setup with:
+# - Development tools and IDEs
+# - Programming languages and runtimes
+# - Docker and container tools
+# - Debug and profiling tools
+#
+# Usage:
+#   debian-composer --config=dev
+#   debian-composer --config=development
+# ============================================================================
+
+name: dev
+version: 1.0.0
+description: Development environment configuration
+environment: dev
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  environment: dev
+  debug: true
+  verbose: true
+
+  # Programming languages
+  enable_python: true
+  enable_nodejs: true
+  enable_rust: true
+  enable_go: true
+  enable_java: false
+
+  # Tools
+  enable_docker: true
+  enable_kubernetes: false
+  enable_ide: true
+  preferred_ide: vscode  # vscode, intellij, eclipse
+
+  # UI preferences
+  enable_gui_tools: true
+  theme: dark
+
+# ============================================================================
+# EXTENDS (Inheritance)
+# ============================================================================
+extends:
+  - base
+
+# ============================================================================
+# PACKAGES
+# ============================================================================
+packages:
+  # Core development tools
+  - git
+  - curl
+  - wget
+  - build-essential
+  - gdb
+
+  # Terminal and shell
+  - zsh
+  - tmux
+  - ripgrep
+  - fd-find
+  - jq
+  - yq
+
+  # IDE/Editor
+  - name: code
+    type: apt
+    apt_fallback: vim
+
+  # Docker
+  - name: docker-ce
+    type: apt
+    apt_fallback: docker.io
+
+  # Python development
+  - name: python3-dev
+    condition: enable_python == true
+  - name: python3-pip
+    condition: enable_python == true
+  - name: python3-venv
+    condition: enable_python == true
+
+  # Node.js development
+  - name: nodejs
+    condition: enable_nodejs == true
+  - name: npm
+    condition: enable_nodejs == true
+
+  # Rust development
+  - name: rustc
+    condition: enable_rust == true
+  - name: cargo
+    condition: enable_rust == true
+
+  # Go development
+  - name: golang-go
+    condition: enable_go == true
+
+# ============================================================================
+# RECIPES
+# ============================================================================
+recipes:
+  - debian-dev-tools
+  - docker-dev
+
+# ============================================================================
+# SETTINGS
+# ============================================================================
+settings:
+  # Shell configuration
+  shell:
+    default: zsh
+    prompt: powerlevel10k
+    aliases: true
+
+  # Git configuration
+  git:
+    editor: code --wait
+    merge_tool: meld
+    difftool: vscode
+
+  # IDE settings
+  ide:
+    auto_save: true
+    format_on_save: true
+    lint_on_save: true
+
+  # Docker settings
+  docker:
+    start_on_boot: true
+    add_user_to_group: true
+
+  # Debug settings
+  debug:
+    enabled: true
+    log_level: debug
+    verbose_errors: true
+
+# ============================================================================
+# HOOKS
+# ============================================================================
+hooks:
+  pre_apply:
+    - echo "Setting up development environment..."
+
+  post_apply:
+    - echo "Development environment ready!"
+    - echo "Run 'chsh -s /bin/zsh' to set zsh as default shell"
+    - echo "Run 'code --install-extension ...' to install VS Code extensions"
+
+# ============================================================================
+# FILES
+# ============================================================================
+files:
+  # Create development directories
+  - path: ~/projects
+    type: directory
+  - path: ~/projects/personal
+    type: directory
+  - path: ~/projects/work
+    type: directory
+
+  # Git config
+  - path: ~/.gitconfig.local
+    type: file
+    content: |
+      [user]
+        name = Developer
+        email = dev@example.com
+      [core]
+        editor = code --wait
+      [init]
+        defaultBranch = main
+
+  # Shell aliases
+  - path: ~/.bash_aliases
+    type: file
+    append: true
+    content: |
+      alias gs='git status'
+      alias ga='git add'
+      alias gc='git commit'
+      alias gp='git push'
+      alias gd='git diff'
+      alias dl='docker logs'
+      alias dps='docker ps'

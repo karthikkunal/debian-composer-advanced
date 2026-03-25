@@ -1,0 +1,84 @@
+# ============================================================================
+# Audio Component
+# ============================================================================
+# PipeWire audio stack for modern audio management
+#
+# Reusable component for any recipe needing modern audio support
+
+name: audio
+version: 1.0.0
+description: PipeWire audio stack for modern audio management
+author: Debian Composer Team
+license: MIT
+tags: [audio, pipewire, pulseaudio, alsa, bluetooth-audio]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # PipeWire core and components
+    - pipewire
+    - pipewire-pulse
+    - pipewire-alsa
+    - pipewire-jack
+    - wireplumber
+    # Audio control
+    - pamixer
+    - alsa-utils
+    - playerctl
+    # Bluetooth audio
+    - bluez
+    - bluez-tools
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  hooks:
+    post_install:
+      - type: command
+        command: "systemctl --user unmask pulseaudio 2>/dev/null || true"
+        description: "Unmask pulseaudio if needed"
+    post_configure:
+      - type: command
+        command: "loginctl enable-linger ${SUDO_USER}"
+        description: "Enable user lingering for PipeWire"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - pactl --version
+    - pw-cli --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 512
+  min_disk: 2
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Audio: PipeWire audio stack configured"
+  - "Restart audio: systemctl --user restart pipewire"
+  - "Test audio: pactl info"

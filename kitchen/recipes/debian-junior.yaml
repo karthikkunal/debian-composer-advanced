@@ -1,0 +1,372 @@
+# ============================================================================
+# Debian Junior Pure Blend - For Children
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian Junior Pure Blend configuration for children. Provides
+# age-appropriate applications, educational games, creative tools, and
+# safe internet browsing for kids from preschool through middle school.
+#
+# Usage:
+#   # Install complete Junior setup
+#   sudo debian-composer --blend=debian-junior
+#
+#   # Install for specific age group
+#   sudo debian-composer --blend=debian-junior --var=age_group=preschool
+#   sudo debian-composer --blend=debian-junior --var=age_group=elementary
+#   sudo debian-composer --blend=debian-junior --var=age_group=middle-school
+#
+#   # Install with specific interests
+#   sudo debian-composer --blend=debian-junior --var=enable_programming=true
+#   sudo debian-composer --blend=debian-junior --var=enable_art=true
+#
+# References:
+#   - Debian Junior: https://blends.debian.org/junior/
+#   - Debian Junior Wiki: https://wiki.debian.org/DebianJunior/
+# ============================================================================
+
+name: debian-junior
+version: 1.0.0
+description: Debian Junior Pure Blend - Applications for children
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/junior/
+tags: [blend, junior, children, kids, education, learning, preschool, elementary]
+kind: pure blend
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: education
+  target_audience: [children, parents, teachers, schools, families]
+  difficulty: beginner
+  min_ram: 2048
+  min_disk: 15
+  recommended_disk: 25
+  gpu_required: false
+  gpu_recommended: false
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies:
+  - debian-edu
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  age_group:
+    type: string
+    default: all
+    choices: [all, preschool, elementary, middle-school, teen]
+    description: Target age group
+
+  enable_art:
+    type: boolean
+    default: true
+    description: Enable art and creativity tools
+
+  enable_education:
+    type: boolean
+    default: true
+    description: Enable educational applications
+
+  enable_games:
+    type: boolean
+    default: true
+    description: Enable games appropriate for children
+
+  enable_programming:
+    type: boolean
+    default: true
+    description: Enable programming learning tools
+
+  enable_music:
+    type: boolean
+    default: true
+    description: Enable music and sound applications
+
+  enable_internet:
+    type: boolean
+    default: true
+    description: Enable safe internet browsing
+
+  enable_writing:
+    type: boolean
+    default: true
+    description: Enable writing and typing practice
+
+# ============================================================================
+# CATEGORIES - Using tasksel task package
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # All Junior (via task-junior)
+  # --------------------------------------------------------------------------
+  junior/all:
+    condition: age_group == all
+    <<: *service_template
+    description: "All Junior applications (via task-junior)"
+    install:
+      packages:
+        - *junior_all
+    verify:
+      commands:
+        - gcompris-qt --version 2>&1 | head -1
+        - tuxpaint --version 2>&1 | head -1
+        - ktouch --version 2>&1 | head -1
+        - scratch 2>&1 | head -1
+        - klettres --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Age-specific (installed via task-junior, filtered by user preference)
+  # --------------------------------------------------------------------------
+  age/preschool:
+    condition: age_group == preschool
+    <<: *service_template
+    description: "Preschool applications (included in task-junior)"
+    install:
+      packages:
+        - *junior_education
+    verify:
+      commands:
+        - gcompris-qt --version 2>&1 | head -1
+
+  age/elementary:
+    condition: age_group == elementary
+    <<: *service_template
+    description: "Elementary applications (included in task-junior)"
+    install:
+      packages:
+        - *junior_education
+    verify:
+      commands:
+        - tuxmath --version 2>&1 | head -1
+
+  age/middle-school:
+    condition: age_group == middle-school
+    <<: *service_template
+    description: "Middle school applications (included in task-junior)"
+    install:
+      packages:
+        - *junior_education
+    verify:
+      commands:
+        - geogebra --version 2>&1 | head -1
+
+  creative/art:
+    condition: enable_art == true
+    <<: *service_template
+    description: "Art applications (included in task-junior)"
+    install:
+      packages:
+        - *junior_art
+    verify:
+      commands:
+        - tuxpaint --version 2>&1 | head -1
+
+  creative/music:
+    condition: enable_music == true
+    <<: *service_template
+    description: "Music applications (included in task-junior)"
+    install:
+      packages:
+        - *junior_sound
+    verify:
+      commands:
+        - audacity --version 2>&1 | head -1
+
+  learn/math:
+    condition: enable_education == true
+    <<: *service_template
+    description: "Math learning (included in task-junior)"
+    install:
+      packages:
+        - *junior_math
+    verify:
+      commands:
+        - tuxmath --version 2>&1 | head -1
+
+  learn/typing:
+    condition: enable_writing == true
+    <<: *service_template
+    description: "Typing practice (included in task-junior)"
+    install:
+      packages:
+        - *junior_typing
+    verify:
+      commands:
+        - ktouch --version 2>&1 | head -1
+
+  dev/programming:
+    condition: enable_programming == true
+    <<: *service_template
+    description: "Programming (included in task-junior)"
+    install:
+      packages:
+        - *junior_programming
+    verify:
+      commands:
+        - scratch --version 2>&1 | head -1
+
+  internet/safe-browsing:
+    condition: enable_internet == true
+    <<: *service_template
+    description: "Internet (included in task-junior)"
+    install:
+      packages:
+        - *junior_internet
+    verify:
+      commands:
+        - firefox --version 2>&1 | head -1
+
+  games/all:
+    condition: enable_games == true
+    <<: *service_template
+    description: "Games (included in task-junior)"
+    install:
+      packages:
+        - *junior_games_arcade
+    verify:
+      commands:
+        - kmines --version 2>&1 | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  complete:
+    description: "Complete Junior setup for all ages"
+    categories:
+      - age/preschool
+      - age/elementary
+      - age/middle-school
+      - creative/art
+      - creative/music
+      - learn/math
+      - learn/typing
+      - dev/programming
+      - games/puzzle
+      - internet/safe-browsing
+      - desktop/child-friendly
+
+  preschool:
+    description: "Preschool setup (ages 3-5)"
+    categories:
+      - age/preschool
+      - age/preschool-games
+      - creative/art
+      - desktop/child-friendly
+
+  elementary:
+    description: "Elementary school setup (ages 6-10)"
+    categories:
+      - age/elementary
+      - age/elementary-education
+      - learn/math
+      - learn/typing
+      - creative/art
+      - creative/music
+      - games/puzzle
+      - games/arcade
+      - internet/safe-browsing
+      - desktop/child-friendly
+
+  middle-school:
+    description: "Middle school setup (ages 11-14)"
+    categories:
+      - age/middle-school
+      - age/science
+      - learn/math
+      - learn/writing
+      - learn/reading
+      - dev/programming
+      - dev/python
+      - creative/video
+      - internet/safe-browsing
+      - desktop/child-friendly
+
+  creative-studio:
+    description: "Creative arts studio for kids"
+    categories:
+      - creative/art
+      - creative/music
+      - creative/video
+      - desktop/child-friendly
+
+  learning-lab:
+    description: "Educational learning environment"
+    categories:
+      - age/elementary-education
+      - age/science
+      - learn/math
+      - learn/typing
+      - learn/writing
+      - learn/reading
+      - desktop/child-friendly
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_junior
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Junior Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Age Group: ${age_group}"
+  - "  Art/Creativity: ${enable_art}"
+  - "  Education: ${enable_education}"
+  - "  Games: ${enable_games}"
+  - "  Programming: ${enable_programming}"
+  - "  Music: ${enable_music}"
+  - "  Internet: ${enable_internet}"
+  - ""
+  - "Recommended Applications by Age:"
+  - "  Preschool (3-5): GCompris, TuxPaint, Bambam"
+  - "  Elementary (6-10): TuxMath, TuxType, KBruch"
+  - "  Middle (11-14): GeoGebra, Scratch, Kalzium"
+  - ""
+  - "Parental Controls:"
+  - "  Enable via: GNOME Settings > Parental Controls"
+  - "  Or: parental-controls package"
+  - ""
+  - "Resources:"
+  - "  - Debian Junior: https://blends.debian.org/junior/"
+  - "  - GCompris: https://gcompris.net/"
+  - "  - Tux4Kids: https://tux4kids.debian.org/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Complete Junior Setup
+    description: Install all Junior applications for all ages
+    command: sudo debian-composer --blend=debian-junior --stack=complete
+
+  - title: Preschool Computer
+    description: Setup for young children (ages 3-5)
+    command: sudo debian-composer --blend=debian-junior --stack=preschool --var=age_group=preschool
+
+  - title: Elementary School Lab
+    description: Setup for elementary school students
+    command: sudo debian-composer --blend=debian-junior --stack=elementary --var=age_group=elementary
+
+  - title: Middle School STEM Lab
+    description: Setup for middle school with programming and science
+    command: sudo debian-composer --blend=debian-junior --stack=middle-school --var=age_group=middle-school --var=enable_programming=true
+
+  - title: Creative Studio
+    description: Setup focused on arts and music
+    command: sudo debian-composer --blend=debian-junior --stack=creative-studio --var=enable_art=true --var=enable_music=true

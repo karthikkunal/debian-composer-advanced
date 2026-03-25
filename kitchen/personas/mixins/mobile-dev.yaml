@@ -1,0 +1,140 @@
+# ============================================================================
+# Mobile Development Specialization Mixin
+# ============================================================================
+# Adds mobile development tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=developer --mixin=mobile-dev
+#   sudo debian-composer --base=desktop --role=developer --mixin=mobile-dev
+
+name: mixin-mobile-dev
+version: 1.0.0
+description: Mobile development tools - Android, Flutter, React Native
+author: Debian Composer Team
+license: MIT
+tags: [mixin, mobile, android, flutter, ios, development]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  platform:
+    type: string
+    default: android
+    choices: [android, flutter, react-native]
+    description: "Primary mobile development platform"
+  enable_emulator:
+    type: boolean
+    default: true
+    description: "Install Android emulator"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - openjdk-17-jdk
+  - gradle
+  - android-sdk-build-tools
+  - android-sdk-platform-tools
+  - flutter
+  - nodejs
+  - npm
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  android:
+    condition: platform == android
+    <<: *service_template
+    description: "Android development"
+    install:
+      packages:
+        - openjdk-17-jdk
+        - gradle
+        - android-sdk-build-tools
+        - android-sdk-platform-tools
+    verify:
+      commands:
+        - java --version
+        - gradle --version
+
+  flutter:
+    condition: platform == flutter
+    <<: *service_template
+    description: "Flutter cross-platform"
+    install:
+      packages:
+        - flutter
+        - dart
+    verify:
+      commands:
+        - flutter --version
+        - dart --version
+
+  react-native:
+    condition: platform == react-native
+    <<: *service_template
+    description: "React Native development"
+    install:
+      packages:
+        - nodejs
+        - npm
+        - watchman
+    verify:
+      commands:
+        - node --version
+        - npm --version
+
+  emulator:
+    condition: enable_emulator == true
+    <<: *service_template
+    description: "Android emulator"
+    install:
+      packages:
+        - android-emulator
+        - qemu-system-x86
+    verify:
+      commands:
+        - emulator -version 2>&1 || true
+
+  ide:
+    <<: *service_template
+    description: "Mobile IDE"
+    install:
+      packages:
+        - android-studio
+        - code
+    verify:
+      commands:
+        - code --version
+
+  testing:
+    <<: *service_template
+    description: "Testing tools"
+    install:
+      packages:
+        - appium
+        - detox
+    verify:
+      commands:
+        - appium --version 2>&1 || true
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Mobile Dev Mixin Applied ==="
+  - "Platform: ${platform}"
+  - "Emulator: ${enable_emulator}"
+  - ""
+  - "Android: Set ANDROID_HOME and ANDROID_SDK_ROOT"
+  - "Flutter: Run 'flutter doctor'"
+  - "React Native: npm install -g react-native-cli"

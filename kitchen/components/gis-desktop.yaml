@@ -1,0 +1,59 @@
+# ============================================================================
+# GIS Desktop Component
+# ============================================================================
+# Desktop GIS applications
+#
+# Reusable component for any recipe needing desktop GIS
+
+name: gis-desktop
+version: 1.0.0
+description: Desktop GIS applications
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [gis, desktop, qgis, grass, mapping]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Main GIS applications
+    - qgis
+    - qgis-plugin-grass
+    - grass
+    # Alternative GIS
+    - gvsig
+    # Spatial database
+    - spatialite
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - qgis --version
+    - grass --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 20
+  gpu: true
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "QGIS: Desktop GIS application - https://qgis.org/"
+  - "GRASS GIS: Advanced spatial analysis - https://grass.osgeo.org/"
+  - "gvSIG: Alternative desktop GIS"

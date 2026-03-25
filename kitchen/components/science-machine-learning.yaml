@@ -1,0 +1,83 @@
+# ============================================================================
+# Science Machine Learning Component
+# ============================================================================
+# Machine learning and AI tools
+#
+# Reusable component for any recipe needing ML/AI tools
+
+name: science-machine-learning
+version: 1.0.0
+description: Machine learning and AI tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [science, machine-learning, ai, tensorflow, pytorch]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_gpu:
+    type: boolean
+    default: false
+    description: Enable GPU acceleration
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Core ML libraries
+    - python3-scikit-learn
+    - python3-pandas
+    - python3-numpy
+    - python3-scipy
+    # Deep learning
+    - python3-tensorflow
+    - python3-pytorch
+    - python3-keras
+    # Traditional ML
+    - weka
+    - mlpack
+
+# ============================================================================
+# GPU PACKAGES (conditional)
+# ============================================================================
+install_gpu:
+  condition: enable_gpu == true
+  packages:
+    - nvidia-cuda-toolkit
+    - python3-tensorflow-gpu
+    - python3-pytorch-cuda
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - python3 -c "import sklearn; print('sklearn:', sklearn.__version__)"
+    - python3 -c "import tensorflow as tf; print('tensorflow:', tf.__version__)"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 8192
+  min_disk: 50
+  gpu: ${enable_gpu}
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "scikit-learn: Machine learning library"
+  - "TensorFlow: Deep learning framework"
+  - "PyTorch: Deep learning framework"
+  - "GPU Acceleration: ${enable_gpu}"

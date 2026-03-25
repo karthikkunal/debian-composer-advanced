@@ -1,0 +1,363 @@
+# ============================================================================
+# Homelab Server
+# ============================================================================
+# Self-hosted services for home: media, automation, monitoring, and cloud
+#
+# Uses YAML anchors, merge keys, variables, and conditions
+#
+# Usage:
+#   sudo debian-composer --recipe=homelab --category=media
+#   sudo debian-composer --recipe=homelab --var=homelab_focus=media
+
+name: homelab
+version: 1.0.0
+description: Complete homelab with media server, home automation, and cloud services
+author: Debian Composer Team
+license: MIT
+tags: [homelab, selfhosted, media, homeautomation, cloud]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/docker.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+  - mixins/security-hardening.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  # Homelab focus
+  homelab_focus:
+    type: string
+    default: media
+    choices: [media, automation, cloud, monitoring, complete]
+    description: Primary homelab focus area
+
+  # Media server
+  enable_media:
+    type: boolean
+    default: true
+    description: Enable media server (Jellyfin, Plex, Radarr, Sonarr)
+
+  # Media server choice
+  media_server:
+    type: string
+    default: jellyfin
+    choices: [jellyfin, plex, emby]
+    description: Media server software choice
+
+  # Home automation
+  enable_automation:
+    type: boolean
+    default: true
+    description: Enable home automation (Home Assistant, Node-RED)
+
+  # Cloud storage
+  enable_cloud:
+    type: boolean
+    default: true
+    description: Enable cloud storage (Nextcloud, Syncthing)
+
+  # Monitoring
+  enable_monitoring:
+    type: boolean
+    default: true
+    description: Enable monitoring (Grafana, Prometheus)
+
+  # Backup
+  enable_backup:
+    type: boolean
+    default: true
+    description: Enable backup solutions
+
+# ============================================================================
+# DEFAULT PACKAGES
+# ============================================================================
+packages:
+  - docker.io
+  - docker-compose
+  - docker-compose-plugin
+  - portainer
+  - git
+  - curl
+  - wget
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Media Server (conditional)
+  # --------------------------------------------------------------------------
+  media/jellyfin:
+    condition: enable_media == true and media_server == jellyfin
+    <<: *service_template
+    description: "Jellyfin media server"
+    install:
+      packages:
+        - jellyfin
+        - jellyfin-ffmpeg
+    configure:
+      service:
+        name: jellyfin
+        enable: true
+    verify:
+      commands:
+        - jellyfin --version 2>&1 | head -1
+
+  media/plex:
+    condition: enable_media == true and media_server == plex
+    <<: *service_template
+    description: "Plex media server"
+    install:
+      packages:
+        - plexmediaserver
+    configure:
+      service:
+        name: plexmediaserver
+        enable: true
+    verify:
+      commands:
+        - systemctl is-active plexmediaserver
+
+  media/arr-suite:
+    condition: enable_media == true
+    <<: *service_template
+    description: "Arr suite (Radarr, Sonarr, Lidarr)"
+    install:
+      packages:
+        - radarr
+        - sonarr
+        - lidarr
+        - prowlarr
+        - bazarr
+    verify:
+      commands:
+        - echo "Arr suite installed"
+
+  # --------------------------------------------------------------------------
+  # Home Automation (conditional)
+  # --------------------------------------------------------------------------
+  automation/home-assistant:
+    condition: enable_automation == true
+    <<: *service_template
+    description: "Home Assistant"
+    install:
+      packages:
+        - homeassistant
+    configure:
+      service:
+        name: home-assistant
+        enable: true
+    verify:
+      commands:
+        - hass --version
+
+  automation/node-red:
+    condition: enable_automation == true
+    <<: *service_template
+    description: "Node-RED automation"
+    install:
+      packages:
+        - node-red
+        - npm
+    configure:
+      service:
+        name: node-red
+        enable: true
+    verify:
+      commands:
+        - node-red --version
+
+  automation/mqtt:
+    condition: enable_automation == true
+    <<: *service_template
+    description: "MQTT broker"
+    install:
+      packages:
+        - mosquitto
+        - mosquitto-clients
+    configure:
+      service:
+        name: mosquitto
+        enable: true
+    verify:
+      commands:
+        - mosquitto --version
+
+  # --------------------------------------------------------------------------
+  # Cloud Storage (conditional)
+  # --------------------------------------------------------------------------
+  cloud/nextcloud:
+    condition: enable_cloud == true
+    <<: *service_template
+    description: "Nextcloud cloud storage"
+    install:
+      packages:
+        - nextcloud
+        - nextcloud-desktop
+    configure:
+      service:
+        name: apache2
+        enable: true
+    verify:
+      commands:
+        - nextcloud --version 2>&1 | head -1
+
+  cloud/syncthing:
+    condition: enable_cloud == true
+    <<: *service_template
+    description: "Syncthing file sync"
+    install:
+      packages:
+        - syncthing
+    configure:
+      service:
+        name: syncthing
+        enable: true
+    verify:
+      commands:
+        - syncthing --version
+
+  # --------------------------------------------------------------------------
+  # Monitoring (conditional)
+  # --------------------------------------------------------------------------
+  monitoring/grafana:
+    condition: enable_monitoring == true and hardware ram >= 4096
+    <<: *service_template
+    description: "Grafana monitoring"
+    install:
+      packages:
+        - grafana
+    configure:
+      service:
+        name: grafana-server
+        enable: true
+    verify:
+      commands:
+        - grafana-server --version 2>&1 | head -1
+
+  monitoring/prometheus:
+    condition: enable_monitoring == true and hardware ram >= 4096
+    <<: *service_template
+    description: "Prometheus monitoring"
+    install:
+      packages:
+        - prometheus
+        - prometheus-node-exporter
+    configure:
+      service:
+        name: prometheus
+        enable: true
+    verify:
+      commands:
+        - prometheus --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Backup (conditional)
+  # --------------------------------------------------------------------------
+  backup/restic:
+    condition: enable_backup == true
+    <<: *service_template
+    description: "Restic backup"
+    install:
+      packages:
+        - restic
+    verify:
+      commands:
+        - restic --version
+
+  backup/borgbackup:
+    condition: enable_backup == true
+    <<: *service_template
+    description: "BorgBackup"
+    install:
+      packages:
+        - borgbackup
+    verify:
+      commands:
+        - borg --version
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  media-complete:
+    description: "Complete media server setup"
+    categories:
+      - media/jellyfin
+      - media/arr-suite
+
+  automation-complete:
+    description: "Complete home automation"
+    categories:
+      - automation/home-assistant
+      - automation/node-red
+      - automation/mqtt
+
+  cloud-complete:
+    description: "Complete cloud storage"
+    categories:
+      - cloud/nextcloud
+      - cloud/syncthing
+
+  monitoring-complete:
+    description: "Complete monitoring stack"
+    categories:
+      - monitoring/grafana
+      - monitoring/prometheus
+
+  full-homelab:
+    description: "Complete homelab setup"
+    categories:
+      - media/jellyfin
+      - media/arr-suite
+      - automation/home-assistant
+      - automation/node-red
+      - cloud/nextcloud
+      - monitoring/grafana
+      - backup/restic
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 50
+  gpu: false
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "=== Homelab Setup Complete ==="
+  - "Focus: ${homelab_focus}"
+  - "Media Server: ${enable_media} (${media_server})"
+  - "Home Automation: ${enable_automation}"
+  - "Cloud Storage: ${enable_cloud}"
+  - "Monitoring: ${enable_monitoring}"
+  - "Backup: ${enable_backup}"
+  - ""
+  - "Media: Access Jellyfin/Plex at http://localhost:8096"
+  - "Automation: Home Assistant at http://localhost:8123"
+  - "Cloud: Nextcloud at http://localhost/nextcloud"
+  - "Monitoring: Grafana at http://localhost:3000"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Media Server Only
+    description: Install media server setup
+    command: sudo debian-composer --recipe=homelab --var=enable_automation=false --var=enable_cloud=false
+  - title: Home Automation
+    description: Install home automation only
+    command: sudo debian-composer --recipe=homelab --var=homelab_focus=automation
+  - title: Full Homelab
+    description: Install complete homelab
+    command: sudo debian-composer --recipe=homelab

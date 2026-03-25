@@ -1,0 +1,349 @@
+# ============================================================================
+# Recipe Registry Index
+# ============================================================================
+# Auto-generated - DO NOT EDIT MANUALLY
+# Generated: 2026-03-23T18:41:51+05:30
+#
+# Regenerate: ./scripts/generate-indexes.sh --recipes
+# ============================================================================
+
+# ============================================================================
+# DISTROS (--distro=NAME)
+# Opinionated system configurations
+# ============================================================================
+distros:
+  - name: antix-composer
+    file: antix-composer.yaml
+    description: "Transform Debian into AntiX-inspired lightweight, systemd-free system"
+    tags: [distro, antix, lightweight, legacy, old-hardware, sysvinit, icevm]
+
+  - name: debian-ai-engineer
+    file: debian-ai-engineer.yaml
+    description: "Opinionated Debian workstation for AI engineers — open source first"
+    tags: [distro, ai-engineer, workstation, cuda, rocm, ollama, pytorch, jupyter]
+
+  - name: debian-creator
+    file: debian-creator.yaml
+    description: "Creative Debian workstation — for artists, designers, and editors"
+    tags: [distro, creative, design, audio, video, opinionated]
+
+  - name: debian-developer
+    file: debian-developer.yaml
+    description: "Tasteful Debian developer workstation — batteries included"
+    tags: [distro, developer, workstation, opinionated]
+
+  - name: debian-homelab
+    file: debian-homelab.yaml
+    description: "Self-hosted homelab — Docker, monitoring, and home services"
+    tags: [distro, server, homelab, self-hosted, docker, opinionated]
+
+  - name: debian-scientist
+    file: debian-scientist.yaml
+    description: "Scientific Debian workstation — for researchers and data scientists"
+    tags: [distro, science, research, data, opinionated]
+
+  - name: devuan-composer
+    file: devuan-composer.yaml
+    description: "Transform Debian into Devuan — Debian without systemd"
+    tags: [distro, devuan, sysvinit, runit, init, freedom]
+
+  - name: mint-composer
+    file: mint-composer.yaml
+    description: "Transform Debian into Linux Mint-inspired system"
+    tags: [distro, linux-mint, cinnamon, ubuntu-based, desktop, user-friendly]
+
+  - name: mx-composer
+    file: mx-composer.yaml
+    description: "Transform Debian into MX Linux-inspired system with live tools"
+    tags: [distro, mx-linux, debian-stable, live, systemd, sysvinit]
+
+  - name: popos-composer
+    file: popos-composer.yaml
+    description: "Transform Debian into Pop!_OS-inspired system with COSMIC desktop"
+    tags: [distro, pop-os, system76, cosmic, ubuntu-based, nvidia]
+
+  - name: sparky-composer
+    file: sparky-composer.yaml
+    description: "Transform Debian into SparkyLinux-inspired system with lightweight tools"
+    tags: [distro, sparky, lightweight, debian-testing, rolling]
+
+  - name: ubuntu-composer
+    file: ubuntu-composer.yaml
+    description: "Transform Debian into Ubuntu-compatible system with official repos"
+    tags: [distro, ubuntu, derivative, apt, canonical]
+
+# ============================================================================
+# PURE BLENDS (--blend=NAME)
+# Official Debian Pure Blends
+# ============================================================================
+blends:
+  - name: debian-accessibility
+    file: debian-accessibility.yaml
+    description: "Debian Accessibility Pure Blend - Assistive technology tools"
+    tags: [blend, accessibility, assistive-technology, screen-reader, braille, magnification, disability]
+
+  - name: debian-astro
+    file: debian-astro.yaml
+    description: "Debian Astro Pure Blend - Astronomy and astrophysics tools"
+    tags: [blend, astronomy, astrophysics, telescope, observation, debian-astro]
+
+  - name: debian-edu
+    file: debian-edu.yaml
+    description: "Debian Edu Pure Blend - Educational tools and configurations"
+    tags: [blend, education, school, university, learning, debian-edu]
+
+  - name: debian-games
+    file: debian-games.yaml
+    description: "Debian Games Pure Blend - Free gaming collection"
+    tags: [blend, games, gaming, entertainment, arcade, strategy, rpg, emulation]
+
+  - name: debian-gis
+    file: debian-gis.yaml
+    description: "Debian GIS Pure Blend - Geographic Information Systems tools"
+    tags: [blend, gis, geography, mapping, cartography, spatial, debian-gis]
+
+  - name: debian-hamradio
+    file: debian-hamradio.yaml
+    description: "Debian Hamradio Pure Blend - Amateur radio software"
+    tags: [blend, hamradio, amateur-radio, ham, sdr, radio, logging, morse]
+
+  - name: debian-junior
+    file: debian-junior.yaml
+    description: "Debian Junior Pure Blend - Applications for children"
+    tags: [blend, junior, children, kids, education, learning, preschool, elementary]
+
+  - name: debian-med
+    file: debian-med.yaml
+    description: "Debian Med Pure Blend - Medical practice and research tools"
+    tags: [blend, medical, healthcare, hospital, research, debian-med]
+
+  - name: debian-multimedia
+    file: debian-multimedia.yaml
+    description: "Debian Multimedia Pure Blend - Audio and multimedia production"
+    tags: [blend, multimedia, audio, video, graphics, music, production, creative]
+
+  - name: debian-science
+    file: debian-science.yaml
+    description: "Debian Science Pure Blend - Scientific computing environment"
+    tags: [blend, science, research, physics, chemistry, biology, computing]
+
+  - name: freedombox
+    file: freedombox.yaml
+    description: "FreedomBox Pure Blend - Personal server for private communications"
+    tags: [blend, freedombox, personal-server, privacy, self-hosted, decentralization]
+
+# ============================================================================
+# PERSONAS (--persona=NAME)
+# User archetype templates
+# ============================================================================
+personas:
+  - name: persona-developer
+    file: developer.yaml
+    description: "Core development environment - IDEs, version control, build tools"
+    tags: [persona, developer, programming, vcs, ide]
+
+  - name: persona-student
+    file: student.yaml
+    description: "Core student environment - notes, research, productivity, writing"
+    tags: [persona, student, education, notes, research, writing]
+
+  - name: persona-sysadmin
+    file: sysadmin.yaml
+    description: "Sysadmin persona - monitoring, security, networking, automation"
+    tags: [persona, sysadmin, server, monitoring, security, networking]
+
+# ============================================================================
+# MIXINS (--mixin=NAME)
+# Specialization overlays
+# ============================================================================
+mixins:
+  - name: mixin-ai-ml
+    file: ai-ml.yaml
+    description: "AI/ML development tools - PyTorch, TensorFlow, CUDA"
+    tags: [mixin, ai, ml, deep-learning, cuda]
+
+  - name: mixin-audio-production
+    file: audio-production.yaml
+    description: "Audio production tools - DAW, plugins, recording"
+    tags: [mixin, audio, music, daw, recording, production]
+
+  - name: mixin-data-science
+    file: data-science.yaml
+    description: "Data science tools - R, Jupyter, pandas, visualization"
+    tags: [mixin, data-science, statistics, r, analytics]
+
+  - name: mixin-devops
+    file: devops.yaml
+    description: "DevOps tools - CI/CD, containers, orchestration, monitoring"
+    tags: [mixin, devops, kubernetes, docker, ci-cd, monitoring]
+
+  - name: mixin-education
+    file: education.yaml
+    description: "Education tools - teaching, quizzes, classroom management"
+    tags: [mixin, education, teaching, classroom, learning]
+
+  - name: mixin-gaming
+    file: gaming.yaml
+    description: "Gaming enhancements - platforms, overlays, performance"
+    tags: [mixin, gaming, steam, lutris, emulation]
+
+  - name: mixin-mobile-dev
+    file: mobile-dev.yaml
+    description: "Mobile development tools - Android, Flutter, React Native"
+    tags: [mixin, mobile, android, flutter, ios, development]
+
+  - name: mixin-security
+    file: security.yaml
+    description: "Security tools - penetration testing, auditing, forensics"
+    tags: [mixin, security, pentesting, auditing, forensics]
+
+  - name: mixin-video-production
+    file: video-production.yaml
+    description: "Video production tools - editing, effects, streaming"
+    tags: [mixin, video, editing, streaming, production]
+
+  - name: mixin-web-dev
+    file: web-dev.yaml
+    description: "Web development tools - Node.js, frameworks, dev servers"
+    tags: [mixin, web, javascript, nodejs, frontend, backend]
+
+# ============================================================================
+# RECIPES (--recipe=NAME)
+# Standard recipes
+# ============================================================================
+recipes:
+  - name: ai-tools
+    file: ai-tools-composed.yaml
+    description: "Open source AI tools for local LLM, image generation, and speech-to-text"
+    tags: [ai, ml, ollama, llm, stable-diffusion, whisper]
+
+  - name: ai-tools
+    file: ai-tools.yaml
+    description: "Open source AI tools for local LLM, image generation, and speech-to-text"
+    tags: [ai, ml, ollama, llm, stable-diffusion, whisper]
+
+  - name: blockchain-dev
+    file: blockchain-dev.yaml
+    description: "Blockchain and Web3 development environment with multi-chain support"
+    tags: [blockchain, web3, ethereum, solidity, defi, smart-contracts]
+
+  - name: composed-ai-dev
+    file: composed-ai-dev.yaml
+    description: "Composed AI development environment"
+    tags: [ai, composed, development]
+
+  - name: composed-lamp
+    file: composed-lamp.yaml
+    description: "Composed LAMP stack using component includes"
+    tags: [web, lamp, composed]
+
+  - name: database
+    file: database-composed.yaml
+    description: "Install and configure database servers (composed)"
+    tags: [database, mysql, postgresql, mongodb, redis, elasticsearch]
+
+  - name: database
+    file: database.yaml
+    description: "Install and configure database servers"
+    tags: [database, mysql, postgresql, mongodb, redis, elasticsearch]
+
+  - name: data-engineering
+    file: data-engineering.yaml
+    description: "Data engineering platform with Apache Spark, Airflow, Kafka, and modern data tools"
+    tags: [data, engineering, spark, kafka, airflow, etl]
+
+  - name: debian-dev-tools
+    file: debian-dev-tools.yaml
+    description: "Install common development tools on Debian"
+    tags: [development, programming, docker, nodejs, python, go, rust]
+
+  - name: devops-toolkit
+    file: devops-toolkit.yaml
+    description: "DevOps and SRE toolkit with Kubernetes, monitoring, logging, and IaC tools"
+    tags: [devops, sre, kubernetes, docker, monitoring, infrastructure]
+
+  - name: docker-dev
+    file: docker-dev-composed.yaml
+    description: "Docker and container development environment"
+    tags: [docker, container, devops, development]
+
+  - name: docker-dev
+    file: docker-dev.yaml
+    description: "Complete Docker development environment with orchestration tools"
+    tags: [docker, containers, development, orchestration]
+
+  - name: dev
+    file: env-dev.yaml
+    description: "Development environment configuration"
+
+  - name: personal
+    file: env-personal.yaml
+    description: "Personal desktop environment configuration"
+
+  - name: prod
+    file: env-prod.yaml
+    description: "Production environment configuration"
+
+  - name: developer-workstation
+    file: example-composed.yaml
+    description: "Developer workstation (dev + personal combined)"
+
+  - name: minimal
+    file: example-minimal.yaml
+    description: "Minimal configuration for lightweight setups"
+
+  - name: fullstack-dev
+    file: fullstack-dev.yaml
+    description: "Full-stack development environment with Node.js, PostgreSQL, Redis, and modern tooling"
+    tags: [development, fullstack, nodejs, postgres, redis]
+
+  - name: homelab
+    file: homelab.yaml
+    description: "Complete homelab with media server, home automation, and cloud services"
+    tags: [homelab, selfhosted, media, homeautomation, cloud]
+
+  - name: layered-ai-dev
+    file: layered-ai-dev.yaml
+    description: "AI development using layered composition"
+
+  - name: minimal-dev-tools
+    file: minimal-setup.yaml
+    description: "Minimal developer tools for resource-constrained systems"
+
+  - name: ml-research
+    file: ml-research.yaml
+    description: "Machine learning research platform with PyTorch, TensorFlow, Weights & Biases, and MLflow"
+    tags: [ml, ai, pytorch, tensorflow, mlops]
+
+  - name: my-custom-dev-tools
+    file: my-custom-tools.yaml
+    description: "My custom developer tools configuration"
+
+  - name: omarchy
+    file: omarchy.yaml
+    description: "Opinionated developer environment with modern CLI tools and Wayland utilities"
+    tags: [omarchy, terminal, neovim, zellij, starship, wayland, cli]
+
+  - name: research-workstation
+    file: research-workstation.yaml
+    description: "Complete research workstation combining multiple Debian Pure Blends"
+    tags: [debian-blend, research, science, gis, med]
+
+  - name: security-research
+    file: security-research.yaml
+    description: "Security research, penetration testing, and forensics environment"
+    tags: [security, pentesting, forensics, research, ethical-hacking]
+
+  - name: team-workstation
+    file: team-workstation.yaml
+    description: "Complete developer workstation for team members"
+    tags: [workstation, team, development, collaboration]
+
+  - name: web-server
+    file: web-server-composed.yaml
+    description: "Install and configure web servers (composed)"
+    tags: [web, nginx, apache, php, server]
+
+  - name: web-server
+    file: web-server.yaml
+    description: "Install and configure common web server components"

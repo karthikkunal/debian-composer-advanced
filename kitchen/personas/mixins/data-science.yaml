@@ -1,0 +1,139 @@
+# ============================================================================
+# Data Science Specialization Mixin
+# ============================================================================
+# Adds data science tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=researcher --mixin=data-science
+#   sudo debian-composer --persona=student --mixin=data-science
+
+name: mixin-data-science
+version: 1.0.0
+description: Data science tools - R, Jupyter, pandas, visualization
+author: Debian Composer Team
+license: MIT
+tags: [mixin, data-science, statistics, r, analytics]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  r_packages:
+    type: array
+    default: [tidyverse, ggplot2, dplyr, readr, tidyr]
+    description: "R packages to install"
+  enable_jupyter:
+    type: boolean
+    default: true
+    description: "Install Jupyter ecosystem"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - r-base
+  - r-base-dev
+  - r-recommended
+  - python3-pandas
+  - python3-numpy
+  - python3-scipy
+  - python3-matplotlib
+  - python3-seaborn
+  - python3-scikit-learn
+  - python3-statsmodels
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  r-base:
+    <<: *service_template
+    description: "R statistical computing"
+    install:
+      packages:
+        - r-base
+        - r-base-dev
+        - r-recommended
+    verify:
+      commands:
+        - R --version
+
+  r-packages:
+    <<: *service_template
+    description: "Essential R packages"
+    install:
+      commands:
+        - R -e "install.packages(c('tidyverse', 'ggplot2', 'dplyr', 'readr', 'tidyr'), repos='https://cloud.r-project.org')"
+    verify:
+      commands:
+        - R -e "library(tidyverse)" 2>&1 || true
+
+  python-data:
+    <<: *service_template
+    description: "Python data science stack"
+    install:
+      packages:
+        - python3-pandas
+        - python3-numpy
+        - python3-scipy
+        - python3-matplotlib
+        - python3-seaborn
+    verify:
+      commands:
+        - python3 -c "import pandas; print(pandas.__version__)"
+
+  jupyter:
+    condition: enable_jupyter == true
+    <<: *service_template
+    description: "Jupyter notebooks"
+    install:
+      packages:
+        - jupyter-notebook
+        - jupyterlab
+        - python3-ipykernel
+        - python3-pandas
+    verify:
+      commands:
+        - jupyter --version
+
+  visualization:
+    <<: *service_template
+    description: "Data visualization tools"
+    install:
+      packages:
+        - python3-plotly
+        - python3-bokeh
+        - graphviz
+    verify:
+      commands:
+        - python3 -c "import plotly; print(plotly.__version__)"
+
+  database:
+    <<: *service_template
+    description: "Database tools"
+    install:
+      packages:
+        - sqlite3
+        - postgresql-client
+    verify:
+      commands:
+        - sqlite3 --version
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Data Science Mixin Applied ==="
+  - "R: Installed with recommended packages"
+  - "Jupyter: ${enable_jupyter}"
+  - ""
+  - "Start Jupyter: jupyter lab"
+  - "R packages: tidyverse, ggplot2, dplyr"
+  - "Python: pandas, numpy, scipy, scikit-learn"

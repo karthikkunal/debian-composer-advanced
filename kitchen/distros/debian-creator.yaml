@@ -1,0 +1,153 @@
+# ============================================================================
+# Distro: debian-creator
+# ============================================================================
+# Opinionated creative workstation for artists, designers, and editors.
+# Inspired by Omarchy — makes the choice for you.
+#
+# Usage:
+#   sudo debian-composer --distro=debian-creator
+#   sudo debian-composer --distro=debian-creator --var=focus=audio
+
+name: debian-creator
+version: 1.0.0
+description: "Creative Debian workstation — for artists, designers, and editors"
+author: Debian Composer Team
+license: MIT
+tags: [distro, creative, design, audio, video, opinionated]
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - components/audio.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  focus:
+    type: string
+    default: general
+    choices: [general, audio, video, graphics, writing]
+    description: "Creative focus area (general installs everything)"
+
+packages:
+  - gimp
+  - inkscape
+  - libreoffice
+  - firefox-esr
+  - ffmpeg
+
+categories:
+  desktop:
+    description: "GNOME desktop environment"
+    install:
+      packages:
+        - gnome-core
+        - gnome-tweaks
+
+  audio:
+    condition: focus == audio or focus == general
+    description: "Audio production tools"
+    install:
+      packages:
+        - ardour
+        - audacity
+        - jack2
+        - qjackctl
+        - lmms
+    verify:
+      commands:
+        - audacity --version 2>&1 | head -1 || true
+
+  video:
+    condition: focus == video or focus == general
+    description: "Video editing and streaming"
+    install:
+      packages:
+        - kdenlive
+        - obs-studio
+        - ffmpeg
+        - handbrake
+    verify:
+      commands:
+        - ffmpeg -version 2>&1 | head -1
+
+  graphics:
+    condition: focus == graphics or focus == general
+    description: "2D/3D graphics tools"
+    install:
+      packages:
+        - gimp
+        - inkscape
+        - krita
+        - darktable
+        - blender
+    verify:
+      commands:
+        - gimp --version
+        - inkscape --version
+
+  writing:
+    condition: focus == writing or focus == general
+    description: "Writing and publishing tools"
+    install:
+      packages:
+        - libreoffice
+        - scribus
+        - pandoc
+        - ghostwriter
+    verify:
+      commands:
+        - libreoffice --version
+        - pandoc --version
+
+stacks:
+  default:
+    description: "General creative setup (all focus areas)"
+    categories:
+      - desktop
+      - audio
+      - video
+      - graphics
+      - writing
+
+  audio-only:
+    description: "Audio production workstation"
+    categories:
+      - desktop
+      - audio
+
+  video-only:
+    description: "Video editing and streaming"
+    categories:
+      - desktop
+      - video
+
+  design:
+    description: "Graphic design workstation"
+    categories:
+      - desktop
+      - graphics
+      - writing
+
+requirements:
+  min_ram: 8192
+  min_disk: 50
+
+post_install:
+  - "=== debian-creator installed ==="
+  - ""
+  - "Your creative Debian workstation is ready."
+  - "Focus: ${focus}"
+  - ""
+  - "Tips:"
+  - "  - Audio: Run 'qjackctl' to configure JACK audio routing"
+  - "  - Video: OBS Studio and Kdenlive are ready to use"
+  - "  - Graphics: GIMP, Inkscape, Krita, and Blender installed"
+
+examples:
+  - title: "General creative setup"
+    command: "sudo debian-composer --distro=debian-creator"
+  - title: "Audio production workstation"
+    command: "sudo debian-composer --distro=debian-creator --var=focus=audio"
+  - title: "Video editing setup"
+    command: "sudo debian-composer --distro=debian-creator --var=focus=video"

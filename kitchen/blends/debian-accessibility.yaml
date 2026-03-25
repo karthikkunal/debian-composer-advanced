@@ -1,0 +1,279 @@
+# ============================================================================
+# Debian Accessibility Pure Blend - Assistive Technology
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian Accessibility Pure Blend configuration for users with
+# disabilities. Provides screen readers, braille support, magnification,
+# and other assistive technologies.
+#
+# Usage:
+#   # Basic accessibility installation
+#   sudo debian-composer --blend=debian-accessibility
+#
+#   # With specific accessibility focus
+#   sudo debian-composer --blend=debian-accessibility --var=access_focus=braille
+#   sudo debian-composer --blend=debian-accessibility --var=access_focus=speech
+#   sudo debian-composer --blend=debian-accessibility --var=access_focus=magnification
+#
+#   # Complete accessibility workstation
+#   sudo debian-composer --blend=debian-accessibility --stack=workstation-complete
+#
+# References:
+#   - Debian Accessibility: https://blends.debian.org/accessibility/
+#   - Debian Accessibility Wiki: https://wiki.debian.org/Accessibility/
+# ============================================================================
+
+name: debian-accessibility
+version: 1.0.0
+description: Debian Accessibility Pure Blend - Assistive technology tools
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/accessibility/
+tags: [blend, accessibility, assistive-technology, screen-reader, braille, magnification, disability]
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: accessibility
+  target_audience: [users-with-disabilities, assistive-technology-users, accessibility-testers]
+  difficulty: beginner
+  min_ram: 2048
+  min_disk: 10
+  recommended_disk: 20
+  gpu_required: false
+  gpu_recommended: false
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies: []
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  access_focus:
+    type: string
+    default: all
+    choices: [all, braille, speech, ocr, magnification, keyboard]
+    description: Accessibility focus area
+
+  enable_braille:
+    type: boolean
+    default: true
+    description: Enable braille display support
+
+  enable_speech:
+    type: boolean
+    default: true
+    description: Enable speech synthesis
+
+  enable_ocr:
+    type: boolean
+    default: true
+    description: Enable optical character recognition
+
+  enable_magnification:
+    type: boolean
+    default: true
+    description: Enable screen magnification
+
+  desktop_environment:
+    type: string
+    default: gnome
+    choices: [gnome, kde, xfce, none]
+    description: Desktop environment for accessibility integration
+
+# ============================================================================
+# CATEGORIES - Using tasksel task packages
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # Accessibility (via task-accessibility)
+  # --------------------------------------------------------------------------
+  accessibility/all:
+    condition: access_focus == all or access_focus == none
+    <<: *service_template
+    description: "All accessibility tools (via task-accessibility)"
+    install:
+      packages:
+        - *accessibility_all
+    configure:
+      services:
+        - name: brltty
+          enable: true
+        - name: speech-dispatcher
+          enable: true
+    verify:
+      commands:
+        - orca --version 2>&1 | head -1
+        - brltty --version 2>&1 | head -1
+        - spd-say --version 2>&1 | head -1
+        - tesseract --version 2>&1 | head -1
+        - kmag --version 2>&1 | head -1
+        - onboard --version 2>&1 | head -1
+        - espeak-ng --version 2>&1 | head -1
+
+  accessibility/braille:
+    condition: access_focus == braille
+    <<: *service_template
+    description: "Braille support (via task-accessibility-braille)"
+    install:
+      packages:
+        - *accessibility_braille
+    configure:
+      services:
+        - name: brltty
+          enable: true
+          start: true
+    verify:
+      commands:
+        - brltty --version 2>&1 | head -1
+
+  accessibility/speech:
+    condition: access_focus == speech
+    <<: *service_template
+    description: "Speech synthesis (via task-accessibility-speech)"
+    install:
+      packages:
+        - *accessibility_speech
+    configure:
+      services:
+        - name: speech-dispatcher
+          enable: true
+          start: true
+    verify:
+      commands:
+        - spd-say --version 2>&1 | head -1
+        - espeak-ng --version 2>&1 | head -1
+
+  accessibility/ocr:
+    condition: access_focus == ocr
+    <<: *service_template
+    description: "OCR tools (via task-accessibility-ocr)"
+    install:
+      packages:
+        - *accessibility_ocr
+    verify:
+      commands:
+        - tesseract --version 2>&1 | head -1
+
+  accessibility/magnification:
+    condition: access_focus == magnification
+    <<: *service_template
+    description: "Screen magnification (via task-accessibility-magnification)"
+    install:
+      packages:
+        - *accessibility_magnification
+    verify:
+      commands:
+        - kmag --version 2>&1 | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  workstation-complete:
+    description: "Complete accessibility workstation"
+    categories:
+      - screen-reader/orca
+      - screen-reader/kde
+      - braille/display
+      - speech/synthesis
+      - magnification/tools
+      - keyboard/on-screen
+      - ocr/tools
+
+  braille-workstation:
+    description: "Braille-focused workstation"
+    categories:
+      - screen-reader/text
+      - braille/display
+      - braille/embossing
+      - speech/synthesis
+
+  speech-workstation:
+    description: "Speech-focused workstation"
+    categories:
+      - screen-reader/orca
+      - speech/synthesis
+      - speech/emacs
+      - keyboard/on-screen
+
+  low-vision:
+    description: "Low vision workstation"
+    categories:
+      - magnification/tools
+      - magnification/gnome
+      - keyboard/on-screen
+      - ocr/tools
+
+  developer-setup:
+    description: "Accessibility development and testing"
+    categories:
+      - documents/helpers
+      - screen-reader/orca
+      - speech/synthesis
+      - braille/display
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_accessibility
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Accessibility Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Focus: ${access_focus}"
+  - "  Braille: ${enable_braille}"
+  - "  Speech: ${enable_speech}"
+  - "  OCR: ${enable_ocr}"
+  - "  Magnification: ${enable_magnification}"
+  - "  Desktop: ${desktop_environment}"
+  - ""
+  - "Next Steps:"
+  - "  1. Enable accessibility: GNOME Settings > Accessibility"
+  - "  2. Configure Orca: Orca Preferences (Insert+Space)"
+  - "  3. For braille: Configure /etc/brltty.conf"
+  - "  4. Test speech: spd-say 'Hello world'"
+  - ""
+  - "Keyboard Shortcuts:"
+  - "  Orca: Insert+Space to toggle"
+  - "  Magnifier: Super+Plus to zoom"
+  - ""
+  - "Resources:"
+  - "  - Debian Accessibility: https://blends.debian.org/accessibility/"
+  - "  - Orca Screen Reader: https://wiki.gnome.org/Projects/Orca"
+  - "  - BRLTTY: https://brltty.app/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Complete Accessibility Workstation
+    description: Install full accessibility suite
+    command: sudo debian-composer --blend=debian-accessibility --stack=workstation-complete
+
+  - title: Braille User Setup
+    description: Install braille-focused setup
+    command: sudo debian-composer --blend=debian-accessibility --stack=braille-workstation --var=enable_braille=true
+
+  - title: Low Vision Support
+    description: Install magnification and OCR tools
+    command: sudo debian-composer --blend=debian-accessibility --stack=low-vision
+
+  - title: Speech-Only Setup
+    description: Install speech synthesis without braille
+    command: sudo debian-composer --blend=debian-accessibility --stack=speech-workstation --var=enable_braille=false

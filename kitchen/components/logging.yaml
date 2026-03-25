@@ -1,0 +1,47 @@
+# Logging Mixin
+# Centralized logging with ELK/Loki stack
+
+name: logging
+version: 1.0.0
+description: ELK stack or Loki for centralized logging
+author: Debian Composer Team
+license: MIT
+tags: [logging, elk, loki, elasticsearch]
+
+install:
+  packages:
+    - elasticsearch
+    - kibana
+    - logstash
+    - filebeat
+    - metricbeat
+    - heartbeat
+
+configure:
+  elasticsearch:
+    port: 9200
+    heap_size: 1g
+  kibana:
+    port: 5601
+    elasticsearch_url: http://localhost:9200
+  logstash:
+    port: 5044
+    pipeline_workers: 2
+
+verify:
+  commands:
+    - elasticsearch --version
+    - kibana --version
+  services_running:
+    - elasticsearch
+    - kibana
+  ports_listening:
+    - 9200
+    - 5601
+    - 5044
+
+post_install:
+  - "Elasticsearch: http://localhost:9200"
+  - "Kibana: http://localhost:5601"
+  - "Logstash: listening on port 5044"
+  - "Filebeat: /etc/filebeat/filebeat.yml"

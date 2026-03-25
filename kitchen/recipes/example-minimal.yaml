@@ -1,0 +1,50 @@
+# ============================================================================
+# Example: Minimal Configuration
+# ============================================================================
+# Version: 1.0.0
+#
+# A minimal configuration for lightweight setups.
+# Good for servers, containers, or minimal desktop installs.
+# ============================================================================
+
+name: minimal
+version: 1.0.0
+description: Minimal configuration for lightweight setups
+environment: test
+
+# ============================================================================
+# PACKAGES (Minimal set)
+# ============================================================================
+packages:
+  # Absolute essentials
+  - vim-tiny
+  - curl
+  - wget
+  - ca-certificates
+
+  # Optional (uncomment as needed)
+  # - git
+  # - htop
+  # - rsync
+
+# ============================================================================
+# SETTINGS
+# ============================================================================
+settings:
+  # Minimal footprint
+  minimal: true
+
+  # No GUI
+  gui_enabled: false
+
+  # Security basics
+  security:
+    automatic_updates: true
+
+# ============================================================================
+# HOOKS
+# ============================================================================
+hooks:
+  post_apply:
+    - echo "Minimal configuration applied"
+    - echo "System is ready for custom setup"

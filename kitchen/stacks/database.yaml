@@ -1,0 +1,24 @@
+# Database Layer
+# Database servers
+
+name: database
+version: 1.0.0
+description: Database servers and storage systems
+order: 3
+author: Debian Composer Team
+license: MIT
+
+components:
+  - postgresql
+  - redis
+
+requires_layer:
+  - base
+
+requirements:
+  min_ram: 2048
+  min_disk: 10
+
+post_install:
+  - "Database layer installed"
+  - "PostgreSQL: port 5432, Redis: port 6379"

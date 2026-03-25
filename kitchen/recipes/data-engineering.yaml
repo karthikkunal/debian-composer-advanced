@@ -1,0 +1,250 @@
+# Data Engineering Platform
+# Complete data engineering stack with pipelines, warehouses, and stream processing
+#
+# Uses YAML anchors for DRY configuration
+
+name: data-engineering
+version: 1.0.0
+description: Data engineering platform with Apache Spark, Airflow, Kafka, and modern data tools
+author: Debian Composer Team
+license: MIT
+tags: [data, engineering, spark, kafka, airflow, etl]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/postgresql.yaml
+  - components/redis.yaml
+  - mixins/security-hardening.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+layers:
+  - base
+  - runtime
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor references
+# ============================================================================
+packages:
+  - *data_batch         # apache-spark, apache-airflow, dbt-core, great-expectations
+  - *data_orchestration # prefect, dagster, luigi
+  - *data_warehouse     # postgresql, timescaledb, clickhouse, duckdb
+  # Java/Scala
+  - openjdk-17
+  - scala
+  - sbt
+  # Kafka
+  - kafka
+  - kafka-connect
+  - confluent-kafka
+  # Build tools
+  - maven
+  - gradle
+  - ant
+  # Protobuf and SSL
+  - protobuf-compiler
+  - libprotobuf-dev
+  - libssl-dev
+  - libsasl2-dev
+  - pkg-config
+  - zlib1g-dev
+  # dbt adapters
+  - dbt-postgres
+  - dbt-redshift
+  - dbt-bigquery
+  - dbt-snowflake
+  # Data validation
+  - pandera
+  # S3 compatible storage
+  - minio
+  - minio-client
+  - mc
+  - s3fs
+  - rclone
+  # Query engines
+  - trino
+  - apache-superset
+  - metabase
+  - redash
+  # Lake house
+  - lakefs
+
+# ============================================================================
+# PYTHON PACKAGES - Using anchor for common data science packages
+# ============================================================================
+python_packages:
+  - *science_python  # numpy, scipy, matplotlib, pandas
+  - pyspark
+  - polars
+  - dask
+  - modin
+  - vaex
+  - sqlalchemy
+  - psycopg2-binary
+  - pyarrow
+  - pyiceberg
+  - delta
+  - great-expectations
+  - pandera
+  - dagster
+  - prefect
+  - mage-ai
+
+# ============================================================================
+# CATEGORIES - Using merge keys
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Spark - Using service template
+  # --------------------------------------------------------------------------
+  spark:
+    <<: *service_template
+    install:
+      packages:
+        - apache-spark
+        - python3-pyspark
+    configure:
+      service:
+        name: spark
+        enable: false  # Run on demand
+      spark:
+        master: local[*]
+        executor_memory: 2g
+    verify:
+      commands:
+        - spark-submit --version
+
+  # --------------------------------------------------------------------------
+  # Airflow - Using service template
+  # --------------------------------------------------------------------------
+  airflow:
+    <<: *service_template
+    install:
+      packages:
+        - apache-airflow
+        - python3-airflow
+    configure:
+      service:
+        name: airflow
+        enable: true
+        start: true
+      airflow:
+        executor: LocalExecutor
+        load_examples: false
+    verify:
+      commands:
+        - airflow version
+      services_running:
+        - airflow
+
+  # --------------------------------------------------------------------------
+  # Kafka - Using service template
+  # --------------------------------------------------------------------------
+  kafka:
+    <<: *service_template
+    install:
+      packages:
+        - kafka
+        - kafka-connect
+    configure:
+      service:
+        name: kafka
+        enable: true
+        start: true
+      kafka:
+        zookeeper: true
+        brokers: 1
+    verify:
+      commands:
+        - kafka-topics --version
+      services_running:
+        - kafka
+        - zookeeper
+
+  # --------------------------------------------------------------------------
+  # PostgreSQL - Using pre-configured service
+  # --------------------------------------------------------------------------
+  postgresql:
+    <<: *postgresql_service
+    install:
+      packages:
+        - postgresql
+        - postgresql-contrib
+        - postgresql-15-postgis-3
+        - timescaledb-2-postgresql-15
+
+  # --------------------------------------------------------------------------
+  # Redis - Using pre-configured service
+  # --------------------------------------------------------------------------
+  redis:
+    <<: *redis_service
+
+  # --------------------------------------------------------------------------
+  # DuckDB - Using service template
+  # --------------------------------------------------------------------------
+  duckdb:
+    <<: *service_template
+    install:
+      packages:
+        - duckdb
+        - python3-duckdb
+    verify:
+      commands:
+        - duckdb --version
+
+  # --------------------------------------------------------------------------
+  # ClickHouse - Using service template
+  # --------------------------------------------------------------------------
+  clickhouse:
+    <<: *service_template
+    install:
+      packages:
+        - clickhouse-server
+        - clickhouse-client
+    configure:
+      service:
+        name: clickhouse-server
+        enable: true
+        start: true
+    verify:
+      commands:
+        - clickhouse-client --version
+      services_running:
+        - clickhouse-server
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor with override
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 16384  # 16GB for data engineering
+  min_disk: 100   # 100GB for data storage
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Spark: Run 'spark-submit --version' to verify"
+  - "Airflow: Initialize with 'airflow db init'"
+  - "Kafka: Start with 'systemctl start kafka'"
+  - "PostgreSQL: Access with 'psql -U postgres'"
+  - "Redis: Test with 'redis-cli ping'"
+  - "DuckDB: Run 'duckdb' for REPL"
+  - "ClickHouse: Connect with 'clickhouse-client'"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install Spark Only
+    description: Install only Apache Spark
+    command: sudo debian-composer --recipe=data-engineering --category=spark
+  - title: Install Airflow and PostgreSQL
+    description: Install Airflow with PostgreSQL backend
+    command: sudo debian-composer --recipe=data-engineering --category=airflow --category=postgresql
+  - title: Full Data Platform
+    description: Install complete data engineering platform
+    command: sudo debian-composer --recipe=data-engineering

@@ -1,0 +1,110 @@
+# Research Workstation - Blend of Blends
+# Demonstrates combining multiple Debian Pure Blends
+#
+# Combines: Debian Science + Debian Med + Debian GIS
+
+name: research-workstation
+version: 1.0.0
+description: Complete research workstation combining multiple Debian Pure Blends
+author: Debian Composer Team
+license: MIT
+tags: [debian-blend, research, science, gis, med]
+
+# ============================================================================
+# INHERITANCE - Combine multiple Debian Pure Blends
+# ============================================================================
+extends:
+  - debian-science.yaml
+  - debian-med.yaml
+  - debian-gis.yaml
+
+# ============================================================================
+# ADDITIONS - Additional research tools
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/postgresql.yaml
+
+packages:
+  # Additional productivity tools
+  - libreoffice
+  - libreoffice-math
+  - libreoffice-calc
+  - libreoffice-writer
+  - zotero
+  - jabref
+  - texlive
+  - texlive-latex-extra
+  - texlive-pictures
+  - texlive-science
+  - jabref
+
+  # Version control
+  - git
+  - git-lfs
+  - git-email
+  - gitk
+
+  # Collaboration
+  - zoom
+  - teams
+  - slack-desktop
+
+  # Notes and knowledge
+  - joplin
+  - obsidian
+  - logseq
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  scientific-computing:
+    description: "Scientific computing (inherited from debian-science)"
+    inherit_from: debian-science
+
+  bioinformatics:
+    description: "Bioinformatics (inherited from debian-med)"
+    inherit_from: debian-med
+
+  gis-analysis:
+    description: "GIS analysis (inherited from debian-gis)"
+    inherit_from: debian-gis
+
+  full:
+    description: "Complete research workstation"
+    components: []
+
+  lite:
+    description: "Lightweight research environment"
+    components: []
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  latex_packages:
+    type: boolean
+    default: true
+    description: "Install LaTeX packages"
+
+  collaboration_tools:
+    type: boolean
+    default: true
+    description: "Install collaboration tools"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 8192
+  min_disk: 50
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "Research workstation ready!"
+  - "Combines: Debian Science + Debian Med + Debian GIS"
+  - "Additional: LaTeX, Zotero, JabRef, Git"
+  - "Run 'tasksel' for additional desktop packages"

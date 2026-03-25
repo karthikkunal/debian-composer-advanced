@@ -1,0 +1,1004 @@
+# ============================================================================
+# Base Anchors - Shared YAML Anchors for DRY Configuration
+# ============================================================================
+# Usage: Include this file or copy anchors to your recipes
+# Example: packages: *base_packages
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Common Package Lists
+# ----------------------------------------------------------------------------
+# Minimal base packages (git, curl, wget, ca-certificates, gnupg)
+_base_packages: &base_packages [git, curl, wget, ca-certificates, gnupg]
+
+# Development essentials (base + build tools)
+_dev_packages: &dev_packages [git, curl, wget, ca-certificates, gnupg, build-essential, make]
+
+# Python development packages
+_python_base: &python_base [python3, python3-pip, python3-venv]
+
+# Python development packages (with dev headers)
+_python_dev: &python_dev [python3, python3-pip, python3-venv, python3-dev]
+
+# Web server prerequisites
+_web_prerequisites: &web_prerequisites [curl, wget, git, ufw, ca-certificates, gnupg]
+
+# Database client packages
+_db_client: &db_client [curl, wget, ca-certificates, gnupg]
+
+# Container/DevOps prerequisites
+_container_prerequisites: &container_prerequisites [apt-transport-https, ca-certificates, curl, gnupg, lsb-release, git]
+
+# AI/ML prerequisites
+_ai_prerequisites: &ai_prerequisites [git, curl, wget, python3, python3-pip, python3-venv]
+
+# ----------------------------------------------------------------------------
+# Service Configuration Templates
+# ----------------------------------------------------------------------------
+# Default service configuration pattern
+_service_defaults: &service_defaults
+  enable: true
+  start: true
+
+# Service with name template
+_service_with_name: &service_with_name
+  name: ""  # Override with actual service name
+  enable: true
+  start: true
+
+# ----------------------------------------------------------------------------
+# Verification Templates
+# ----------------------------------------------------------------------------
+# Basic command verification
+_verify_commands_only: &verify_commands_only
+  commands: []
+
+# Service verification pattern
+_verify_service: &verify_service
+  services_running: []
+
+# Port verification pattern
+_verify_ports: &verify_ports
+  ports_listening: []
+
+# File existence verification
+_verify_files: &verify_files
+  files_exist: []
+
+# Combined service + port verification
+_verify_service_and_ports: &verify_service_and_ports
+  services_running: []
+  ports_listening: []
+
+# Full verification template (commands + service + ports)
+_verify_full: &verify_full
+  commands: []
+  services_running: []
+  ports_listening: []
+
+# ----------------------------------------------------------------------------
+# Directory Configuration Templates
+# ----------------------------------------------------------------------------
+# Standard service directories
+_dirs_standard: &dirs_standard
+  config: ""  # Override with /etc/<service>
+  logs: ""    # Override with /var/log/<service>
+  data: ""    # Override with /var/lib/<service>
+
+# Web server directories
+_dirs_web: &dirs_web
+  config: /etc/nginx
+  logs: /var/log/nginx
+  www: /var/www/html
+
+# Database directories
+_dirs_db: &dirs_db
+  config: /etc/mysql
+  data: /var/lib/mysql
+  logs: /var/log/mysql
+
+# ----------------------------------------------------------------------------
+# Security Configuration Templates
+# ----------------------------------------------------------------------------
+# Basic security headers
+_security_headers: &security_headers
+  - "X-Frame-Options: SAMEORIGIN"
+  - "X-Content-Type-Options: nosniff"
+  - "X-XSS-Protection: 1; mode=block"
+
+# SSL/TLS defaults
+_ssl_defaults: &ssl_defaults
+  enabled: true
+  redirect: true
+  min_version: "TLSv1.2"
+
+# ----------------------------------------------------------------------------
+# Repository Configuration Templates
+# ----------------------------------------------------------------------------
+# Standard repository pattern with GPG key
+_repo_with_key: &repo_with_key
+  name: ""  # Override with repo name
+  key: ""   # Override with key URL
+  keyring: ""  # Override with keyring path
+  url: ""   # Override with repository URL
+
+# ----------------------------------------------------------------------------
+# Hook Templates
+# ----------------------------------------------------------------------------
+# Pre-install hook pattern
+_hook_pre_install: &hook_pre_install
+  - type: apt
+    action: update
+
+# Post-install hook pattern
+_hook_post_install: &hook_post_install
+  - type: command
+    command: "echo 'Installation complete'"
+
+# Pre-configure hook
+_hook_pre_configure: &hook_pre_configure
+  - type: wait
+    seconds: 2
+
+# Post-configure hook
+_hook_post_configure: &hook_post_configure
+  - type: command
+    command: "echo 'Configuration complete'"
+
+# ----------------------------------------------------------------------------
+# Requirements Templates
+# ----------------------------------------------------------------------------
+# Minimal requirements
+_req_minimal: &req_minimal
+  min_ram: 512
+  min_disk: 2
+  gpu: false
+
+# Standard requirements
+_req_standard: &req_standard
+  min_ram: 2048
+  min_disk: 10
+  gpu: false
+
+# High requirements (for heavy tools)
+_req_heavy: &req_heavy
+  min_ram: 8192
+  min_disk: 20
+  gpu: true
+
+# Container requirements
+_req_container: &req_container
+  min_ram: 4096
+  min_disk: 20
+  gpu: false
+  virtualization: true
+
+# ----------------------------------------------------------------------------
+# Debian Pure Blend Requirements Templates
+# ----------------------------------------------------------------------------
+_req_blend_edu: &req_blend_edu
+  min_ram: 4096
+  min_disk: 30
+  gpu: false
+
+_req_blend_science: &req_blend_science
+  min_ram: 8192
+  min_disk: 100
+  gpu: true
+
+_req_blend_med: &req_blend_med
+  min_ram: 4096
+  min_disk: 20
+  gpu: false
+
+_req_blend_gis: &req_blend_gis
+  min_ram: 8192
+  min_disk: 50
+  gpu: true
+
+_req_blend_astro: &req_blend_astro
+  min_ram: 4096
+  min_disk: 30
+  gpu: false
+
+_req_blend_bio: &req_blend_bio
+  min_ram: 8192
+  min_disk: 50
+  gpu: true
+
+# ----------------------------------------------------------------------------
+# Category Installation Templates
+# ----------------------------------------------------------------------------
+# Package-only installation
+_install_packages_only: &install_packages_only
+  packages: []
+
+# Packages + repositories installation
+_install_with_repo: &install_with_repo
+  packages: []
+  repositories: []
+
+# Script-based installation
+_install_script: &install_script
+  packages: []
+  script:
+    url: ""
+    env: {}
+
+# Docker image installation
+_install_docker: &install_docker
+  packages: []
+  docker:
+    image: ""
+    pull: true
+
+# ----------------------------------------------------------------------------
+# Configuration Templates by Category
+# ----------------------------------------------------------------------------
+# Nginx configuration template
+_cfg_nginx: &cfg_nginx
+  service:
+    name: nginx
+    enable: true
+    start: true
+  directories:
+    config: /etc/nginx
+    logs: /var/log/nginx
+    www: /var/www/html
+  security:
+    hide_version: true
+    ssl_enabled: true
+
+# Apache configuration template
+_cfg_apache: &cfg_apache
+  service:
+    name: apache2
+    enable: true
+    start: true
+  modules:
+    enable: []
+  directories:
+    config: /etc/apache2
+    www: /var/www/html
+  security:
+    server_tokens: false
+    ssl_enabled: true
+
+# MySQL/MariaDB configuration template
+_cfg_mysql: &cfg_mysql
+  service:
+    name: mysql
+    enable: true
+    start: true
+  settings:
+    port: 3306
+    bind_address: 127.0.0.1
+    secure_installation: true
+  security:
+    root_password_required: true
+    remove_anonymous: true
+    disallow_root_login_remotely: true
+    remove_test_db: true
+
+# PostgreSQL configuration template
+_cfg_postgresql: &cfg_postgresql
+  service:
+    name: postgresql
+    enable: true
+    start: true
+  settings:
+    port: 5432
+    listen_addresses: localhost
+  authentication:
+    method: peer
+
+# Redis configuration template
+_cfg_redis: &cfg_redis
+  service:
+    name: redis-server
+    enable: true
+    start: true
+  settings:
+    port: 6379
+    bind: 127.0.0.1
+  persistence:
+    rdb: true
+    aof: false
+
+# Docker daemon configuration template
+_cfg_docker: &cfg_docker
+  service:
+    name: docker
+    enable: true
+    start: true
+  user_groups:
+    - docker
+  daemon:
+    log_driver: json-file
+    log_opts:
+      max-size: 10m
+      max-file: "3"
+    storage_driver: overlay2
+    features:
+      buildkit: true
+
+# Ollama configuration template
+_cfg_ollama: &cfg_ollama
+  service:
+    name: ollama
+    enable: true
+    start: true
+  validation:
+    - type: service
+      name: ollama
+      state: active
+    - type: port
+      port: 11434
+      protocol: tcp
+
+# ----------------------------------------------------------------------------
+# Verification Templates by Category
+# ----------------------------------------------------------------------------
+# Nginx verification
+_verify_nginx: &verify_nginx
+  commands:
+    - nginx -v
+  services_running:
+    - nginx
+  ports_listening:
+    - 80
+    - 443
+
+# Apache verification
+_verify_apache: &verify_apache
+  commands:
+    - apache2 -v
+    - apachectl -M | grep -E "rewrite|ssl|headers"
+  services_running:
+    - apache2
+  ports_listening:
+    - 80
+    - 443
+
+# MySQL verification
+_verify_mysql: &verify_mysql
+  commands:
+    - mysql --version
+    - mysqladmin -u root status
+  services_running:
+    - mysql
+  ports_listening:
+    - 3306
+
+# PostgreSQL verification
+_verify_postgresql: &verify_postgresql
+  commands:
+    - psql --version
+    - pg_isready
+  services_running:
+    - postgresql
+  ports_listening:
+    - 5432
+
+# Redis verification
+_verify_redis: &verify_redis
+  commands:
+    - redis-server --version
+    - redis-cli ping
+  services_running:
+    - redis-server
+  ports_listening:
+    - 6379
+
+# Docker verification
+_verify_docker: &verify_docker
+  commands:
+    - docker --version
+    - docker compose version
+  services_running:
+    - docker
+  files_exist:
+    - /etc/docker/daemon.json
+
+# Ollama verification
+_verify_ollama: &verify_ollama
+  commands:
+    - ollama --version
+  services_running:
+    - ollama
+  ports_listening:
+    - 11434
+
+# ----------------------------------------------------------------------------
+# Desktop Environment Hooks (templates in service-templates.yaml)
+# ----------------------------------------------------------------------------
+# Note: Desktop package lists are in fragments/service-templates.yaml
+# because they're used by desktop service templates
+
+_desktop_lightdm_hooks: &desktop_lightdm_hooks
+  configure:
+    hooks:
+      pre_configure:
+        - type: service
+          service: lightdm
+          action: enable
+          description: "Enable LightDM display manager"
+      post_configure:
+        - type: command
+          command: "update-desktop-database 2>/dev/null || true"
+          description: "Update desktop database"
+
+_desktop_gdm_hooks: &desktop_gdm_hooks
+  configure:
+    hooks:
+      pre_configure:
+        - type: service
+          service: gdm3
+          action: enable
+          description: "Enable GDM3 display manager"
+      post_configure:
+        - type: command
+          command: "update-desktop-database 2>/dev/null || true"
+          description: "Update desktop database"
+
+_desktop_sddm_hooks: &desktop_sddm_hooks
+  configure:
+    hooks:
+      pre_configure:
+        - type: service
+          service: sddm
+          action: enable
+          description: "Enable SDDM display manager"
+      post_configure:
+        - type: command
+          command: "update-desktop-database 2>/dev/null || true"
+          description: "Update desktop database"
+
+# ============================================================================
+# All Debian Pure Blends - tasksel task packages
+# ============================================================================
+# All anchors below use tasksel task packages (task-*) as base dependencies.
+# Install with: apt install task-<name> or tasksel
+#
+# References:
+# - Astro: https://blends.debian.org/astro/
+# - Edu: https://blends.debian.org/edu/
+# - GIS: https://blends.debian.org/gis/
+# - Med: https://blends.debian.org/med/
+# - Science: https://blends.debian.org/science/
+# - Accessibility: https://blends.debian.org/accessibility/
+# - Games: https://blends.debian.org/games/
+# - Junior: https://blends.debian.org/junior/
+# - Multimedia: https://blends.debian.org/multimedia/
+# - FreedomBox: https://wiki.debian.org/FreedomBox
+# - Hamradio: https://blends.debian.org/hamradio/
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Astro - tasksel tasks (task-astro-*)
+# ----------------------------------------------------------------------------
+_astro_all: &astro_all [task-astro]
+_astro_education: &astro_education [task-astro-education]
+_astro_tools: &astro_tools [task-astro-tools]
+_astro_data_reduction: &astro_data_reduction [task-astro-data-reduction]
+_astro_python3: &astro_python3 [task-astro-python3]
+_astro_viewers: &astro_viewers [task-astro-viewers]
+_astro_catalogs: &astro_catalogs [task-astro-catalogs]
+_astro_virtual_observatory: &astro_virtual_observatory [task-astro-virtual-observatory]
+_astro_radio_astronomy: &astro_radio_astronomy [task-astro-radio-astronomy]
+_astro_telescope_control: &astro_telescope_control [task-astro-telescope-control]
+
+# ----------------------------------------------------------------------------
+# Education - tasksel tasks (task-education-*)
+# ----------------------------------------------------------------------------
+_edu_all: &edu_all [task-education]
+_edu_primary_school: &edu_primary_school [task-education-primary-school]
+_edu_high_school: &edu_high_school [task-education-high-school]
+_edu_development: &edu_development [task-education-development]
+
+# ----------------------------------------------------------------------------
+# GIS - tasksel tasks (task-gis-*)
+# ----------------------------------------------------------------------------
+_gis_all: &gis_all [task-gis]
+_gis_workstation: &gis_workstation [task-gis-workstation]
+_gis_map_server: &gis_map_server [task-gis-map-server]
+_gis_data: &gis_data [task-gis-data]
+_gis_devel: &gis_devel [task-gis-devel]
+_gis_openstreetmap: &gis_openstreetmap [task-gis-openstreetmap]
+_gis_gps: &gis_gps [task-gis-gps]
+_gis_remote_sensing: &gis_remote_sensing [task-gis-remote-sensing]
+_gis_statistics: &gis_statistics [task-gis-statistics]
+
+# ----------------------------------------------------------------------------
+# Med - tasksel tasks (task-med-*)
+# ----------------------------------------------------------------------------
+_med_all: &med_all [task-med]
+_med_practice: &med_practice [task-med-practice]
+_med_tools: &med_tools [task-med-tools]
+_med_hospital_information_systems: &med_hospital_information_systems [task-med-hospital-information-systems]
+_med_dental: &med_dental [task-med-dental]
+_med_laboratory: &med_laboratory [task-med-laboratory]
+_med_oncology: &med_oncology [task-med-oncology]
+_med_pharmacology: &med_pharmacology [task-med-pharmacology]
+_med_imaging: &med_imaging [task-med-imaging]
+_med_research: &med_research [task-med-research]
+_med_statistics: &med_statistics [task-med-statistics]
+_med_biology: &med_biology [task-med-biology]
+_med_nextgen_sequencing: &med_nextgen_sequencing [task-med-nextgen-sequencing]
+
+# ----------------------------------------------------------------------------
+# Science - tasksel tasks (task-science-*)
+# ----------------------------------------------------------------------------
+_science_all: &science_all [task-science]
+_science_tools: &science_tools [task-science-tools]
+_science_data_management: &science_data_management [task-science-data-management]
+_science_mathematics: &science_mathematics [task-science-mathematics]
+_science_physics: &science_physics [task-science-physics]
+_science_simulations: &science_simulations [task-science-simulations]
+_science_chemistry: &science_chemistry [task-science-chemistry]
+_science_biology: &science_biology [task-science-biology]
+_science_machine_learning: &science_machine_learning [task-science-machine-learning]
+_science_neuroscience: &science_neuroscience [task-science-neuroscience]
+_science_neuroscience_modeling: &science_neuroscience_modeling [task-science-neuroscience-modeling]
+_science_brain_computer_interface: &science_brain_computer_interface [task-science-brain-computer-interface]
+_science_robotics: &science_robotics [task-science-robotics]
+_science_robotics_dev: &science_robotics_dev [task-science-robotics-dev]
+_science_engineering: &science_engineering [task-science-engineering]
+_science_engineering_dev: &science_engineering_dev [task-science-engineering-dev]
+_science_meteorology: &science_meteorology [task-science-meteorology]
+_science_meteorology_dev: &science_meteorology_dev [task-science-meteorology-dev]
+_science_high_energy_physics: &science_high_energy_physics [task-science-high-energy-physics]
+
+# ----------------------------------------------------------------------------
+# Accessibility - tasksel tasks (task-accessibility-*)
+# ----------------------------------------------------------------------------
+_accessibility_all: &accessibility_all [task-accessibility]
+_accessibility_braille: &accessibility_braille [task-accessibility-braille]
+_accessibility_speech: &accessibility_speech [task-accessibility-speech]
+_accessibility_ocr: &accessibility_ocr [task-accessibility-ocr]
+_accessibility_magnification: &accessibility_magnification [task-accessibility-magnification]
+_accessibility_gnome: &accessibility_gnome [task-accessibility-gnome]
+_accessibility_kde: &accessibility_kde [task-accessibility-kde]
+
+# ----------------------------------------------------------------------------
+# Games - tasksel tasks (task-games-*)
+# ----------------------------------------------------------------------------
+_games_all: &games_all [task-games]
+_games_adventure: &games_adventure [task-games-adventure]
+_games_arcade: &games_arcade [task-games-arcade]
+_games_board: &games_board [task-games-board]
+_games_card: &games_card [task-games-card]
+_games_chess: &games_chess [task-games-chess]
+_games_console: &games_console [task-games-console]
+_games_edu: &games_edu [task-games-edu]
+_games_emulator: &games_emulator [task-games-emulator]
+_games_fps: &games_fps [task-games-fps]
+_games_minesweeper: &games_minesweeper [task-games-minesweeper]
+_games_mud: &games_mud [task-games-mud]
+_games_platform: &games_platform [task-games-platform]
+_games_programming: &games_programming [task-games-programming]
+_games_puzzle: &games_puzzle [task-games-puzzle]
+_games_racing: &games_racing [task-games-racing]
+_games_rogue: &games_rogue [task-games-rogue]
+_games_rpg: &games_rpg [task-games-rpg]
+_games_shootemup: &games_shootemup [task-games-shootemup]
+_games_simulation: &games_simulation [task-games-simulation]
+_games_sport: &games_sport [task-games-sport]
+_games_strategy: &games_strategy [task-games-strategy]
+_games_tetris: &games_tetris [task-games-tetris]
+_games_toys: &games_toys [task-games-toys]
+_games_typing: &games_typing [task-games-typing]
+_games_cxx_dev: &games_cxx_dev [task-games-c++-dev]
+_games_java_dev: &games_java_dev [task-games-java-dev]
+_games_perl_dev: &games_perl_dev [task-games-perl-dev]
+_games_python3_dev: &games_python3_dev [task-games-python3-dev]
+_games_content_dev: &games_content_dev [task-games-content-dev]
+
+# ----------------------------------------------------------------------------
+# Junior - tasksel tasks (task-junior-*)
+# ----------------------------------------------------------------------------
+_junior_all: &junior_all [task-junior]
+_junior_art: &junior_art [task-junior-art]
+_junior_desktop: &junior_desktop [task-junior-desktop]
+_junior_doudou_base: &junior_doudou_base [task-junior-doudou-base]
+_junior_doudou_dev_artists: &junior_doudou_dev_artists [task-junior-doudou-dev-artists]
+_junior_doudou_games: &junior_doudou_games [task-junior-doudou-games]
+_junior_education: &junior_education [task-junior-education]
+_junior_games_adventure: &junior_games_adventure [task-junior-games-adventure]
+_junior_games_arcade: &junior_games_arcade [task-junior-games-arcade]
+_junior_games_card: &junior_games_card [task-junior-games-card]
+_junior_games_gl: &junior_games_gl [task-junior-games-gl]
+_junior_games_net: &junior_games_net [task-junior-games-net]
+_junior_games_puzzle: &junior_games_puzzle [task-junior-games-puzzle]
+_junior_games_sim: &junior_games_sim [task-junior-games-sim]
+_junior_games_text: &junior_games_text [task-junior-games-text]
+_junior_internet: &junior_internet [task-junior-internet]
+_junior_math: &junior_math [task-junior-math]
+_junior_programming: &junior_programming [task-junior-programming]
+_junior_sound: &junior_sound [task-junior-sound]
+_junior_system: &junior_system [task-junior-system]
+_junior_toys: &junior_toys [task-junior-toys]
+_junior_typing: &junior_typing [task-junior-typing]
+_junior_video: &junior_video [task-junior-video]
+_junior_writing: &junior_writing [task-junior-writing]
+
+# ----------------------------------------------------------------------------
+# Multimedia - tasksel tasks (task-multimedia-*)
+# ----------------------------------------------------------------------------
+_multimedia_all: &multimedia_all [task-multimedia]
+_multimedia_3d: &multimedia_3d [task-multimedia-3d]
+_multimedia_audio: &multimedia_audio [task-multimedia-audio]
+_multimedia_graphics: &multimedia_graphics [task-multimedia-graphics]
+_multimedia_midi: &multimedia_midi [task-multimedia-midi]
+_multimedia_video: &multimedia_video [task-multimedia-video]
+
+# ----------------------------------------------------------------------------
+# Hamradio - tasksel tasks (task-hamradio-*)
+# ----------------------------------------------------------------------------
+_hamradio_all: &hamradio_all [task-hamradio]
+_hamradio_antenna: &hamradio_antenna [task-hamradio-antenna]
+_hamradio_datamodes: &hamradio_datamodes [task-hamradio-datamodes]
+_hamradio_digitalvoice: &hamradio_digitalvoice [task-hamradio-digitalvoice]
+_hamradio_logging: &hamradio_logging [task-hamradio-logging]
+_hamradio_morse: &hamradio_morse [task-hamradio-morse]
+_hamradio_nonamateur: &hamradio_nonamateur [task-hamradio-nonamateur]
+_hamradio_packetmodes: &hamradio_packetmodes [task-hamradio-packetmodes]
+_hamradio_rigcontrol: &hamradio_rigcontrol [task-hamradio-rigcontrol]
+_hamradio_satellite: &hamradio_satellite [task-hamradio-satellite]
+_hamradio_sdr: &hamradio_sdr [task-hamradio-sdr]
+_hamradio_tasks: &hamradio_tasks [task-hamradio-tasks]
+_hamradio_tools: &hamradio_tools [task-hamradio-tools]
+_hamradio_training: &hamradio_training [task-hamradio-training]
+
+# ----------------------------------------------------------------------------
+# FreedomBox - tasksel tasks
+# ----------------------------------------------------------------------------
+_freedombox_all: &freedombox_all [freedombox]
+
+_req_blend_accessibility: &req_blend_accessibility
+  min_ram: 2048
+  min_disk: 10
+  gpu: false
+
+_req_blend_games: &req_blend_games
+  min_ram: 2048
+  min_disk: 20
+  gpu: true
+
+_req_blend_hamradio: &req_blend_hamradio
+  min_ram: 1024
+  min_disk: 10
+  gpu: false
+
+_req_blend_junior: &req_blend_junior
+  min_ram: 1024
+  min_disk: 10
+  gpu: false
+
+_req_blend_multimedia: &req_blend_multimedia
+  min_ram: 4096
+  min_disk: 50
+  gpu: true
+
+_req_blend_freedombox: &req_blend_freedombox
+  min_ram: 512
+  min_disk: 8
+  gpu: false
+
+_accessibility_complete: &accessibility_complete [task-accessibility]
+
+
+# ----------------------------------------------------------------------------
+# Security Tool Groups
+# ----------------------------------------------------------------------------
+_security_network: &security_network
+  - nmap
+  - netcat
+  - wireshark
+  - tcpdump
+  - bettercap
+
+_security_web: &security_web
+  - burpsuite
+  - owasp-zap
+  - nikto
+  - sqlmap
+  - gobuster
+
+_security_wireless: &security_wireless
+  - aircrack-ng
+  - kismet
+  - reaver
+  - wifite
+  - hostapd
+
+_security_forensics: &security_forensics
+  - autopsy
+  - sleuthkit
+  - volatility
+  - bulk-extractor
+
+_password_tools: &password_tools
+  - john
+  - hashcat
+  - hydra
+  - crunch
+
+_security_misc: &security_misc
+  - metasploit-framework
+  - set
+  - maltego
+  - rekonq
+
+# ----------------------------------------------------------------------------
+# Blockchain Development Groups
+# ----------------------------------------------------------------------------
+_blockchain_ethereum: &blockchain_ethereum
+  - solc
+  - hardhat
+  - truffle
+  - foundry
+  - web3j
+
+_blockchain_solana: &blockchain_solana
+  - rustup
+  - rustc
+  - cargo
+  - anchor
+  - solana-cli
+
+_blockchain_cosmos: &blockchain_cosmos
+  - cosmos-sdk
+  - gaiad
+  - hermes
+  - ignite-cli
+
+_blockchain_tools: &blockchain_tools
+  - ganache
+  - remix-desktop
+  - metamask-plugin
+
+# ----------------------------------------------------------------------------
+# Homelab Service Groups
+# ----------------------------------------------------------------------------
+_homelab_media: &homelab_media
+  - jellyfin
+  - radarr
+  - sonarr
+  - lidarr
+  - prowlarr
+  - qbittorrent-nox
+
+_homelab_cloud: &homelab_cloud
+  - nextcloud
+  - syncthing
+  - duplicati
+
+_homelab_iot: &homelab_iot
+  - homeassistant
+  - mosquitto
+  - node-red
+  - zigbee2mqtt
+
+_homelab_monitoring: &homelab_monitoring
+  - grafana
+  - prometheus
+  - node-exporter
+  - loki
+
+_homelab_network: &homelab_network
+  - pihole
+  - unbound
+  - adguardhome
+
+_homelab_backup: &homelab_backup
+  - restic
+  - borgbackup
+  - rsync
+
+# ----------------------------------------------------------------------------
+# Data Engineering Groups
+# ----------------------------------------------------------------------------
+_data_batch: &data_batch
+  - apache-spark
+  - apache-airflow
+  - dbt-core
+  - great-expectations
+
+_data_streaming: &data_streaming
+  - kafka
+  - kafka-connect
+  - zookeeper
+
+_data_warehouse: &data_warehouse
+  - postgresql
+  - timescaledb-2-postgresql-15
+  - clickhouse
+  - duckdb
+
+_data_orchestration: &data_orchestration
+  - prefect
+  - dagster
+  - luigi
+
+_data_format: &data_format
+  - apache-parquet
+  - apache-avro
+  - protobuf
+
+# ----------------------------------------------------------------------------
+# DevOps Tool Groups
+# ----------------------------------------------------------------------------
+_devops_k8s: &devops_k8s
+  - kubectl
+  - helm
+  - kustomize
+  - kind
+  - k9s
+
+_devops_monitoring: &devops_monitoring
+  - prometheus
+  - grafana
+  - loki
+  - promtail
+  - alertmanager
+
+_devops_iac: &devops_iac
+  - terraform
+  - terragrunt
+  - ansible
+  - vault
+  - consul
+
+_devops_ci: &devops_ci
+  - gitlab-runner
+  - jenkins
+  - drone
+
+_devops_logging: &devops_logging
+  - fluentd
+  - filebeat
+  - logstash
+  - elasticsearch
+
+# ----------------------------------------------------------------------------
+# ML/AI Research Groups
+# ----------------------------------------------------------------------------
+_ml_pytorch: &ml_pytorch
+  - torch
+  - torchvision
+  - torchaudio
+  - tensorboard
+
+_ml_tensorflow: &ml_tensorflow
+  - tensorflow
+  - keras
+  - tensorboard
+
+_ml_mlops: &ml_mlops
+  - mlflow
+  - wandb
+  - optuna
+  - dvc
+
+_ml_nlp: &ml_nlp
+  - transformers
+  - spacy
+  - nltk
+  - gensim
+
+_ml_vision: &ml_vision
+  - opencv-python
+  - albumentations
+  - detectron2
+
+# ----------------------------------------------------------------------------
+# Modern CLI Tools
+# ----------------------------------------------------------------------------
+_cli_modern_ls: &cli_modern_ls [eza]
+_cli_modern_cat: &cli_modern_cat [bat]
+_cli_modern_find: &cli_modern_find [fd-find]
+_cli_modern_grep: &cli_modern_grep [ripgrep]
+_cli_modern_top: &cli_modern_top [btop]
+
+_cli_modern_bundle: &cli_modern_bundle
+  - eza
+  - bat
+  - fd-find
+  - ripgrep
+  - btop
+  - fzf
+  - zoxide
+  - tealdeer
+
+_cli_git_enhanced: &cli_git_enhanced
+  - git-delta
+  - git-lfs
+  - tig
+  - gh
+
+# ----------------------------------------------------------------------------
+# Font Package Groups
+# ----------------------------------------------------------------------------
+_fonts_base: &fonts_base
+  - fonts-dejavu-core
+  - fonts-dejavu-extra
+  - fonts-liberation
+  - fonts-noto-core
+  - fonts-noto-color-emoji
+
+_fonts_dev: &fonts_dev
+  - fonts-firacode
+  - fonts-jetbrains-mono
+  - fonts-source-code-pro
+  - fonts-cascadia-code
+
+_fonts_cjk: &fonts_cjk
+  - fonts-noto-cjk
+  - fonts-wqy-microhei
+  - fonts-wqy-zenhei
+
+_fonts_indic: &fonts_indic
+  - fonts-indic
+  - fonts-beng
+  - fonts-deva
+  - fonts-gujr
+  - fonts-guru
+  - fonts-knda
+  - fonts-mlym
+  - fonts-orya
+  - fonts-taml
+  - fonts-telu
+
+_fonts_arabic: &fonts_arabic
+  - fonts-arabeyes
+  - fonts-sil-abyssinica
+  - fonts-sil-charis
+
+# ----------------------------------------------------------------------------
+# Development Environment Tools
+# ----------------------------------------------------------------------------
+_dev_shell: &dev_shell
+  - zsh
+  - tmux
+  - oh-my-zsh
+
+_dev_editor_cli: &dev_editor_cli
+  - vim
+  - neovim
+  - nano
+
+_dev_editor_gui: &dev_editor_gui
+  - code
+  - sublime-text
+  - atom
+
+_dev_complete: &dev_complete
+  - zsh
+  - tmux
+  - vim
+  - neovim
+  - git-delta
+  - fzf
+  - ripgrep
+
+# ----------------------------------------------------------------------------
+# Post-Install Message Templates
+# ----------------------------------------------------------------------------
+_postinstall_web: &postinstall_web
+  - "Web server: Access at http://localhost:{port}"
+  - "Web root: {www_path}"
+  - "Config: {config_path}"
+
+_postinstall_db: &postinstall_db
+  - "Database: Connect with '{connection_command}'"
+  - "Default port: {port}"
+  - "Run security setup: {security_command}"
+
+_postinstall_service: &postinstall_service
+  - "{service}: {usage_instructions}"
+  - "{service}: Config at {config_path}"
+
+# ============================================================================
+# End of Base Anchors
+# ============================================================================

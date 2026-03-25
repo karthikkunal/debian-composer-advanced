@@ -1,0 +1,298 @@
+# ============================================================================
+# Debian Med Pure Blend - Medical Practice and Research
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian Med Pure Blend configuration for medical practices,
+# hospitals, and research institutions.
+#
+# Usage:
+#   # Basic medical practice installation
+#   sudo debian-composer --blend=debian-med
+#
+#   # With medical focus specification
+#   sudo debian-composer --blend=debian-med --var=med_focus=practice
+#   sudo debian-composer --blend=debian-med --var=med_focus=imaging
+#   sudo debian-composer --blend=debian-med --var=med_focus=research
+#   sudo debian-composer --blend=debian-med --var=med_focus=bioinformatics
+#
+#   # Complete medical practice setup
+#   sudo debian-composer --blend=debian-med --stack=practice-complete
+#
+# References:
+#   - Debian Med: https://blends.debian.org/med/
+#   - Debian Med Wiki: https://wiki.debian.org/DebianMed/
+# ============================================================================
+
+name: debian-med
+version: 1.0.0
+description: Debian Med Pure Blend - Medical practice and research tools
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/med/
+tags: [blend, medical, healthcare, hospital, research, debian-med]
+kind: pure blend
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: medical
+  target_audience: [doctors, nurses, researchers, hospitals, clinics]
+  difficulty: intermediate
+  min_ram: 4096
+  min_disk: 20
+  recommended_disk: 50
+  gpu_required: false
+  gpu_recommended: true
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies:
+  - debian-science
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  med_focus:
+    type: string
+    default: general
+    choices: [general, practice, imaging, research, bioinformatics]
+    description: Medical focus area
+
+  enable_practice:
+    type: boolean
+    default: true
+    description: Enable medical practice management tools
+
+  enable_imaging:
+    type: boolean
+    default: true
+    description: Enable medical imaging tools
+
+  enable_research:
+    type: boolean
+    default: true
+    description: Enable medical research tools
+
+  enable_bioinformatics:
+    type: boolean
+    default: false
+    description: Enable bioinformatics tools
+
+  enable_laboratory:
+    type: boolean
+    default: false
+    description: Enable laboratory information management
+
+# ============================================================================
+# CATEGORIES - Using tasksel task package
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # Medical Practice
+  # --------------------------------------------------------------------------
+  practice/management:
+    condition: enable_practice == true or med_focus == practice
+    <<: *service_template
+    description: "Practice management software"
+    install:
+      packages:
+        - *med_practice
+    verify:
+      commands:
+        - gmclient --version 2>&1 | head -1
+
+  practice/imaging:
+    condition: enable_imaging == true or med_focus == imaging
+    <<: *service_template
+    description: "Medical imaging tools"
+    install:
+      packages:
+        - *med_imaging
+    verify:
+      commands:
+        - dcmdump --version 2>&1 | head -1
+        - dcm2niix --version 2>&1 | head -1
+
+  practice/research:
+    condition: enable_research == true or med_focus == research
+    <<: *service_template
+    description: "Medical research tools"
+    install:
+      packages:
+        - *med_research
+    verify:
+      commands:
+        - R --version | head -1
+
+  # --------------------------------------------------------------------------
+  # Specialized Areas
+  # --------------------------------------------------------------------------
+  specialty/bioinformatics:
+    condition: enable_bioinformatics == true or med_focus == bioinformatics
+    <<: *service_template
+    description: "Bioinformatics tools"
+    install:
+      packages:
+        - *med_biology
+    verify:
+      commands:
+        - blastn -version | head -1
+
+  specialty/laboratory:
+    condition: enable_laboratory == true
+    <<: *service_template
+    description: "Laboratory information management"
+    install:
+      packages:
+        - *med_laboratory
+    verify:
+      commands:
+        - php --version | head -1
+
+  specialty/oncology:
+    condition: med_focus == research
+    <<: *service_template
+    description: "Oncology tools"
+    install:
+      packages:
+        - *med_oncology
+    verify:
+      commands:
+        - R --version | head -1
+
+  specialty/pharmacology:
+    <<: *service_template
+    description: "Pharmacology tools"
+    install:
+      packages:
+        - *med_pharmacology
+    verify:
+      commands:
+        - obabel -V 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Infrastructure
+  # --------------------------------------------------------------------------
+  infra/workstation:
+    <<: *service_template
+    description: "Medical workstation"
+    install:
+      packages:
+        - *med_tools
+    verify:
+      commands:
+        - libreoffice --version
+
+  infra/server:
+    condition: med_focus == practice or med_focus == laboratory
+    <<: *service_template
+    description: "Medical server components"
+    install:
+      packages:
+        - *med_hospital_information_systems
+    configure:
+      services:
+        - name: postgresql
+          enable: true
+          start: true
+    verify:
+      commands:
+        - psql --version | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  practice-complete:
+    description: "Complete medical practice setup"
+    categories:
+      - practice/management
+      - practice/imaging
+      - infra/workstation
+
+  research-complete:
+    description: "Medical research environment"
+    categories:
+      - practice/research
+      - specialty/bioinformatics
+      - specialty/oncology
+
+  hospital-complete:
+    description: "Complete hospital setup"
+    categories:
+      - practice/management
+      - practice/imaging
+      - specialty/laboratory
+      - infra/server
+
+  imaging-center:
+    description: "Medical imaging center"
+    categories:
+      - practice/imaging
+      - infra/workstation
+
+  bioinformatics-lab:
+    description: "Bioinformatics laboratory"
+    categories:
+      - specialty/bioinformatics
+      - practice/research
+      - infra/server
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_med
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Med Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Medical Focus: ${med_focus}"
+  - "  Practice Management: ${enable_practice}"
+  - "  Medical Imaging: ${enable_imaging}"
+  - "  Research Tools: ${enable_research}"
+  - "  Bioinformatics: ${enable_bioinformatics}"
+  - "  Laboratory: ${enable_laboratory}"
+  - ""
+  - "Next Steps:"
+  - "  1. Configure practice management: gnumed-server-setup"
+  - "  2. For imaging: Configure DICOM viewers"
+  - "  3. For bioinformatics: Set up BLAST databases"
+  - ""
+  - "Resources:"
+  - "  - Debian Med: https://blends.debian.org/med/"
+  - "  - Wiki: https://wiki.debian.org/DebianMed/"
+  - "  - GNUmed: https://www.gnumed.org/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Medical Practice
+    description: Install Debian Med for a medical practice
+    command: sudo debian-composer --blend=debian-med --var=med_focus=practice --stack=practice-complete
+
+  - title: Research Laboratory
+    description: Install Debian Med for medical research
+    command: sudo debian-composer --blend=debian-med --var=med_focus=research --stack=research-complete
+
+  - title: Bioinformatics Lab
+    description: Install Debian Med for bioinformatics
+    command: sudo debian-composer --blend=debian-med --var=med_focus=bioinformatics --stack=bioinformatics-lab
+
+  - title: Hospital Setup
+    description: Install complete hospital environment
+    command: sudo debian-composer --blend=debian-med --stack=hospital-complete

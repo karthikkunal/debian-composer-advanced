@@ -1,0 +1,100 @@
+# ============================================================================
+# Minimal Base Template
+# ============================================================================
+# Base configuration for minimal/container systems
+#
+# Usage:
+#   sudo debian-composer --base=minimal --role=developer
+#   sudo debian-composer --base=minimal --tools=git,vim
+
+name: base-minimal
+version: 1.0.0
+description: Minimal base configuration - essential tools only
+author: Debian Composer Team
+license: MIT
+tags: [base, minimal, essential, cli]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - sudo
+  - curl
+  - wget
+  - git
+  - vim
+  - htop
+  - tree
+  - jq
+  - bash-completion
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  essentials:
+    <<: *service_template
+    description: "Essential command-line tools"
+    install:
+      packages:
+        - sudo
+        - curl
+        - wget
+        - git
+        - vim
+    verify:
+      commands:
+        - git --version
+        - vim --version
+
+  utils:
+    <<: *service_template
+    description: "Utility tools"
+    install:
+      packages:
+        - htop
+        - tree
+        - jq
+        - bash-completion
+    verify:
+      commands:
+        - htop --version
+        - jq --version
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  minimal:
+    description: "Minimal setup"
+    categories:
+      - essentials
+      - utils
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_minimal
+  min_ram: 256
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Minimal Base Installed ==="
+  - "Essential CLI tools installed"
+  - ""
+  - "Next steps:"
+  - "  - Add a role: --role=developer, --role=admin"
+  - "  - Add tools: --tools=neovim,tmux,fzf"
+  - "  - Build your custom setup from here"

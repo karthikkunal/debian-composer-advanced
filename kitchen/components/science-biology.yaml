@@ -1,0 +1,64 @@
+# ============================================================================
+# Science Biology Component
+# ============================================================================
+# Computational biology tools
+#
+# Reusable component for any recipe needing biology/bioinformatics tools
+
+name: science-biology
+version: 1.0.0
+description: Computational biology tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [science, biology, bioinformatics, emboss, genetics]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # EMBOSS suite
+    - emboss
+    - emboss-data
+    # Sequence analysis
+    - primer3
+    - clustalw
+    - clustalo
+    - muscle
+    # Phylogenetics
+    - phyml
+    - mrbayes
+    # General biology
+    - gperiodic
+    - kalzium
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - embossversion 2>&1 | head -1
+    - clustalw --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "EMBOSS: Molecular biology sequence analysis"
+  - "ClustalW/ClustalO: Multiple sequence alignment"
+  - "MUSCLE: Multiple sequence alignment"

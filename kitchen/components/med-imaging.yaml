@@ -1,0 +1,82 @@
+# ============================================================================
+# Medical Imaging Component
+# ============================================================================
+# Medical imaging tools (DICOM, PACS, viewers)
+#
+# Reusable component for any recipe needing medical imaging
+
+name: med-imaging
+version: 1.0.0
+description: Medical imaging tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [medical, imaging, dicom, pacs, radiology]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_pacs:
+    type: boolean
+    default: false
+    description: Enable PACS server
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # DICOM tools
+    - dcmtk
+    - dcm4net
+    # Image viewers
+    - fiji
+    - imagej
+    - 3dslicer
+    - itksnap
+    - weasis
+
+# ============================================================================
+# PACS SERVER (conditional)
+# ============================================================================
+install_pacs:
+  condition: enable_pacs == true
+  packages:
+    - orthanc
+    - dcm4chee
+  configure:
+    service:
+      name: orthanc
+      enable: true
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - storescu --version 2>&1 | head -1
+    - ImageJ --version 2>&1 | head -1
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "DCMTK: DICOM toolkit"
+  - "3D Slicer: Medical image visualization"
+  - "Fiji/ImageJ: Image processing"
+  - "PACS Server: ${enable_pacs}"

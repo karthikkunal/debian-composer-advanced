@@ -1,0 +1,335 @@
+# ============================================================================
+# Developer Persona Template
+# ============================================================================
+# Pre-configured development environment for software developers
+# Includes IDEs, containers, databases, and modern CLI tools
+#
+# Usage:
+#   sudo debian-composer --persona=developer
+#   sudo debian-composer --persona=developer --var=primary_lang=go
+#   sudo debian-composer --persona=developer --var=enable_containers=true
+
+name: persona-developer
+version: 1.0.0
+description: Developer persona - IDEs, containers, databases, modern tools
+author: Debian Composer Team
+license: MIT
+tags: [persona, developer, programming, containers, devops]
+persona_type: developer
+
+includes:
+  - components/base.yaml
+
+variables:
+  primary_lang:
+    type: string
+    default: python
+    choices: [python, go, rust, javascript, java, cpp, all]
+    description: "Primary programming language"
+
+  enable_containers:
+    type: boolean
+    default: true
+    description: "Install Docker and container tools"
+
+  enable_database:
+    type: boolean
+    default: true
+    description: "Install local database servers"
+
+  enable_cloud:
+    type: boolean
+    default: false
+    description: "Install cloud CLI tools (AWS, GCP, Azure)"
+
+packages:
+  - git
+  - curl
+  - wget
+  - build-essential
+  - make
+  - eza
+  - bat
+  - ripgrep
+  - fd-find
+  - fzf
+  - zoxide
+  - tmux
+  - zsh
+
+categories:
+  base-dev:
+    description: "Base development environment"
+    install:
+      packages:
+        - build-essential
+        - make
+        - cmake
+        - meson
+        - ninja-build
+        - pkg-config
+        - git
+        - git-lfs
+        - gh
+        - fzf
+        - zoxide
+        - bat
+        - eza
+        - ripgrep
+        - fd-find
+        - btop
+        - tmux
+        - zsh
+        - curl
+        - wget
+        - jq
+        - tree
+        - htop
+        - strace
+        - lsof
+    verify:
+      commands:
+        - git --version
+        - zsh --version
+
+  python-dev:
+    condition: primary_lang == python or primary_lang == all
+    description: "Python development"
+    install:
+      packages:
+        - python3
+        - python3-pip
+        - python3-venv
+        - python3-dev
+        - pyright
+        - black
+        - isort
+        - flake8
+        - mypy
+        - pytest
+        - pipx
+    verify:
+      commands:
+        - python3 --version
+        - black --version
+
+  go-dev:
+    condition: primary_lang == go or primary_lang == all
+    description: "Go development"
+    install:
+      packages:
+        - golang-go
+        - golang-golang-x-tools
+        - gopls
+        - delve
+        - gotools
+    verify:
+      commands:
+        - go version
+
+  rust-dev:
+    condition: primary_lang == rust or primary_lang == all
+    description: "Rust development"
+    install:
+      packages:
+        - rustc
+        - cargo
+        - rustfmt
+        - clippy
+        - rls
+        - rust-src
+    verify:
+      commands:
+        - rustc --version
+        - cargo --version
+
+  javascript-dev:
+    condition: primary_lang == javascript or primary_lang == all
+    description: "JavaScript/TypeScript development"
+    install:
+      packages:
+        - nodejs
+        - npm
+        - npx
+        - yarn
+        - pnpm
+        - typescript
+        - ts-node
+        - eslint
+        - prettier
+    verify:
+      commands:
+        - node --version
+        - npm --version
+
+  java-dev:
+    condition: primary_lang == java or primary_lang == all
+    description: "Java/Kotlin development"
+    install:
+      packages:
+        - default-jdk
+        - default-jdk-doc
+        - maven
+        - gradle
+        - kotlin
+    verify:
+      commands:
+        - java --version
+        - mvn --version
+
+  cpp-dev:
+    condition: primary_lang == cpp or primary_lang == all
+    description: "C/C++ development"
+    install:
+      packages:
+        - gcc
+        - g++
+        - gdb
+        - valgrind
+        - clang
+        - clang-tools
+        - llvm
+        - lld
+        - cppcheck
+    verify:
+      commands:
+        - gcc --version
+        - clang --version
+
+  containers:
+    condition: enable_containers == true
+    description: "Container runtime and tools"
+    install:
+      packages:
+        - docker.io
+        - docker-compose
+        - docker-buildx
+        - containerd.io
+        - podman
+        - buildah
+        - skopeo
+        - curl
+        - ca-certificates
+        - gnupg
+    configure:
+      user_groups:
+        - docker
+    verify:
+      commands:
+        - docker --version
+        - docker compose version
+        - podman --version
+
+  databases:
+    condition: enable_database == true
+    description: "Local database servers"
+    install:
+      packages:
+        - postgresql
+        - postgresql-client
+        - mariadb-server
+        - mariadb-client
+        - sqlite3
+        - redis-server
+        - redis-tools
+    verify:
+      commands:
+        - psql --version
+        - mariadb --version
+        - redis-server --version
+
+  cloud-cli:
+    condition: enable_cloud == true
+    description: "Cloud provider CLIs"
+    install:
+      packages:
+        - awscli
+        - google-cloud-sdk
+        - azure-cli
+        - terraform
+        - packer
+    verify:
+      commands:
+        - aws --version
+        - az --version
+
+  editors:
+    description: "Text editors and IDEs"
+    install:
+      packages:
+        - neovim
+        - vim
+        - nano
+        - code
+        - helix
+    verify:
+      commands:
+        - nvim --version
+
+  api-testing:
+    description: "API testing tools"
+    install:
+      packages:
+        - httpie
+        - curl
+        - jq
+        - postman
+        - insomnia
+    verify:
+      commands:
+        - http --version
+
+stacks:
+  default:
+    description: "Default developer setup"
+    categories:
+      - base-dev
+      - editors
+      - python-dev
+
+  fullstack:
+    description: "Full-stack developer setup"
+    categories:
+      - base-dev
+      - editors
+      - python-dev
+      - javascript-dev
+      - containers
+      - databases
+      - api-testing
+
+  backend:
+    description: "Backend developer setup"
+    categories:
+      - base-dev
+      - editors
+      - python-dev
+      - go-dev
+      - containers
+      - databases
+      - api-testing
+
+  devops:
+    description: "DevOps/SRE setup"
+    categories:
+      - base-dev
+      - editors
+      - containers
+      - databases
+      - cloud-cli
+
+requirements:
+  min_ram: 4096
+  min_disk: 30
+  gpu: false
+
+post_install:
+  - "=== Developer Persona Installed ==="
+  - "Primary Language: ${primary_lang}"
+  - "Containers: ${enable_containers}"
+  - "Databases: ${enable_database}"
+  - ""
+  - "Zsh + Tmux: Modern terminal workflow"
+  - "Docker: Run 'sudo usermod -aG docker $USER' then logout"
+  - "VS Code: Run 'code' to install"
+  - "Starship: Run 'curl -sS https://starship.rs/install.sh | sh'"

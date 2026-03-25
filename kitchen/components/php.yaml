@@ -1,0 +1,89 @@
+# PHP Component
+# Reusable PHP configuration
+# Template variables: ${memory_limit}, ${max_execution_time}, ${upload_max_filesize}
+# Uses YAML anchors and templates for DRY configuration
+
+name: php
+version: 1.0.0
+description: PHP runtime
+author: Debian Composer Team
+license: MIT
+tags: [web, php, runtime]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# Template variables
+variables:
+  memory_limit:
+    type: string
+    default: "256M"
+    description: "PHP memory limit"
+  max_execution_time:
+    type: integer
+    default: 30
+    description: "Max execution time (seconds)"
+  upload_max_filesize:
+    type: string
+    default: "64M"
+    description: "Upload max file size"
+
+requires:
+  components:
+    - base
+
+install:
+  packages:
+    - php
+    - php-fpm
+    - php-mysql
+    - php-pgsql
+    - php-curl
+    - php-gd
+    - php-mbstring
+    - php-xml
+    - php-zip
+    - php-intl
+
+# ============================================================================
+# CONFIGURE - Using application server template with overrides
+# ============================================================================
+configure:
+  <<: *app_server_template
+  service:
+    name: php*-fpm
+    enable: true
+    start: true
+  settings:
+    memory_limit: ${memory_limit}
+    max_execution_time: ${max_execution_time}
+    upload_max_filesize: ${upload_max_filesize}
+    post_max_size: ${upload_max_filesize}
+  pools:
+    www:
+      listen: /run/php/php-fpm.sock
+      pm: dynamic
+      pm_max_children: 5
+      pm_start_servers: 2
+
+# ============================================================================
+# VERIFY - Using service template verification with php-specific overrides
+# ============================================================================
+verify:
+  commands:
+    - php --version
+  services_running:
+    - php*-fpm
+
+requirements:
+  min_ram: 512
+  min_disk: 2
+
+post_install:
+  - "Configure in /etc/php/*/fpm/php.ini"
+  - "Pool config in /etc/php/*/fpm/pool.d/"
+  - "memory_limit=${memory_limit}, max_execution_time=${max_execution_time}"

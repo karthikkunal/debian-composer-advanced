@@ -1,0 +1,346 @@
+# ============================================================================
+# Debian Astro Pure Blend - Astronomy and Astrophysics
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian Astro Pure Blend configuration for astronomers,
+# astrophysicists, and amateur astronomy enthusiasts.
+#
+# Usage:
+#   # Basic astronomy installation
+#   sudo debian-composer --blend=debian-astro
+#
+#   # With astronomy focus specification
+#   sudo debian-composer --blend=debian-astro --var=astro_focus=amateur
+#   sudo debian-composer --blend=debian-astro --var=astro_focus=professional
+#   sudo debian-composer --blend=debian-astro --var=astro_focus=data-reduction
+#
+#   # Complete observatory setup
+#   sudo debian-composer --blend=debian-astro --stack=observatory-complete
+#
+# References:
+#   - Debian Astro: https://blends.debian.org/astro/
+#   - Debian Astro Wiki: https://wiki.debian.org/DebianAstro/
+# ============================================================================
+
+name: debian-astro
+version: 1.0.0
+description: Debian Astro Pure Blend - Astronomy and astrophysics tools
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/astro/
+tags: [blend, astronomy, astrophysics, telescope, observation, debian-astro]
+kind: pure blend
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: astronomy
+  target_audience: [astronomers, astrophysicists, amateurs, observatories]
+  difficulty: intermediate
+  min_ram: 8192
+  min_disk: 50
+  recommended_disk: 100
+  gpu_required: false
+  gpu_recommended: true
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies:
+  - debian-science
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  astro_focus:
+    type: string
+    default: general
+    choices: [general, amateur, professional, data-reduction, visualization]
+    description: Astronomy focus area
+
+  enable_telescope:
+    type: boolean
+    default: true
+    description: Enable telescope control software
+
+  enable_data_reduction:
+    type: boolean
+    default: true
+    description: Enable data reduction tools
+
+  enable_visualization:
+    type: boolean
+    default: true
+    description: Enable visualization tools
+
+  enable_radio:
+    type: boolean
+    default: false
+    description: Enable radio astronomy tools
+
+  enable_catalogs:
+    type: boolean
+    default: true
+    description: Enable astronomical catalogs
+
+# ============================================================================
+# CATEGORIES - Using tasksel task package
+# ============================================================================
+# Note: packages installed via categories based on astro_focus variable
+# Default (general) installs task-astro, specific focuses install sub-metapackages
+categories:
+  # --------------------------------------------------------------------------
+  # All Astro (via task-astro)
+  # --------------------------------------------------------------------------
+  astro/all:
+    condition: astro_focus == general or astro_focus == all
+    <<: *service_template
+    description: "All astronomy tools (via task-astro)"
+    install:
+      packages:
+        - *astro_all
+    verify:
+      commands:
+        - stellarium --version 2>&1 | head -1
+        - kstars --version 2>&1 | head -1
+        - casacore --version 2>&1 | head -1
+        - aladin --version 2>&1 | head -1
+        - indi --version 2>&1 | head -1
+        - python3 -c "import astropy; print(astropy.__version__)" 2>&1
+
+  # --------------------------------------------------------------------------
+  # Focus-specific (installed via task-astro)
+  # --------------------------------------------------------------------------
+  observation/amateur:
+    condition: astro_focus == amateur
+    <<: *service_template
+    description: "Amateur astronomy (included in task-astro)"
+    install:
+      packages:
+        - *astro_education
+        - *astro_tools
+    verify:
+      commands:
+        - stellarium --version 2>&1 | head -1
+        - kstars --version 2>&1 | head -1
+        - aladin --version 2>&1 | head -1
+        - python3 -c "import astropy; print(astropy.__version__)" 2>&1
+
+  observation/professional:
+    condition: astro_focus == professional
+    <<: *service_template
+    description: "Professional astronomy (included in task-astro)"
+    install:
+      packages:
+        - *astro_tools
+        - *astro_data_reduction
+        - *astro_python3
+    verify:
+      commands:
+        - stellarium --version 2>&1 | head -1
+        - kstars --version 2>&1 | head -1
+        - casacore --version 2>&1 | head -1
+        - aladin --version 2>&1 | head -1
+        - indi --version 2>&1 | head -1
+        - python3 -c "import astropy; print(astropy.__version__)" 2>&1
+
+  data/reduction:
+    condition: enable_data_reduction == true or astro_focus == data-reduction
+    <<: *service_template
+    description: "Data reduction (included in task-astro)"
+    install:
+      packages:
+        - *astro_data_reduction
+        - *astro_python3
+    verify:
+      commands:
+        - casacore --version 2>&1 | head -1
+        - python3 -c "import astropy; print(astropy.__version__)" 2>&1
+
+  data/visualization:
+    condition: enable_visualization == true or astro_focus == visualization
+    <<: *service_template
+    description: "Visualization (included in task-astro)"
+    install:
+      packages:
+        - *astro_viewers
+    verify:
+      commands:
+        - stellarium --version 2>&1 | head -1
+        - kstars --version 2>&1 | head -1
+        - aladin --version 2>&1 | head -1
+
+  specialty/radio:
+    condition: enable_radio == true
+    <<: *service_template
+    description: "Radio astronomy (included in task-astro)"
+    install:
+      packages:
+        - *astro_radio_astronomy
+    verify:
+      commands:
+        - casacore --version 2>&1 | head -1
+        - indi --version 2>&1 | head -1
+
+  specialty/telescope:
+    condition: enable_telescope == true
+    <<: *service_template
+    description: "Telescope control (included in task-astro)"
+    install:
+      packages:
+        - *astro_telescope_control
+    verify:
+      commands:
+        - indi --version 2>&1 | head -1
+
+  specialty/catalogs:
+    condition: enable_catalogs == true
+    <<: *service_template
+    description: "Astronomical catalogs (included in task-astro)"
+    install:
+      packages:
+        - *astro_catalogs
+    verify:
+      commands:
+        - python3 -c "import astroquery; print(astroquery.__version__)" 2>&1
+        - python3 -c "import astropy; print(astropy.__version__)" 2>&1
+
+  specialty/virtual-observatory:
+    <<: *service_template
+    description: "Virtual Observatory (included in task-astro)"
+    install:
+      packages:
+        - *astro_virtual_observatory
+    verify:
+      commands:
+        - python3 -c "import pyvo; print(pyvo.__version__)" 2>&1
+        - python3 -c "import astropy; print(astropy.__version__)" 2>&1
+
+  infra/workstation:
+    <<: *service_template
+    description: "Astronomy workstation (via task-astro)"
+    install:
+      packages:
+        - *astro_tools
+        - *astro_viewers
+    verify:
+      commands:
+        - libreoffice --version 2>&1 | head -1
+        - stellarium --version 2>&1 | head -1
+        - kstars --version 2>&1 | head -1
+        - aladin --version 2>&1 | head -1
+        - indi --version 2>&1 | head -1
+        - python3 -c "import astropy; print(astropy.__version__)" 2>&1
+
+  infra/server:
+    <<: *service_template
+    description: "Astronomy server (via task-astro)"
+    install:
+      packages:
+        - *astro_catalogs
+        - *astro_virtual_observatory
+    configure:
+      service:
+        name: postgresql
+        enable: true
+    verify:
+      commands:
+        - psql --version 2>&1 | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  amateur-complete:
+    description: "Complete amateur astronomy setup"
+    categories:
+      - observation/amateur
+      - data/visualization
+      - specialty/telescope
+
+  professional-complete:
+    description: "Professional astronomy environment"
+    categories:
+      - observation/professional
+      - data/reduction
+      - specialty/catalogs
+
+  observatory-complete:
+    description: "Complete observatory setup"
+    categories:
+      - observation/professional
+      - data/reduction
+      - data/visualization
+      - specialty/telescope
+      - specialty/virtual-observatory
+
+  radio-astronomy:
+    description: "Radio astronomy setup"
+    categories:
+      - specialty/radio
+      - data/reduction
+      - specialty/catalogs
+
+  data-analysis:
+    description: "Astronomy data analysis workstation"
+    categories:
+      - data/reduction
+      - data/visualization
+      - specialty/catalogs
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_astro
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Astro Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Astronomy Focus: ${astro_focus}"
+  - "  Telescope Control: ${enable_telescope}"
+  - "  Data Reduction: ${enable_data_reduction}"
+  - "  Visualization: ${enable_visualization}"
+  - "  Radio Astronomy: ${enable_radio}"
+  - "  Catalogs: ${enable_catalogs}"
+  - ""
+  - "Next Steps:"
+  - "  1. Configure telescope: Run INDI control panel"
+  - "  2. Set up data reduction: Configure astropy"
+  - "  3. Download star catalogs for Stellarium/KStars"
+  - ""
+  - "Resources:"
+  - "  - Debian Astro: https://blends.debian.org/astro/"
+  - "  - Astropy: https://www.astropy.org/"
+  - "  - INDI Library: https://indilib.org/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Amateur Astronomy
+    description: Install Debian Astro for amateur astronomy
+    command: sudo debian-composer --blend=debian-astro --var=astro_focus=amateur --stack=amateur-complete
+
+  - title: Professional Observatory
+    description: Install Debian Astro for professional observatory
+    command: sudo debian-composer --blend=debian-astro --var=astro_focus=professional --stack=observatory-complete
+
+  - title: Data Analysis Workstation
+    description: Install Debian Astro for data analysis
+    command: sudo debian-composer --blend=debian-astro --stack=data-analysis
+
+  - title: Radio Astronomy
+    description: Install Debian Astro for radio astronomy
+    command: sudo debian-composer --blend=debian-astro --var=enable_radio=true --stack=radio-astronomy

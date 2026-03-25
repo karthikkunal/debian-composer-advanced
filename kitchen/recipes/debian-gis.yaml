@@ -1,0 +1,334 @@
+# ============================================================================
+# Debian GIS Pure Blend - Geographic Information Systems
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian GIS Pure Blend configuration for geographers, cartographers,
+# and GIS professionals.
+#
+# Usage:
+#   # Basic GIS installation
+#   sudo debian-composer --blend=debian-gis
+#
+#   # With GIS focus specification
+#   sudo debian-composer --blend=debian-gis --var=gis_focus=desktop
+#   sudo debian-composer --blend=debian-gis --var=gis_focus=server
+#   sudo debian-composer --blend=debian-gis --var=gis_focus=remote-sensing
+#
+#   # Complete GIS setup
+#   sudo debian-composer --blend=debian-gis --stack=gis-desktop-complete
+#
+# References:
+#   - Debian GIS: https://blends.debian.org/gis/
+#   - Debian GIS Wiki: https://wiki.debian.org/DebianGis/
+# ============================================================================
+
+name: debian-gis
+version: 1.0.0
+description: Debian GIS Pure Blend - Geographic Information Systems tools
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/gis/
+tags: [blend, gis, geography, mapping, cartography, spatial, debian-gis]
+kind: pure blend
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: geography
+  target_audience: [geographers, cartographers, gis-analysts, researchers]
+  difficulty: intermediate
+  min_ram: 8192
+  min_disk: 50
+  recommended_disk: 100
+  gpu_required: false
+  gpu_recommended: true
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies:
+  - debian-science
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  gis_focus:
+    type: string
+    default: desktop
+    choices: [desktop, server, remote-sensing, osm, research]
+    description: GIS focus area
+
+  enable_remote_sensing:
+    type: boolean
+    default: true
+    description: Enable remote sensing tools
+
+  enable_osm:
+    type: boolean
+    default: true
+    description: Enable OpenStreetMap tools
+
+  enable_web_gis:
+    type: boolean
+    default: false
+    description: Enable web GIS server
+
+  enable_gps:
+    type: boolean
+    default: true
+    description: Enable GPS tools
+
+  enable_statistics:
+    type: boolean
+    default: true
+    description: Enable spatial statistics
+
+# ============================================================================
+# CATEGORIES - Using tasksel task package
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # Desktop GIS
+  # --------------------------------------------------------------------------
+  desktop/qgis:
+    <<: *service_template
+    description: "QGIS Desktop GIS"
+    install:
+      packages:
+        - *gis_workstation
+    verify:
+      commands:
+        - qgis --version | head -1
+
+  desktop/analysis:
+    condition: gis_focus == desktop or gis_focus == research
+    <<: *service_template
+    description: "GIS analysis tools"
+    install:
+      packages:
+        - *gis_workstation
+    verify:
+      commands:
+        - grass --version | head -1
+
+  # --------------------------------------------------------------------------
+  # Remote Sensing
+  # --------------------------------------------------------------------------
+  remote/basic:
+    condition: enable_remote_sensing == true or gis_focus == remote-sensing
+    <<: *service_template
+    description: "Remote sensing tools"
+    install:
+      packages:
+        - *gis_remote_sensing
+    verify:
+      commands:
+        - otbcli --version 2>&1 | head -1
+
+  remote/advanced:
+    condition: gis_focus == remote-sensing
+    <<: *service_template
+    description: "Advanced remote sensing"
+    install:
+      packages:
+        - *gis_remote_sensing
+    verify:
+      commands:
+        - gdalinfo --version | head -1
+
+  # --------------------------------------------------------------------------
+  # OpenStreetMap
+  # --------------------------------------------------------------------------
+  osm/editing:
+    condition: enable_osm == true or gis_focus == osm
+    <<: *service_template
+    description: "OpenStreetMap editing"
+    install:
+      packages:
+        - *gis_openstreetmap
+    verify:
+      commands:
+        - josm --version 2>&1 | head -1
+
+  osm/server:
+    condition: gis_focus == osm
+    <<: *service_template
+    description: "OpenStreetMap server"
+    install:
+      packages:
+        - *gis_map_server
+    verify:
+      commands:
+        - osm2pgsql --version | head -1
+
+  # --------------------------------------------------------------------------
+  # GPS
+  # --------------------------------------------------------------------------
+  gps/tools:
+    condition: enable_gps == true
+    <<: *service_template
+    description: "GPS tools"
+    install:
+      packages:
+        - *gis_gps
+    verify:
+      commands:
+        - gpsd --version | head -1
+
+  gps/navigation:
+    condition: enable_gps == true
+    <<: *service_template
+    description: "GPS navigation"
+    install:
+      packages:
+        - *gis_gps
+    verify:
+      commands:
+        - navit --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Spatial Statistics
+  # --------------------------------------------------------------------------
+  statistics/spatial:
+    condition: enable_statistics == true or gis_focus == research
+    <<: *service_template
+    description: "Spatial statistics"
+    install:
+      packages:
+        - *gis_statistics
+    verify:
+      commands:
+        - R --version | head -1
+
+  # --------------------------------------------------------------------------
+  # Infrastructure
+  # --------------------------------------------------------------------------
+  infra/workstation:
+    <<: *service_template
+    description: "GIS workstation"
+    install:
+      packages:
+        - *gis_workstation
+    verify:
+      commands:
+        - libreoffice --version
+
+  infra/server:
+    condition: gis_focus == server or enable_web_gis == true
+    <<: *service_template
+    description: "GIS server components"
+    install:
+      packages:
+        - *gis_map_server
+    configure:
+      services:
+        - name: postgresql
+          enable: true
+          start: true
+        - name: mapserver
+          enable: false
+          start: false
+    verify:
+      commands:
+        - psql --version | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  gis-desktop-complete:
+    description: "Complete GIS desktop workstation"
+    categories:
+      - desktop/qgis
+      - desktop/analysis
+      - remote/basic
+      - osm/editing
+      - gps/tools
+
+  gis-server:
+    description: "GIS server setup"
+    categories:
+      - infra/server
+      - osm/server
+
+  remote-sensing-complete:
+    description: "Remote sensing analysis workstation"
+    categories:
+      - desktop/qgis
+      - remote/basic
+      - remote/advanced
+      - statistics/spatial
+
+  osm-complete:
+    description: "OpenStreetMap workstation"
+    categories:
+      - osm/editing
+      - osm/server
+      - desktop/qgis
+
+  research-complete:
+    description: "GIS research environment"
+    categories:
+      - desktop/analysis
+      - remote/basic
+      - statistics/spatial
+      - gps/tools
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_gis
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian GIS Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  GIS Focus: ${gis_focus}"
+  - "  Remote Sensing: ${enable_remote_sensing}"
+  - "  OpenStreetMap: ${enable_osm}"
+  - "  Web GIS: ${enable_web_gis}"
+  - "  GPS Tools: ${enable_gps}"
+  - "  Statistics: ${enable_statistics}"
+  - ""
+  - "Next Steps:"
+  - "  1. Launch QGIS: qgis"
+  - "  2. Configure GRASS: grass --config"
+  - "  3. For server: Set up PostGIS extension"
+  - ""
+  - "Resources:"
+  - "  - Debian GIS: https://blends.debian.org/gis/"
+  - "  - QGIS: https://qgis.org/"
+  - "  - GRASS GIS: https://grass.osgeo.org/"
+  - "  - PostGIS: https://postgis.net/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: GIS Desktop Workstation
+    description: Install Debian GIS for desktop GIS work
+    command: sudo debian-composer --blend=debian-gis --var=gis_focus=desktop --stack=gis-desktop-complete
+
+  - title: Remote Sensing Lab
+    description: Install Debian GIS for remote sensing analysis
+    command: sudo debian-composer --blend=debian-gis --var=gis_focus=remote-sensing --stack=remote-sensing-complete
+
+  - title: OSM Editing Station
+    description: Install Debian GIS for OpenStreetMap editing
+    command: sudo debian-composer --blend=debian-gis --var=gis_focus=osm --stack=osm-complete
+
+  - title: GIS Server
+    description: Install Debian GIS server with PostGIS
+    command: sudo debian-composer --blend=debian-gis --var=gis_focus=server --stack=gis-server

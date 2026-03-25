@@ -1,0 +1,114 @@
+# ============================================================================
+# Wayland Desktop Component
+# ============================================================================
+# Wayland compositor and desktop utilities (Sway)
+#
+# Reusable component for any recipe needing Wayland desktop environment
+# For Hyprland, use the hyprland-desktop component instead
+#
+# Usage:
+#   sudo debian-composer --recipe=my-recipe --component=wayland-desktop
+
+name: wayland-desktop
+version: 1.0.0
+description: Wayland desktop utilities (Sway/Waybar)
+author: Debian Composer Team
+license: MIT
+tags: [wayland, sway, desktop, waybar, wofi]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Compositor and core
+    - sway
+    - swaybg
+    - swaylock
+    - swayidle
+    - swayosd
+    # Panel and launcher
+    - waybar
+    - wofi
+    - rofi
+    # Notifications
+    - mako
+    # Screenshot/screencast
+    - grim
+    - slurp
+    - wf-recorder
+    - gpu-screen-recorder
+    # Clipboard
+    - wl-clipboard
+    # Color picker
+    - hyprpicker
+    # GTK portal
+    - xdg-desktop-portal-gtk
+    - xdg-desktop-portal-wlr
+    - xdg-terminal-exec
+    # Theme
+    - adwaita-icon-theme
+    - hicolor-icon-theme
+    - gnome-themes-extra
+    - yaru-icon-theme
+    - kvantum-qt5
+    # Qt Wayland
+    - qt5-wayland
+    - qt6-wayland
+    # Display server
+    - xorg
+    - xinit
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  wayland:
+    enabled: true
+  hooks:
+    post_configure:
+      - type: command
+        command: "systemctl enable sddm"
+        description: "Enable SDDM display manager"
+      - type: command
+        command: "echo 'Wayland session configured'"
+        description: "Log configuration"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - sway --version
+    - waybar --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 10
+  gpu: false
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Wayland: Select Sway session at login"
+  - "Display Manager: SDDM enabled"
+  - "Config: ~/.config/sway/config"

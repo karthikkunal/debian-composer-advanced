@@ -1,0 +1,83 @@
+# ============================================================================
+# Bioinformatics Component
+# ============================================================================
+# Bioinformatics tools for sequence and structural analysis
+#
+# Reusable component for any recipe needing bioinformatics
+
+name: bioinformatics
+version: 1.0.0
+description: Bioinformatics tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [bioinformatics, sequence, genomics, bwa, samtools]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_structural:
+    type: boolean
+    default: false
+    description: Enable structural bioinformatics
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Sequence alignment
+    - bwa
+    - bowtie2
+    # Sequence processing
+    - samtools
+    - bcftools
+    - htslib
+    # Variant calling
+    - gatk
+    - freebayes
+    # Genomics
+    - bedtools
+    - vcftools
+
+# ============================================================================
+# STRUCTURAL BIOINFORMATICS (conditional)
+# ============================================================================
+install_structural:
+  condition: enable_structural == true
+  packages:
+    - pymol
+    - vmd
+    - chimera
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - bwa 2>&1 | head -1
+    - samtools --version | head -1
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 8192
+  min_disk: 50
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "BWA: Sequence alignment"
+  - "SAMtools: Sequence alignment processing"
+  - "BCFtools: Variant calling"
+  - "Structural Bioinformatics: ${enable_structural}"

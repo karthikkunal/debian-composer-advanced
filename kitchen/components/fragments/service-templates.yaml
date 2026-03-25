@@ -1,0 +1,702 @@
+# ============================================================================
+# Service Templates - Reusable Category Templates with Merge Keys
+# ============================================================================
+# Usage: Use merge key (<<:) to inherit template, then override specific values
+# Example:
+#   categories:
+#     nginx:
+#       <<: *service_template
+#       install:
+#         packages: [nginx]
+#       configure:
+#         service:
+#           name: nginx
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Desktop Environment Package Lists (needed before templates)
+# ----------------------------------------------------------------------------
+_desktop_base: &desktop_base
+  - xorg
+  - xinit
+  - fonts-liberation
+  - fonts-dejavu-core
+  - hicolor-icon-theme
+  - adwaita-icon-theme
+
+_desktop_gnome: &desktop_gnome
+  - gnome
+  - gnome-tweaks
+  - gnome-shell-extensions
+  - chrome-gnome-shell
+
+_desktop_kde: &desktop_kde
+  - kde-plasma-desktop
+  - kde-applications
+  - sddm
+
+_desktop_xfce: &desktop_xfce
+  - xfce4
+  - xfce4-goodies
+
+_desktop_mate: &desktop_mate
+  - mate-desktop-environment
+  - mate-desktop-environment-extras
+
+_desktop_cinnamon: &desktop_cinnamon
+  - cinnamon
+  - cinnamon-core
+
+_desktop_lxqt: &desktop_lxqt
+  - lxqt
+  - lxqt-panel
+
+_desktop_budgie: &desktop_budgie
+  - ubuntu-budgie-desktop
+  - budgie-desktop
+
+_desktop_i3: &desktop_i3
+  - i3
+  - i3status
+  - i3lock
+  - dmenu
+  - dunst
+
+_desktop_sway: &desktop_sway
+  - sway
+  - swaybg
+  - swaylock
+  - swayidle
+  - waybar
+  - wofi
+
+_desktop_hyprland: &desktop_hyprland
+  - hyprland
+  - hyprpaper
+  - hyprlock
+  - hypridle
+  - hyprcursor
+  - waybar
+  - wofi
+  - mako
+  - grim
+  - slurp
+  - swappy
+  - wl-clipboard
+  - pavucontrol
+  - sddm
+
+_desktop_deepin: &desktop_deepin
+  - deepin-gnome-shell
+  - deepin-desktop
+  - deepin-session-ui
+  - deepin-launcher
+  - deepin-file-manager
+  - deepin-control-center
+  - dde-dock
+  - dde-display
+  - dde-notification
+  - lightdm
+  - lightdm-deepin-greeter
+
+# ----------------------------------------------------------------------------
+# Base Service Template - Foundation for all service categories
+# ----------------------------------------------------------------------------
+.service_template: &service_template
+  install:
+    packages: []
+    repositories: []
+    scripts: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    directories:
+      config: ""
+      data: ""
+      logs: ""
+    settings: {}
+    security: {}
+    hooks:
+      pre_install: []
+      post_install: []
+      pre_configure: []
+      post_configure: []
+  verify:
+    commands: []
+    services_running: []
+    ports_listening: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Web Server Template - For nginx, apache, caddy, etc.
+# ----------------------------------------------------------------------------
+.web_server_template: &web_server_template
+  <<: *service_template
+  install:
+    packages: []
+    repositories: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    directories:
+      config: ""
+      logs: ""
+      www: /var/www/html
+    security:
+      hide_version: true
+      ssl_enabled: true
+  verify:
+    commands: []
+    services_running: []
+    ports_listening:
+      - 80
+      - 443
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Database Server Template - For MySQL, PostgreSQL, MariaDB, etc.
+# ----------------------------------------------------------------------------
+.database_server_template: &database_server_template
+  <<: *service_template
+  install:
+    packages: []
+    repositories: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    settings:
+      port: 0
+      bind_address: 127.0.0.1
+      secure_installation: true
+    security: {}
+  verify:
+    commands: []
+    services_running: []
+    ports_listening: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Cache Server Template - For Redis, Memcached, etc.
+# ----------------------------------------------------------------------------
+.cache_server_template: &cache_server_template
+  <<: *service_template
+  install:
+    packages: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    settings:
+      port: 0
+      bind: 127.0.0.1
+    persistence: {}
+  verify:
+    commands: []
+    services_running: []
+    ports_listening: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Application Server Template - For PHP-FPM, Gunicorn, uWSGI, etc.
+# ----------------------------------------------------------------------------
+.app_server_template: &app_server_template
+  <<: *service_template
+  install:
+    packages: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    settings: {}
+    pools: {}
+  verify:
+    commands: []
+    services_running: []
+    ports_listening: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Container Service Template - For Docker, containerd, etc.
+# ----------------------------------------------------------------------------
+.container_service_template: &container_service_template
+  <<: *service_template
+  install:
+    packages: []
+    repositories: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    user_groups: []
+    daemon: {}
+    settings: {}
+  verify:
+    commands: []
+    services_running: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# API Service Template - For Ollama, LM Studio, etc.
+# ----------------------------------------------------------------------------
+.api_service_template: &api_service_template
+  <<: *service_template
+  install:
+    packages: []
+    repositories: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    settings:
+      port: 0
+      bind: 127.0.0.1
+    validation: []
+  verify:
+    commands: []
+    services_running: []
+    ports_listening: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Manual Install Template - For software requiring manual download
+# ----------------------------------------------------------------------------
+.manual_install_template: &manual_install_template
+  install:
+    packages: []
+    configuration: []
+  configure:
+    validation: []
+  verify:
+    commands: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Script Install Template - For software installed via script
+# ----------------------------------------------------------------------------
+.script_install_template: &script_install_template
+  install:
+    packages: []
+    script:
+      url: ""
+      env: {}
+    install_path: ""
+  configure:
+    settings: {}
+  verify:
+    commands: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Python Package Template - For pip-installed tools
+# ----------------------------------------------------------------------------
+.python_package_template: &python_package_template
+  install:
+    packages:
+      - python3-pip
+    python_packages: []
+  configure:
+    virtualenv: ""
+    settings: {}
+  verify:
+    commands: []
+    files_exist: []
+
+# ----------------------------------------------------------------------------
+# Docker Container Template - For containerized services
+# ----------------------------------------------------------------------------
+.docker_container_template: &docker_container_template
+  install:
+    packages: []
+    docker:
+      image: ""
+      pull: true
+  configure:
+    container:
+      name: ""
+      image: ""
+      ports: []
+      volumes: []
+      restart_policy: always
+      networks: []
+  verify:
+    commands: []
+    containers_running: []
+    ports_listening: []
+
+# ============================================================================
+# Pre-configured Service Instances (Ready to use with merge key)
+# ============================================================================
+
+# Nginx - Ready to use
+.nginx_service: &nginx_service
+  <<: *web_server_template
+  install:
+    packages:
+      - nginx
+      - nginx-extras
+  configure:
+    service:
+      name: nginx
+    directories:
+      config: /etc/nginx
+      logs: /var/log/nginx
+      www: /var/www/html
+  verify:
+    commands:
+      - nginx -v
+    services_running:
+      - nginx
+    ports_listening:
+      - 80
+      - 443
+
+# Apache - Ready to use
+.apache_service: &apache_service
+  <<: *web_server_template
+  install:
+    packages:
+      - apache2
+      - apache2-utils
+  configure:
+    service:
+      name: apache2
+    directories:
+      config: /etc/apache2
+      www: /var/www/html
+    modules:
+      enable:
+        - rewrite
+        - ssl
+        - headers
+  verify:
+    commands:
+      - apache2 -v
+    services_running:
+      - apache2
+    ports_listening:
+      - 80
+      - 443
+
+# MySQL - Ready to use
+.mysql_service: &mysql_service
+  <<: *database_server_template
+  install:
+    packages:
+      - mysql-server
+      - mysql-client
+      - python3-mysql.connector
+  configure:
+    service:
+      name: mysql
+    settings:
+      port: 3306
+      bind_address: 127.0.0.1
+      secure_installation: true
+    security:
+      root_password_required: true
+      remove_anonymous: true
+      disallow_root_login_remotely: true
+      remove_test_db: true
+  verify:
+    commands:
+      - mysql --version
+      - mysqladmin -u root status
+    services_running:
+      - mysql
+    ports_listening:
+      - 3306
+
+# PostgreSQL - Ready to use
+.postgresql_service: &postgresql_service
+  <<: *database_server_template
+  install:
+    packages:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+  configure:
+    service:
+      name: postgresql
+    settings:
+      port: 5432
+      listen_addresses: localhost
+    authentication:
+      method: peer
+  verify:
+    commands:
+      - psql --version
+      - pg_isready
+    services_running:
+      - postgresql
+    ports_listening:
+      - 5432
+
+# Redis - Ready to use
+.redis_service: &redis_service
+  <<: *cache_server_template
+  install:
+    packages:
+      - redis-server
+      - redis-tools
+  configure:
+    service:
+      name: redis-server
+    settings:
+      port: 6379
+      bind: 127.0.0.1
+    persistence:
+      rdb: true
+      aof: false
+  verify:
+    commands:
+      - redis-server --version
+      - redis-cli ping
+    services_running:
+      - redis-server
+    ports_listening:
+      - 6379
+
+# Docker - Ready to use
+.docker_service: &docker_service
+  <<: *container_service_template
+  install:
+    packages:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+  configure:
+    service:
+      name: docker
+    user_groups:
+      - docker
+    daemon:
+      log_driver: json-file
+      log_opts:
+        max-size: 10m
+        max-file: "3"
+      storage_driver: overlay2
+      features:
+        buildkit: true
+  verify:
+    commands:
+      - docker --version
+      - docker compose version
+    services_running:
+      - docker
+    files_exist:
+      - /etc/docker/daemon.json
+
+# Ollama - Ready to use
+.ollama_service: &ollama_service
+  <<: *api_service_template
+  install:
+    packages:
+      - ollama
+    repositories:
+      - name: ollama
+        url: "deb https://ollama.com/debian stable main"
+        key: https://ollama.com/public-key.asc
+  configure:
+    service:
+      name: ollama
+    validation:
+      - type: service
+        name: ollama
+        state: active
+      - type: port
+        port: 11434
+        protocol: tcp
+  verify:
+    commands:
+      - ollama --version
+    services_running:
+      - ollama
+    ports_listening:
+      - 11434
+
+# ----------------------------------------------------------------------------
+# Desktop Environment Templates
+# ----------------------------------------------------------------------------
+.desktop_base_template: &desktop_base_template
+  install:
+    packages: *desktop_base
+  configure:
+    display_manager:
+      service: lightdm
+      enable: true
+    hooks:
+      post_configure:
+        - type: command
+          command: "update-desktop-database 2>/dev/null || true"
+          description: "Update desktop database"
+  verify:
+    commands:
+      - "echo 'Desktop environment installed'"
+    files_exist:
+      - /usr/share/xsessions
+
+.desktop_gnome_service: &desktop_gnome_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_gnome
+  configure:
+    display_manager:
+      service: gdm3
+      enable: true
+    hooks:
+      post_configure:
+        - type: command
+          command: "update-desktop-database 2>/dev/null || true"
+  verify:
+    commands:
+      - "echo 'GNOME installed'"
+    files_exist:
+      - /usr/share/xsessions/gnome.desktop
+
+.desktop_kde_service: &desktop_kde_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_kde
+  configure:
+    display_manager:
+      service: sddm
+      enable: true
+  verify:
+    commands:
+      - "echo 'KDE Plasma installed'"
+    files_exist:
+      - /usr/share/xsessions/plasma.desktop
+
+.desktop_xfce_service: &desktop_xfce_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_xfce
+  configure:
+    display_manager:
+      service: lightdm
+      enable: true
+  verify:
+    commands:
+      - "echo 'XFCE installed'"
+    files_exist:
+      - /usr/share/xsessions/xfce.desktop
+
+.desktop_mate_service: &desktop_mate_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_mate
+  configure:
+    display_manager:
+      service: lightdm
+      enable: true
+  verify:
+    commands:
+      - "echo 'MATE installed'"
+    files_exist:
+      - /usr/share/xsessions/mate.desktop
+
+.desktop_cinnamon_service: &desktop_cinnamon_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_cinnamon
+  configure:
+    display_manager:
+      service: lightdm
+      enable: true
+  verify:
+    commands:
+      - "echo 'Cinnamon installed'"
+    files_exist:
+      - /usr/share/xsessions/cinnamon.desktop
+
+.desktop_lxqt_service: &desktop_lxqt_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_lxqt
+  configure:
+    display_manager:
+      service: lightdm
+      enable: true
+  verify:
+    commands:
+      - "echo 'LXQt installed'"
+    files_exist:
+      - /usr/share/xsessions/lxqt.desktop
+
+.desktop_budgie_service: &desktop_budgie_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_budgie
+  configure:
+    display_manager:
+      service: lightdm
+      enable: true
+  verify:
+    commands:
+      - "echo 'Budgie installed'"
+    files_exist:
+      - /usr/share/xsessions/budgie-desktop.desktop
+
+.desktop_i3_service: &desktop_i3_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_i3
+  configure:
+    display_manager:
+      service: lightdm
+      enable: true
+  verify:
+    commands:
+      - "i3 --version"
+    files_exist:
+      - /usr/share/xsessions/i3.desktop
+
+.desktop_sway_service: &desktop_sway_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_sway
+  configure:
+    display_manager:
+      service: gdm3
+      enable: true
+    wayland:
+      enabled: true
+  verify:
+    commands:
+      - "sway --version"
+    files_exist:
+      - /usr/share/wayland-sessions/sway.desktop
+
+.desktop_hyprland_service: &desktop_hyprland_service
+  <<: *desktop_base_template
+  install:
+    packages: *desktop_hyprland
+  configure:
+    display_manager:
+      service: sddm
+      enable: true
+    wayland:
+      enabled: true
+    hyprland:
+      configure: true
+  verify:
+    commands:
+      - "hyprland --version"
+    files_exist:
+      - /usr/share/wayland-sessions/hyprland.desktop
+
+# ============================================================================
+# End of Service Templates
+# ============================================================================

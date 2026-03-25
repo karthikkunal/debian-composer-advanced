@@ -1,0 +1,58 @@
+# ============================================================================
+# Education Electronics Component
+# ============================================================================
+# Electronics education tools
+#
+# Reusable component for any recipe needing electronics education
+
+name: edu-electronics
+version: 1.0.0
+description: Electronics education tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, electronics, circuit, arduino, learning]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # CAD tools
+    - kicad
+    - fritzing
+    # Circuit simulation
+    - gnucap
+    # Arduino
+    - arduino
+    - arduino-mk
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - kicad --version 2>&1 | head -1
+    - fritzing --version 2>&1 | head -1
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "KiCad: Electronics design automation"
+  - "Fritzing: Electronic circuit designer"
+  - "Arduino: Microcontroller programming"

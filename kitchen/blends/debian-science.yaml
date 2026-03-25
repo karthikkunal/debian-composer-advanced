@@ -1,0 +1,419 @@
+# ============================================================================
+# Debian Science Pure Blend - Scientific Computing Environment
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian Science Pure Blend configuration for scientists,
+# researchers, and academic institutions.
+#
+# Usage:
+#   # Basic science installation
+#   sudo debian-composer --blend=debian-science
+#
+#   # With science focus specification
+#   sudo debian-composer --blend=debian-science --var=science_domains=physics,chemistry
+#   sudo debian-composer --blend=debian-science --var=science_domains=biology
+#
+#   # Complete science setup
+#   sudo debian-composer --blend=debian-science --stack=science-complete
+#
+# References:
+#   - Debian Science: https://blends.debian.org/science/
+#   - Debian Science Wiki: https://wiki.debian.org/DebianScience/
+# ============================================================================
+
+name: debian-science
+version: 1.0.0
+description: Debian Science Pure Blend - Scientific computing environment
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/science/
+tags: [blend, science, research, physics, chemistry, biology, computing]
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: science
+  target_audience: [scientists, researchers, students, academics]
+  difficulty: intermediate
+  min_ram: 8192
+  min_disk: 50
+  recommended_disk: 100
+  gpu_required: false
+  gpu_recommended: true
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies: []
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  science_domains:
+    type: array
+    default: [general]
+    choices: [general, physics, chemistry, biology, math, electronics, robotics]
+    description: Scientific domains to install
+
+  enable_physics:
+    type: boolean
+    default: true
+    description: Enable physics tools
+
+  enable_chemistry:
+    type: boolean
+    default: true
+    description: Enable chemistry tools
+
+  enable_biology:
+    type: boolean
+    default: true
+    description: Enable biology tools
+
+  enable_math:
+    type: boolean
+    default: true
+    description: Enable mathematics tools
+
+  enable_electronics:
+    type: boolean
+    default: false
+    description: Enable electronics tools
+
+  enable_robotics:
+    type: boolean
+    default: false
+    description: Enable robotics tools
+
+  enable_gpu_acceleration:
+    type: boolean
+    default: auto
+    description: Enable GPU-accelerated packages
+
+# ============================================================================
+# CATEGORIES - Using tasksel task package
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # Physics
+  # --------------------------------------------------------------------------
+  physics/general:
+    condition: enable_physics == true or '"physics" in science_domains'
+    <<: *service_template
+    description: "General physics tools"
+    install:
+      packages:
+        - *science_physics
+    verify:
+      commands:
+        - root --version | head -1
+
+  physics/high-energy:
+    condition: enable_physics == true
+    <<: *service_template
+    description: "High-energy physics"
+    install:
+      packages:
+        - *science_high_energy_physics
+    verify:
+      commands:
+        - geant4-config --version | head -1
+
+  physics/computational:
+    condition: enable_physics == true
+    <<: *service_template
+    description: "Computational physics"
+    install:
+      packages:
+        - *science_physics
+    verify:
+      commands:
+        - octave --version | head -1
+        - maxima --version | head -1
+        - R --version | head -1
+        - python3 -c "import numpy; import scipy" 2>&1
+
+  # --------------------------------------------------------------------------
+  # Chemistry
+  # --------------------------------------------------------------------------
+  chemistry/general:
+    condition: enable_chemistry == true or '"chemistry" in science_domains'
+    <<: *service_template
+    description: "General chemistry tools"
+    install:
+      packages:
+        - *science_chemistry
+    verify:
+      commands:
+        - gmx --version | head -1
+
+  chemistry/quantum:
+    condition: enable_chemistry == true
+    <<: *service_template
+    description: "Quantum chemistry"
+    install:
+      packages:
+        - *science_chemistry
+    verify:
+      commands:
+        - pw.x -version 2>&1 | head -1
+
+  chemistry/cheminformatics:
+    condition: enable_chemistry == true
+    <<: *service_template
+    description: "Cheminformatics"
+    install:
+      packages:
+        - *science_chemistry
+    verify:
+      commands:
+        - obabel -V 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Biology
+  # --------------------------------------------------------------------------
+  biology/general:
+    condition: enable_biology == true or '"biology" in science_domains'
+    <<: *service_template
+    description: "General biology tools"
+    install:
+      packages:
+        - *science_biology
+    verify:
+      commands:
+        - python3 -c "import Bio; print(Bio.__version__)"
+        - python3 -c "import numpy; import scipy" 2>&1
+
+  biology/bioinformatics:
+    condition: enable_biology == true
+    <<: *service_template
+    description: "Bioinformatics"
+    install:
+      packages:
+        - *science_biology
+    verify:
+      commands:
+        - blastn -version | head -1
+
+  biology/genomics:
+    condition: enable_biology == true
+    <<: *service_template
+    description: "Genomics"
+    install:
+      packages:
+        - *science_biology
+    verify:
+      commands:
+        - bedtools --version | head -1
+
+  # --------------------------------------------------------------------------
+  # Mathematics
+  # --------------------------------------------------------------------------
+  math/general:
+    condition: enable_math == true or '"math" in science_domains'
+    <<: *service_template
+    description: "Mathematics tools"
+    install:
+      packages:
+        - *science_mathematics
+    verify:
+      commands:
+        - R --version | head -1
+        - octave --version | head -1
+        - maxima --version | head -1
+        - python3 -c "import numpy; import scipy" 2>&1
+
+  math/symbolic:
+    condition: enable_math == true
+    <<: *service_template
+    description: "Symbolic mathematics"
+    install:
+      packages:
+        - *science_mathematics
+    verify:
+      commands:
+        - maxima --version | head -1
+
+  # --------------------------------------------------------------------------
+  # Electronics
+  # --------------------------------------------------------------------------
+  electronics/cad:
+    condition: enable_electronics == true or '"electronics" in science_domains'
+    <<: *service_template
+    description: "Electronics CAD"
+    install:
+      packages:
+        - *science_engineering
+    verify:
+      commands:
+        - kicad --version | head -1
+
+  electronics/simulation:
+    condition: enable_electronics == true
+    <<: *service_template
+    description: "Electronics simulation"
+    install:
+      packages:
+        - *science_engineering
+    verify:
+      commands:
+        - gnucap --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Robotics
+  # --------------------------------------------------------------------------
+  robotics/basic:
+    condition: enable_robotics == true or '"robotics" in science_domains'
+    <<: *service_template
+    description: "Basic robotics"
+    install:
+      packages:
+        - *science_robotics
+    verify:
+      commands:
+        - roscore -h 2>&1 | head -1
+
+  robotics/advanced:
+    condition: enable_robotics == true
+    <<: *service_template
+    description: "Advanced robotics"
+    install:
+      packages:
+        - *science_robotics
+    verify:
+      commands:
+        - gzserver --version | head -1
+
+  # --------------------------------------------------------------------------
+  # Infrastructure
+  # --------------------------------------------------------------------------
+  infra/workstation:
+    <<: *service_template
+    description: "Science workstation"
+    install:
+      packages:
+        - *science_tools
+    verify:
+      commands:
+        - libreoffice --version
+
+  infra/hpc:
+    <<: *service_template
+    description: "HPC tools"
+    install:
+      packages:
+        - *science_tools
+    verify:
+      commands:
+        - mpirun --version | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  physics-complete:
+    description: "Complete physics environment"
+    categories:
+      - physics/general
+      - physics/high-energy
+      - physics/computational
+      - math/general
+
+  chemistry-complete:
+    description: "Complete chemistry environment"
+    categories:
+      - chemistry/general
+      - chemistry/quantum
+      - chemistry/cheminformatics
+
+  biology-complete:
+    description: "Complete biology environment"
+    categories:
+      - biology/general
+      - biology/bioinformatics
+      - biology/genomics
+
+  science-complete:
+    description: "All science domains"
+    categories:
+      - physics/general
+      - chemistry/general
+      - biology/general
+      - math/general
+
+  computational-science:
+    description: "Computational science workstation"
+    categories:
+      - physics/computational
+      - chemistry/quantum
+      - math/symbolic
+      - infra/hpc
+
+  bioinformatics:
+    description: "Bioinformatics workstation"
+    categories:
+      - biology/bioinformatics
+      - biology/genomics
+      - math/general
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 8192
+  min_disk: 50
+  gpu: false
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Science Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Science Domains: ${science_domains}"
+  - "  Physics: ${enable_physics}"
+  - "  Chemistry: ${enable_chemistry}"
+  - "  Biology: ${enable_biology}"
+  - "  Mathematics: ${enable_math}"
+  - "  Electronics: ${enable_electronics}"
+  - "  Robotics: ${enable_robotics}"
+  - ""
+  - "Next Steps:"
+  - "  1. Configure Python environment: python3 -m venv ~/science-env"
+  - "  2. For physics: Initialize ROOT: root"
+  - "  3. For chemistry: Test GROMACS: gmx --version"
+  - "  4. For biology: Test Biopython: python3 -c 'import Bio'"
+  - ""
+  - "Resources:"
+  - "  - Debian Science: https://blends.debian.org/science/"
+  - "  - SciPy: https://scipy.org/"
+  - "  - ROOT: https://root.cern/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Physics Research
+    description: Install Debian Science for physics research
+    command: sudo debian-composer --blend=debian-science --var=enable_physics=true --stack=physics-complete
+
+  - title: Chemistry Lab
+    description: Install Debian Science for chemistry
+    command: sudo debian-composer --blend=debian-science --var=enable_chemistry=true --stack=chemistry-complete
+
+  - title: Bioinformatics
+    description: Install Debian Science for bioinformatics
+    command: sudo debian-composer --blend=debian-science --var=enable_biology=true --stack=bioinformatics
+
+  - title: Complete Science
+    description: Install all science domains
+    command: sudo debian-composer --blend=debian-science --stack=science-complete

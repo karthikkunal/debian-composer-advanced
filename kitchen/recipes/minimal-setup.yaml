@@ -1,0 +1,67 @@
+# Minimal Developer Tools Configuration
+# Example: Lightweight setup for minimal systems
+#
+# Usage: sudo ./recipes/debian-dev-tools.sh --config=minimal-setup.yaml
+#
+# Demonstrates YAML anchors for DRY configuration
+
+name: minimal-dev-tools
+version: 1.0.0
+description: Minimal developer tools for resource-constrained systems
+
+# ============================================================================
+# COMPOSABILITY - Uses base component
+# ============================================================================
+includes:
+  - components/base.yaml
+  - fragments/base-anchors.yaml
+
+# ============================================================================
+# ANCHORS - Define local anchors for this recipe
+# ============================================================================
+# Minimal package list (extends base packages without heavy tools)
+.minimal_packages: &minimal_packages [git, curl, wget]
+
+# Python minimal (no venv, no dev packages)
+.python_minimal: &python_minimal [python3, python3-pip]
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor reference
+# ============================================================================
+packages: *minimal_packages
+
+# ============================================================================
+# CATEGORIES - Using anchors for package lists
+# ============================================================================
+categories:
+  python:
+    packages: *python_minimal
+    # Skip venv and dev packages to save space
+
+# ============================================================================
+# LIGHTWEIGHT ALTERNATIVES
+# ============================================================================
+tools:
+  python:
+    version: "3"
+    install_pip: true
+    install_venv: false  # Use python3 -m venv instead
+    install_dev: false   # Skip python3-dev
+
+# Skip heavy tools
+skip_categories:
+  - docker   # Too heavy for minimal systems
+  - go       # Large installation
+  - rust     # Very large installation
+
+# Only install Node.js if specifically requested
+nodejs:
+  enabled: false  # Disabled by default
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor with override
+# ============================================================================
+requirements:
+  <<: *req_minimal  # Inherit from base-anchors.yaml
+  min_ram: 1024  # 1GB minimum (override)
+  min_disk: 5    # 5GB minimum (override)

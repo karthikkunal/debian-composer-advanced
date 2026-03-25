@@ -1,0 +1,137 @@
+# ============================================================================
+# Video Production Specialization Mixin
+# ============================================================================
+# Adds video production tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=creative --mixin=video-production
+#   sudo debian-composer --base=desktop --role=creator --mixin=video-production
+
+name: mixin-video-production
+version: 1.0.0
+description: Video production tools - editing, effects, streaming
+author: Debian Composer Team
+license: MIT
+tags: [mixin, video, editing, streaming, production]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/audio.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_streaming:
+    type: boolean
+    default: true
+    description: "Install streaming tools"
+  enable_codecs:
+    type: boolean
+    default: true
+    description: "Install additional codecs"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - kdenlive
+  - obs-studio
+  - blender
+  - ffmpeg
+  - handbrake
+  - shotcut
+  - davinci-resolve
+  - mkvtoolnix
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  editing:
+    <<: *service_template
+    description: "Video editing"
+    install:
+      packages:
+        - kdenlive
+        - shotcut
+        - openshot
+    verify:
+      commands:
+        - kdenlive --version
+
+  streaming:
+    condition: enable_streaming == true
+    <<: *service_template
+    description: "Live streaming"
+    install:
+      packages:
+        - obs-studio
+        - obs-plugins
+    verify:
+      commands:
+        - obs --version 2>&1 || true
+
+  3d-vfx:
+    <<: *service_template
+    description: "3D and visual effects"
+    install:
+      packages:
+        - blender
+    verify:
+      commands:
+        - blender --version
+
+  encoding:
+    <<: *service_template
+    description: "Video encoding"
+    install:
+      packages:
+        - ffmpeg
+        - handbrake
+        - handbrake-cli
+    verify:
+      commands:
+        - ffmpeg -version
+
+  codecs:
+    condition: enable_codecs == true
+    <<: *service_template
+    description: "Additional codecs"
+    install:
+      packages:
+        - gstreamer1.0-plugins-bad
+        - gstreamer1.0-plugins-ugly
+        - gstreamer1.0-libav
+        - libavcodec-extra
+    verify:
+      commands:
+        - gst-inspect-1.0 --version
+
+  professional:
+    <<: *service_template
+    description: "Professional tools"
+    install:
+      packages:
+        - davinci-resolve
+        - mkvtoolnix
+    verify:
+      commands:
+        - mkvmerge --version
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Video Production Mixin Applied ==="
+  - "Streaming: ${enable_streaming}"
+  - "Codecs: ${enable_codecs}"
+  - ""
+  - "Editing: Kdenlive, Shotcut"
+  - "Streaming: OBS Studio"
+  - "3D/VFX: Blender"
+  - "Encoding: FFmpeg, HandBrake"

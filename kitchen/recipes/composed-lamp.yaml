@@ -1,0 +1,76 @@
+# Composed Stack Recipe
+# Demonstrates composable recipe system using components
+#
+# This recipe composes multiple components together using the includes mechanism.
+# Format: includes:
+#   - components/component-name.yaml
+#   - mixins/mixin-name.yaml
+
+name: composed-lamp
+version: 1.0.0
+description: Composed LAMP stack using component includes
+author: Debian Composer Team
+license: MIT
+tags: [web, lamp, composed]
+
+# ============================================================================
+# INCLUDES - Compose from components and mixins
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/mysql.yaml
+  - components/apache.yaml
+  - components/php.yaml
+  - mixins/security-hardening.yaml
+
+# ============================================================================
+# DEFAULT PACKAGES (inherited from included components)
+# ============================================================================
+packages:
+  - git
+  - curl
+  - wget
+
+# ============================================================================
+# OVERRIDES - Custom configuration on top of included components
+# ============================================================================
+configure:
+  apache:
+    directories:
+      www: /var/www/myapp
+  php:
+    settings:
+      memory_limit: 512M
+
+# ============================================================================
+# PRE-CONFIGURED STACKS
+# ============================================================================
+stacks:
+  full:
+    description: "Full LAMP stack with security hardening"
+    components:
+      - mysql
+      - apache
+      - php
+
+  lamp:
+    description: "Basic LAMP stack"
+    components:
+      - mysql
+      - apache
+      - php
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 2048
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "LAMP stack installed successfully"
+  - "Web root: /var/www/myapp"
+  - "Apply security hardening: ufw enable"

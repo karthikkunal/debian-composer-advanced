@@ -1,0 +1,224 @@
+# ============================================================================
+# UV Python Component
+# ============================================================================
+# UV as the primary Python package manager — replaces conda, pip, poetry, pyenv
+#
+# UV (https://docs.astral.sh/uv/) is a Rust-based Python tool that:
+# - Manages Python versions (replaces pyenv)
+# - Creates virtual environments (replaces virtualenv)
+# - Installs packages (replaces pip, 10-100x faster)
+# - Locks dependencies (replaces poetry/pip-tools)
+# - Runs tools (replaces pipx)
+#
+# System Python is NOT touched — UV manages its own Python installations.
+# This avoids breaking system tools that depend on /usr/bin/python3.
+#
+# Conda is explicitly blocked to prevent user temptation.
+
+name: uv-python
+version: 1.0.0
+description: "UV Python package manager — replaces conda, pip, poetry, pyenv"
+author: Debian Composer Team
+license: MIT
+tags: [python, uv, package-manager, development]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  default_python:
+    type: string
+    default: "3.12"
+    choices: ["3.11", "3.12", "3.13"]
+    description: "Default Python version to install via UV"
+
+  install_jupyter:
+    type: boolean
+    default: true
+    description: "Install JupyterLab via UV tool system"
+
+  install_dev_tools:
+    type: boolean
+    default: true
+    description: "Install Python dev tools (ruff, black, mypy) via UV"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # System Python minimal (for system tools only, NOT for development)
+  # --------------------------------------------------------------------------
+  system-python:
+    description: "Minimal system Python (for apt/dpkg, NOT for development)"
+    install:
+      packages:
+        - python3
+        - python3-venv
+        - python3-dev
+        - python3-apt
+    verify:
+      commands:
+        - python3 --version
+
+  # --------------------------------------------------------------------------
+  # UV Package Manager
+  # --------------------------------------------------------------------------
+  uv/manager:
+    description: "UV — Rust-based Python package and environment manager"
+    install:
+      packages: []  # UV installed via curl script, not apt
+    hooks:
+      pre_install:
+        - type: command
+          command: "curl -LsSf https://astral.sh/uv/install.sh | sh"
+          description: "Install UV via official installer"
+      post_install:
+        - type: command
+          command: "export PATH=\"$HOME/.local/bin:$PATH\" && uv --version"
+          description: "Verify UV installation"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv --version"
+
+  # --------------------------------------------------------------------------
+  # Python Versions via UV (no system Python pollution)
+  # --------------------------------------------------------------------------
+  uv/python:
+    description: "Python ${default_python} managed by UV (isolated from system)"
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: "$HOME/.local/bin/uv python install ${default_python} --default"
+          description: "Install Python ${default_python} via UV"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv python list | grep '${default_python}'"
+
+  # --------------------------------------------------------------------------
+  # JupyterLab via UV tool system
+  # --------------------------------------------------------------------------
+  uv/jupyter:
+    condition: install_jupyter == true
+    description: "JupyterLab installed via UV tool system (isolated)"
+    install:
+      packages:
+        - nodejs  # Required for JupyterLab extensions
+    hooks:
+      post_install:
+        - type: command
+          command: "$HOME/.local/bin/uv tool install jupyterlab"
+          description: "Install JupyterLab via UV tool system"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv tool list | grep -i jupyter"
+
+  # --------------------------------------------------------------------------
+  # Python development tools via UV
+  # --------------------------------------------------------------------------
+  uv/dev-tools:
+    condition: install_dev_tools == true
+    description: "Python development tools installed via UV"
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: |
+            $HOME/.local/bin/uv tool install ruff
+            $HOME/.local/bin/uv tool install mypy
+            $HOME/.local/bin/uv tool install pytest
+          description: "Install Python dev tools via UV tool system"
+    verify:
+      commands:
+        - "$HOME/.local/bin/uv tool list | grep -i ruff"
+
+# ============================================================================
+# CONFIGURE - Block conda from being installable
+# ============================================================================
+configure:
+  package_manager:
+    pinning:
+      - package: conda*
+        pin: release *
+        priority: -10
+      - package: miniconda*
+        pin: release *
+        priority: -10
+      - package: anaconda*
+        pin: release *
+        priority: -10
+  environment:
+    # UV is primary; system python only for apt/dpkg
+    UV_PYTHON_PREFERENCE: "managed"
+    UV_LINK_MODE: "hardlink"  # Disk-efficient, deduplicates packages
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== UV Python Environment Ready ==="
+  - ""
+  - "UV installed to: ~/.local/bin/uv"
+  - "Python ${default_python} installed via UV (not system Python)"
+  - ""
+  - "Common commands:"
+  - "  uv python install 3.13       # Install another Python version"
+  - "  uv venv .venv --python 3.12  # Create project venv"
+  - "  uv pip install torch          # Install packages (10-100x faster than pip)"
+  - "  uv pip compile requirements.in # Lock dependencies"
+  - "  uv tool install ruff          # Install tools globally"
+  - "  uvx ruff check .              # Run tools without installing"
+  - ""
+  - "JupyterLab: Run 'jupyter lab' to start notebook server"
+  - ""
+  - "Conda blocked: conda/miniconda/anaconda cannot be installed via apt"
+  - "System Python: /usr/bin/python3 — DO NOT use for development"
+  - ""
+  - "Project workflow:"
+  - "  mkdir myproject && cd myproject"
+  - "  uv venv .venv --python 3.12"
+  - "  source .venv/bin/activate"
+  - "  uv pip install -r requirements.txt"
+  - "  uv pip freeze > requirements.txt  # Lock"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: "Create a PyTorch project with UV"
+    description: "Set up a new AI project with PyTorch using UV"
+    command: |
+      mkdir my-ai-project && cd my-ai-project
+      uv venv .venv --python 3.12
+      source .venv/bin/activate
+      uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+      uv pip install jupyterlab
+      jupyter lab
+
+  - title: "Install without JupyterLab"
+    description: "Minimal Python setup without Jupyter"
+    command: "sudo debian-composer --component=uv-python --var=install_jupyter=false"

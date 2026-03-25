@@ -1,0 +1,62 @@
+# ============================================================================
+# GIS OpenStreetMap Component
+# ============================================================================
+# OpenStreetMap editing and rendering tools
+#
+# Reusable component for any recipe needing OSM tools
+
+name: gis-osm
+version: 1.0.0
+description: OpenStreetMap editing and rendering tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [gis, osm, openstreetmap, josm, mapping]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # OSM editors
+    - josm
+    - merkaartor
+    - jmapviewer
+    # OSM rendering
+    - nik4
+    - mapnik
+    # OSM processing
+    - osmium-tool
+    - osmosis
+    - osm2pgsql
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - josm --version 2>&1 | head -1
+    - osmium --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "JOSM: Advanced OSM editor"
+  - "Mapnik: Map rendering"
+  - "Osmium: OSM data processing"
+  - "osm2pgsql: OSM to PostgreSQL import"

@@ -1,0 +1,106 @@
+# Docker Development Environment
+# Composed version using component includes
+
+name: docker-dev
+version: 2.0.0
+description: Docker and container development environment
+author: Debian Composer Team
+license: MIT
+tags: [docker, container, devops, development]
+
+# ============================================================================
+# INCLUDES - Compose from layers
+# ============================================================================
+includes:
+  - components/base.yaml
+
+layers:
+  - container
+
+# ============================================================================
+# DEFAULT PACKAGES
+# ============================================================================
+packages:
+  - curl
+  - wget
+  - git
+  - ca-certificates
+  - gnupg
+  - apt-transport-https
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  docker:
+    packages:
+      - docker.io
+      - docker-compose
+      - docker-compose-plugin
+      - docker-doc
+
+  podman:
+    packages:
+      - podman
+      - podman-docker
+      - buildah
+      - skopeo
+      - crun
+
+  kubernetes:
+    packages:
+      - kubectl
+      - kubeadm
+      - kubelet
+      - kubernetes-cni
+
+# ============================================================================
+# TEMPLATE VARIABLES
+# ============================================================================
+variables:
+  docker_data_root:
+    type: string
+    default: "/var/lib/docker"
+    description: "Docker data root directory"
+
+  docker_version:
+    type: string
+    default: "latest"
+    description: "Docker version to install"
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  docker:
+    description: "Docker CE"
+    components: []
+
+  podman:
+    description: "Podman (rootless containers)"
+    components: []
+
+  k3s:
+    description: "Lightweight Kubernetes (k3s)"
+    components: []
+
+  full:
+    description: "Full container development environment"
+    components: []
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 2048
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Docker: Enable with 'systemctl enable docker'"
+  - "Docker: Add user to docker group 'usermod -aG docker USER'"
+  - "Podman: No daemon required, rootless by default"
+  - "k3s: Run 'k3s server' to start cluster"
+  - "Docker Compose: 'docker compose up' for compose files"

@@ -1,0 +1,270 @@
+# Docker Development Environment Recipe
+# YAML Configuration for Docker-based development
+#
+# Schema Version: 2.0
+# Structure: install (what to install) is separate from configure (how to set it up)
+#
+# Demonstrates YAML anchors and merge keys for DRY configuration
+
+name: docker-dev
+version: 1.1.0
+description: Complete Docker development environment with orchestration tools
+author: Debian Composer Team
+license: MIT
+tags: [docker, containers, development, orchestration]
+
+# ============================================================================
+# COMPOSABILITY - Uses container layer
+# ============================================================================
+includes:
+  - components/base.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+layers:
+  - container
+
+# ============================================================================
+# VARIABLES (Customizable parameters)
+# ============================================================================
+variables:
+  DOCKER_VERSION: "latest"
+  DOCKER_COMPOSE_VERSION: "v2"
+  INSTALL_PORTAINER: true
+  INSTALL_K3S: false
+  DATA_DIR: "/var/lib/docker"
+  LOG_DRIVER: "json-file"
+  LOG_MAX_SIZE: "10m"
+  LOG_MAX_FILE: "3"
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+depends_on:
+  # Recipe dependencies
+  recipes: []  # No recipe dependencies for now
+
+  # External dependencies (tools that should be installed)
+  external:
+    - name: apt
+      check: "{{preferred_package_manager}} --version"
+    - name: curl
+      check: "curl --version"
+    - name: systemd
+      check: "systemctl --version"
+
+# ============================================================================
+# CONFLICTS
+# ============================================================================
+conflicts:
+  # Conflicting recipes
+  recipes: []
+
+  # Conflicting packages
+  packages:
+    - podman  # Alternative to Docker (can coexist but may conflict)
+    - docker.io  # Debian's docker package (conflicts with docker-ce)
+
+  # Conflicting services
+  services: []
+
+# ============================================================================
+# PROVIDES (virtual features this recipe provides)
+# ============================================================================
+provides:
+  - container-runtime
+  - docker
+  - container-orchestration
+
+# ============================================================================
+# LOCAL ANCHORS - Recipe-specific anchors
+# ============================================================================
+.docker_prerequisites: &docker_prerequisites [*container_prerequisites]
+
+.docker_images: &dev_images
+  - node:20-alpine
+  - python:3.12-slim
+  - golang:1.21-alpine
+  - rust:1.75-slim
+  - nginx:alpine
+  - postgres:16-alpine
+  - redis:7-alpine
+  - mongo:7
+  - ubuntu:22.04
+  - debian:{{VERSION_CODENAME}}-slim
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor reference
+# ============================================================================
+requirements:
+  <<: *req_container
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor reference
+# ============================================================================
+packages: *container_prerequisites
+
+# ============================================================================
+# CATEGORIES - Using merge keys to inherit from templates
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Docker Engine - Using pre-configured service anchor
+  # --------------------------------------------------------------------------
+  docker-engine:
+    <<: *docker_service
+    install:
+      packages:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+      repositories:
+        - name: docker
+          key: https://download.docker.com/linux/debian/gpg
+          keyring: /etc/apt/keyrings/docker.asc
+          url: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{VERSION_CODENAME}} stable"
+    configure:
+      daemon:
+        log_driver: "{{LOG_DRIVER}}"
+        log_opts:
+          max-size: "{{LOG_MAX_SIZE}}"
+          max-file: "{{LOG_MAX_FILE}}"
+        storage_driver: overlay2
+        features:
+          buildkit: true
+      data_dir: "{{DATA_DIR}}"
+
+  # --------------------------------------------------------------------------
+  # Portainer - Using Docker container template
+  # --------------------------------------------------------------------------
+  portainer:
+    <<: *docker_container_template
+    install:
+      packages: []  # Deployed as container
+      docker:
+        image: portainer/portainer-ce:latest
+        pull: true
+    configure:
+      container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        ports:
+          - "9000:9000"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - portainer_data:/data
+        restart_policy: always
+        networks:
+          - dev-network
+    verify:
+      commands:
+        - docker ps | grep portainer
+      containers_running:
+        - portainer
+      ports_listening:
+        - 9000
+
+  # --------------------------------------------------------------------------
+  # Kubernetes (K3s) - Using script install template
+  # --------------------------------------------------------------------------
+  kubernetes:
+    <<: *script_install_template
+    install:
+      packages: []
+      script:
+        url: https://get.k3s.io
+        env:
+          INSTALL_K3S_CHANNEL: stable
+    configure:
+      service:
+        name: k3s
+        enable: true
+        start: true
+      k3s:
+        channel: stable
+        extras:
+          disable:
+            - traefik
+          enable:
+            - metrics-server
+        token: auto-generate
+        write_kubeconfig_mode: "644"
+      settings:
+        port: 6443
+        kubectl_included: true
+        helm_included: true
+    verify:
+      commands:
+        - k3s --version
+        - kubectl cluster-info
+      services_running:
+        - k3s
+      ports_listening:
+        - 6443
+      files_exist:
+        - /etc/rancher/k3s/k3s.yaml
+
+  # --------------------------------------------------------------------------
+  # Dev Images - Using anchor reference for image list
+  # --------------------------------------------------------------------------
+  dev-images:
+    <<: *service_template
+    install:
+      packages: []
+      docker:
+        images: *dev_images
+    configure:
+      note: "Images are pulled and ready to use"
+    verify:
+      commands:
+        - docker images | grep -E "node|python|golang|rust|nginx|postgres|redis|mongo|ubuntu|debian"
+
+# ============================================================================
+# HOOKS - Using anchor references for common hooks
+# ============================================================================
+hooks:
+  pre_install: *hook_pre_install
+  post_install:
+    - type: service
+      service: docker
+      action: daemon-reload
+    - type: command
+      command: "docker --version"
+  pre_configure: *hook_pre_configure
+  post_configure:
+    - type: command
+      command: "echo 'Docker configuration complete'"
+  pre_uninstall:
+    - type: service
+      service: docker
+      action: stop
+  post_uninstall:
+    - type: command
+      command: "echo 'Docker removed'"
+
+# ============================================================================
+# GROUPS TO CREATE
+# ============================================================================
+groups:
+  - docker
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Docker: Test with 'docker run hello-world'"
+  - "Add user to docker group: 'usermod -aG docker $USER'"
+  - "Portainer: Access at http://localhost:9000 (if installed)"
+  - "K3s: Kubeconfig at /etc/rancher/k3s/k3s.yaml (if installed)"
+  - "Enable firewall rules for remote access if needed"
+
+# ============================================================================
+# QUICK START COMMANDS
+# ============================================================================
+quick_start:
+  docker: "docker run -d -p 80:80 nginx"
+  portainer: "docker volume create portainer_data && docker run -d -p 9000:9000 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce"
+  k3s: "curl -sfL https://get.k3s.io | sh -"
+  compose: "docker compose up -d"

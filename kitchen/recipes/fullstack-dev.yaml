@@ -1,0 +1,56 @@
+# Full-Stack Development Environment
+# Complete web development stack with frontend, backend, database, and dev tools
+
+name: fullstack-dev
+version: 1.0.0
+description: Full-stack development environment with Node.js, PostgreSQL, Redis, and modern tooling
+author: Debian Composer Team
+license: MIT
+tags: [development, fullstack, nodejs, postgres, redis]
+
+layers:
+  - base
+  - runtime
+  - database
+  - web
+
+includes:
+  - components/postgresql.yaml
+  - components/redis.yaml
+  - mixins/security-hardening.yaml
+
+packages:
+  - build-essential
+  - cmake
+  - ripgrep
+  - fzf
+  - bat
+  - exa
+  - tmux
+  - vim
+  - zsh
+  - oh-my-zsh
+  - docker-compose
+
+stacks:
+  node-pg-redis:
+    description: "Node.js + PostgreSQL + Redis stack"
+    components:
+      - postgresql
+      - redis
+
+  full:
+    description: "Full development environment"
+    components:
+      - postgresql
+      - redis
+
+requirements:
+  min_ram: 4096
+  min_disk: 20
+
+post_install:
+  - "PostgreSQL: port 5432, Redis: port 6379"
+  - "Docker available for container development"
+  - "Dev tools: zsh, tmux, vim configured"
+  - "Oh-My-Zsh installed - run 'zsh' to start"

@@ -1,0 +1,61 @@
+# ============================================================================
+# Education Mathematics Component
+# ============================================================================
+# Mathematics education tools
+#
+# Reusable component for any recipe needing mathematics software
+
+name: edu-mathematics
+version: 1.0.0
+description: Mathematics education tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, mathematics, geometry, algebra, learning]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Interactive geometry
+    - geogebra
+    - kig
+    - kmplot
+    # Computer algebra
+    - maxima
+    - gap
+    - pari-gp
+    # Mathematics education
+    - kbruch
+    - cantor
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - geogebra --version 2>&1 | head -1
+    - maxima --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "GeoGebra: Interactive mathematics software"
+  - "Maxima: Computer algebra system"
+  - "Resources: https://www.geogebra.org/"

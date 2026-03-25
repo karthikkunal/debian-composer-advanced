@@ -1,0 +1,231 @@
+# ============================================================================
+# Blockchain Development Environment
+# ============================================================================
+# Complete blockchain development with EVM, Solana, and smart contract tools
+#
+# Uses YAML anchors, merge keys, variables, and conditions
+#
+# Usage:
+#   sudo debian-composer --recipe=blockchain-dev --category=ethereum
+#   sudo debian-composer --recipe=blockchain-dev --var=blockchain_focus=ethereum
+
+name: blockchain-dev
+version: 1.0.0
+description: Blockchain and Web3 development environment with multi-chain support
+author: Debian Composer Team
+license: MIT
+tags: [blockchain, web3, ethereum, solidity, defi, smart-contracts]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+  - mixins/security-hardening.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  # Blockchain focus
+  blockchain_focus:
+    type: string
+    default: ethereum
+    choices: [ethereum, solana, polkadot, cosmos, multi-chain]
+    description: Primary blockchain platform focus
+
+  # Ethereum tools
+  enable_ethereum:
+    type: boolean
+    default: true
+    description: Enable Ethereum/EVM development tools
+
+  # Solana tools
+  enable_solana:
+    type: boolean
+    default: false
+    description: Enable Solana development tools
+
+  # Polkadot/Substrate
+  enable_polkadot:
+    type: boolean
+    default: false
+    description: Enable Polkadot/Substrate tools
+
+  # Security auditing
+  enable_security:
+    type: boolean
+    default: true
+    description: Enable smart contract security tools
+
+  # Node management
+  enable_node:
+    type: boolean
+    default: false
+    description: Enable local blockchain nodes (requires more RAM)
+
+# ============================================================================
+# DEFAULT PACKAGES
+# ============================================================================
+packages:
+  - git
+  - curl
+  - wget
+  - build-essential
+  - nodejs
+  - npm
+  - python3
+  - python3-pip
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Ethereum/EVM (conditional)
+  # --------------------------------------------------------------------------
+  ethereum/core:
+    condition: enable_ethereum == true
+    <<: *service_template
+    description: "Ethereum core development tools"
+    install:
+      packages:
+        - solc
+        - hardhat
+        - truffle
+        - foundry
+        - dapptools
+    verify:
+      commands:
+        - solc --version
+        - npx hardhat --version
+
+  ethereum/security:
+    condition: enable_ethereum == true and enable_security == true
+    <<: *service_template
+    description: "Smart contract security tools"
+    install:
+      packages:
+        - mythril
+        - slither-analyzer
+        - echidna
+        - manticore
+    verify:
+      commands:
+        - slither --version
+
+  # --------------------------------------------------------------------------
+  # Solana (conditional)
+  # --------------------------------------------------------------------------
+  solana/core:
+    condition: enable_solana == true and hardware ram >= 16384
+    <<: *service_template
+    description: "Solana development tools"
+    install:
+      packages:
+        - rustup
+        - rustc
+        - cargo
+        - solana-cli
+        - anchor-cli
+    verify:
+      commands:
+        - rustc --version
+        - solana --version
+
+  # --------------------------------------------------------------------------
+  # Polkadot/Substrate (conditional)
+  # --------------------------------------------------------------------------
+  polkadot/core:
+    condition: enable_polkadot == true and hardware ram >= 16384
+    <<: *service_template
+    description: "Polkadot/Substrate development"
+    install:
+      packages:
+        - rustup
+        - rustc
+        - cargo
+        - substrate-contracts-node
+    verify:
+      commands:
+        - rustc --version
+
+  # --------------------------------------------------------------------------
+  # Multi-Chain Tools (always available)
+  # --------------------------------------------------------------------------
+  multi-chain/web3:
+    <<: *service_template
+    description: "Multi-chain Web3 libraries"
+    install:
+      packages:
+        - web3j
+        - python3-web3
+        - ethers
+    verify:
+      commands:
+        - python3 -c "import web3; print('web3:', web3.__version__)"
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  ethereum-complete:
+    description: "Complete Ethereum development"
+    categories:
+      - ethereum/core
+      - ethereum/security
+      - multi-chain/web3
+
+  solana-complete:
+    description: "Complete Solana development"
+    categories:
+      - solana/core
+      - multi-chain/web3
+
+  multi-chain-complete:
+    description: "Complete multi-chain development"
+    categories:
+      - ethereum/core
+      - solana/core
+      - polkadot/core
+      - multi-chain/web3
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 8192
+  min_disk: 50
+  gpu: false
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "=== Blockchain Dev Environment Complete ==="
+  - "Focus: ${blockchain_focus}"
+  - "Ethereum: ${enable_ethereum}"
+  - "Solana: ${enable_solana}"
+  - "Polkadot: ${enable_polkadot}"
+  - "Security Tools: ${enable_security}"
+  - ""
+  - "Ethereum: Use 'npx hardhat' to start development"
+  - "Solana: Run 'solana-keygen new' to create keypair"
+  - "Security: Run 'slither' to analyze contracts"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Ethereum Development
+    description: Install Ethereum tools only
+    command: sudo debian-composer --recipe=blockchain-dev --var=enable_solana=false
+  - title: Solana Development
+    description: Install Solana tools
+    command: sudo debian-composer --recipe=blockchain-dev --var=blockchain_focus=solana --var=enable_ethereum=false
+  - title: Multi-Chain Setup
+    description: Install all blockchain tools
+    command: sudo debian-composer --recipe=blockchain-dev --var=blockchain_focus=multi-chain

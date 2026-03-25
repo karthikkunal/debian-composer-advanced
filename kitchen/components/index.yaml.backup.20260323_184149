@@ -1,0 +1,847 @@
+# Component Registry Index
+# All reusable building blocks for debian-composer recipes.
+# Generated: 2026-03-23
+#
+# type: component   — standard package + config installer (default)
+# type: content     — asset/file bundle (themes, wallpapers, dotfiles)
+#
+# subtype: service  — installs a systemd daemon; engine auto-verifies service+port
+# subtype: bundle   — pure composition (no own packages); resolves requires: only
+# subtype: bootstrap — package manager installer; resolved first, trust prompt shown
+# (no subtype)      — standard component install
+
+components:
+  # ============================================================================
+  # BASE COMPONENTS
+  # ============================================================================
+  - name: base
+    file: base.yaml
+    type: component
+    description: Base system packages
+    tags: [base, system]
+    category: infrastructure
+    has_variables: false
+
+  - name: base-bundle
+    file: base-bundle.yaml
+    type: component
+    subtype: bundle
+    description: Foundation bundle — composes base system packages for all system types
+    tags: [base, bundle, system, foundation]
+    category: infrastructure
+    has_variables: false
+
+  - name: config-base
+    file: config-base.yaml
+    type: component
+    description: Base configuration overlay and system defaults
+    tags: [config, system, defaults]
+    category: infrastructure
+    has_variables: false
+
+  - name: non-debian
+    file: non-debian.yaml
+    type: component
+    subtype: bootstrap
+    description: Compatibility bootstrap for non-Debian Debian-based distros
+    tags: [compatibility, bootstrap, ubuntu, mint, popos]
+    category: infrastructure
+    has_variables: false
+
+  # ============================================================================
+  # DESKTOP COMPONENTS
+  # ============================================================================
+  - name: audio
+    file: audio.yaml
+    type: component
+    description: PipeWire audio stack for modern audio management
+    tags: [audio, pipewire, pulseaudio, alsa]
+    category: desktop
+    has_variables: false
+
+  - name: cli-tools
+    file: cli-tools.yaml
+    type: component
+    description: Modern replacements for standard CLI tools
+    tags: [cli, modern-cli, jq, httpie, tree]
+    category: desktop
+    has_variables: false
+
+  - name: desktop-apps
+    file: desktop-apps.yaml
+    type: component
+    description: Desktop applications for productivity and media
+    tags: [applications, desktop, productivity, media]
+    category: desktop
+    has_variables: false
+
+  - name: dev-fonts
+    file: dev-fonts.yaml
+    type: component
+    description: Developer-friendly monospace fonts
+    tags: [fonts, monospace, developer-fonts]
+    category: desktop
+    has_variables: false
+
+  - name: editors
+    file: editors.yaml
+    type: component
+    description: NeoVim and modern terminal UI tools for Git/Docker
+    tags: [editors, neovim, vim, lazygit, lazydocker]
+    category: desktop
+    has_variables: false
+
+  - name: hardware-support
+    file: hardware-support.yaml
+    type: component
+    description: Hardware support packages and firmware
+    tags: [hardware, firmware, microcode, drivers]
+    category: system
+    has_variables: false
+
+  - name: system-utils
+    file: system-utils.yaml
+    type: component
+    description: System utilities and monitoring tools
+    tags: [system, monitoring, network, security, utilities]
+    category: system
+    has_variables: false
+
+  - name: terminal
+    file: terminal.yaml
+    type: component
+    description: Modern terminal experience with Zsh, Starship, and Zellij
+    tags: [terminal, zsh, tmux, fzf, zoxide, modern-cli]
+    category: desktop
+    has_variables: false
+
+  - name: wayland-desktop
+    file: wayland-desktop.yaml
+    type: component
+    description: Wayland-based desktop utilities (Sway/Waybar)
+    tags: [wayland, sway, desktop, waybar, wofi]
+    category: desktop
+    has_variables: false
+
+  - name: web-apps
+    file: web-apps.yaml
+    type: component
+    description: Web app shortcuts for popular services (PWA-style)
+    tags: [web-apps, pwa, shortcuts, hey, whatsapp, youtube]
+    category: desktop
+    has_variables: false
+
+  # ============================================================================
+  # DESKTOP ENVIRONMENT COMPONENTS
+  # Each DE uses role: desktop so the engine detects conflicts between DEs.
+  # ============================================================================
+  - name: budgie-desktop
+    file: budgie-desktop.yaml
+    type: component
+    description: Budgie desktop environment
+    tags: [desktop-environment, budgie, gnome]
+    category: desktop-environment
+    has_variables: false
+
+  - name: cinnamon-desktop
+    file: cinnamon-desktop.yaml
+    type: component
+    description: Cinnamon desktop environment (Linux Mint style)
+    tags: [desktop-environment, cinnamon, mint]
+    category: desktop-environment
+    has_variables: false
+
+  - name: gnome-desktop
+    file: gnome-desktop.yaml
+    type: component
+    description: GNOME desktop environment
+    tags: [desktop-environment, gnome]
+    category: desktop-environment
+    has_variables: false
+
+  - name: hyprland-desktop
+    file: hyprland-desktop.yaml
+    type: component
+    description: Hyprland tiling Wayland compositor
+    tags: [desktop-environment, hyprland, wayland, tiling]
+    category: desktop-environment
+    has_variables: false
+
+  - name: i3-wm
+    file: i3-wm.yaml
+    type: component
+    description: i3 tiling window manager (X11)
+    tags: [desktop-environment, i3, tiling, x11]
+    category: desktop-environment
+    has_variables: false
+
+  - name: kde-desktop
+    file: kde-desktop.yaml
+    type: component
+    description: KDE Plasma desktop environment
+    tags: [desktop-environment, kde, plasma]
+    category: desktop-environment
+    has_variables: false
+
+  - name: lxqt-desktop
+    file: lxqt-desktop.yaml
+    type: component
+    description: LXQt lightweight desktop environment
+    tags: [desktop-environment, lxqt, lightweight]
+    category: desktop-environment
+    has_variables: false
+
+  - name: mate-desktop
+    file: mate-desktop.yaml
+    type: component
+    description: MATE desktop environment (GNOME 2 fork)
+    tags: [desktop-environment, mate, gnome2]
+    category: desktop-environment
+    has_variables: false
+
+  - name: xfce-desktop
+    file: xfce-desktop.yaml
+    type: component
+    description: Xfce lightweight desktop environment
+    tags: [desktop-environment, xfce, lightweight]
+    category: desktop-environment
+    has_variables: false
+
+  # ============================================================================
+  # SYSTEM MANAGEMENT COMPONENTS (cross-distro)
+  # ============================================================================
+  - name: hardware-detect
+    file: hardware-detect.yaml
+    type: component
+    description: Universal hardware detection and reporting — works on any Debian-based distro
+    tags: [hardware, detection, diagnostics, lspci, lsusb, system-info]
+    category: system
+    has_variables: true
+    variables:
+      - report_format
+      - save_report
+
+  - name: driver-manager
+    file: driver-manager.yaml
+    type: component
+    description: Unified driver management — works on any Debian-based distro
+    tags: [drivers, hardware, nvidia, firmware, dkms, gui]
+    category: system
+    has_variables: true
+    variables:
+      - install_gui
+      - auto_detect
+      - nvidia_version
+      - enable_nvidia
+      - enable_amd
+
+  - name: system-snapshot
+    file: system-snapshot.yaml
+    type: component
+    description: Unified system snapshot, backup, and restore — works on any Debian-based distro
+    tags: [snapshot, backup, restore, snapper, borg, disaster-recovery]
+    category: system
+    has_variables: true
+    variables:
+      - install_gui
+      - auto_snapshots
+      - snapshot_retention
+      - borg_encryption
+      - snapshot_on_install
+
+  - name: welcome-wizard
+    file: welcome-wizard.yaml
+    type: component
+    description: First-run welcome wizard — works on any Debian-based distro
+    tags: [welcome, first-run, setup, wizard, user-experience]
+    category: desktop
+    has_variables: true
+    variables:
+      - distro_name
+      - welcome_message
+      - auto_launch
+      - show_tips
+
+  - name: firewall-manager
+    file: firewall-manager.yaml
+    type: component
+    description: Unified firewall management with UFW — works on any Debian-based distro
+    tags: [firewall, security, ufw, networking, protection]
+    category: security
+    has_variables: true
+    variables:
+      - install_gui
+      - profile
+      - enable_ssh
+      - ssh_port
+
+  - name: appearance
+    file: appearance.yaml
+    type: component
+    description: Unified appearance and theme management — works on any Debian-based distro
+    tags: [appearance, themes, icons, gtk, dark-mode, customization]
+    category: desktop
+    has_variables: true
+    variables:
+      - theme
+      - icon_theme
+      - cursor_theme
+      - dark_mode
+      - install_fonts
+
+  # ============================================================================
+  # OBSERVABILITY COMPONENTS
+  # ============================================================================
+  - name: logging
+    file: logging.yaml
+    type: component
+    subtype: service
+    description: ELK stack or Loki for centralized logging
+    tags: [logging, elk, loki, elasticsearch]
+    category: observability
+    has_variables: false
+
+  - name: monitoring
+    file: monitoring.yaml
+    type: component
+    subtype: service
+    description: Prometheus, Grafana, and node exporter setup
+    tags: [monitoring, prometheus, grafana, metrics]
+    category: observability
+    has_variables: false
+
+  - name: security-hardening
+    file: security-hardening.yaml
+    type: component
+    description: Security hardening configuration
+    tags: [security, hardening]
+    category: security
+    has_variables: false
+
+  # ============================================================================
+  # DEVELOPMENT COMPONENTS
+  # ============================================================================
+  - name: dev-toolchain
+    file: dev-toolchain.yaml
+    type: component
+    description: Development toolchains and build tools
+    tags: [development, toolchain, compilers, build-tools]
+    category: development
+    has_variables: false
+
+  # ============================================================================
+  # EDUCATION COMPONENTS (Debian Edu Blend)
+  # ============================================================================
+  - name: edu-astronomy
+    file: edu-astronomy.yaml
+    type: component
+    description: Astronomy education software
+    tags: [education, astronomy, space, planetarium]
+    category: education
+    has_variables: false
+
+  - name: edu-chemistry
+    file: edu-chemistry.yaml
+    type: component
+    description: Chemistry education software
+    tags: [education, chemistry, molecular]
+    category: education
+    has_variables: false
+
+  - name: edu-electronics
+    file: edu-electronics.yaml
+    type: component
+    description: Electronics education tools
+    tags: [education, electronics, circuit, arduino]
+    category: education
+    has_variables: false
+
+  - name: edu-graphics
+    file: edu-graphics.yaml
+    type: component
+    description: Graphics and art education tools
+    tags: [education, graphics, art, design]
+    category: education
+    has_variables: false
+
+  - name: edu-language
+    file: edu-language.yaml
+    type: component
+    description: Language learning tools
+    tags: [education, language, learning, typing]
+    category: education
+    has_variables: false
+
+  - name: edu-mathematics
+    file: edu-mathematics.yaml
+    type: component
+    description: Mathematics education tools
+    tags: [education, mathematics, geometry, algebra]
+    category: education
+    has_variables: false
+
+  - name: edu-music
+    file: edu-music.yaml
+    type: component
+    description: Music education tools
+    tags: [education, music, audio]
+    category: education
+    has_variables: false
+
+  - name: edu-programming
+    file: edu-programming.yaml
+    type: component
+    description: Programming education tools for students
+    tags: [education, programming, python, learning]
+    category: education
+    has_variables: false
+
+  - name: edu-server
+    file: edu-server.yaml
+    type: component
+    description: School server components (LDAP, GOsa)
+    tags: [education, server, ldap, gosa]
+    category: education
+    has_variables: false
+
+  # ============================================================================
+  # SCIENCE COMPONENTS (Debian Science Blend)
+  # ============================================================================
+  - name: bioinformatics
+    file: bioinformatics.yaml
+    type: component
+    description: Bioinformatics tools for sequence and structural analysis
+    tags: [bioinformatics, sequence, genomics, bwa, samtools]
+    category: science
+    has_variables: true
+    variables:
+      - enable_structural
+
+  - name: science-biology
+    file: science-biology.yaml
+    type: component
+    description: Computational biology tools
+    tags: [science, biology, bioinformatics, emboss]
+    category: science
+    has_variables: false
+
+  - name: science-chemistry
+    file: science-chemistry.yaml
+    type: component
+    description: Computational chemistry tools
+    tags: [science, chemistry, quantum, molecular]
+    category: science
+    has_variables: false
+
+  - name: science-engineering
+    file: science-engineering.yaml
+    type: component
+    description: Engineering CAD/FEM/CFD tools
+    tags: [science, engineering, cad, fem, cfd]
+    category: science
+    has_variables: true
+    variables:
+      - enable_cad
+      - enable_fem
+      - enable_cfd
+
+  - name: science-machine-learning
+    file: science-machine-learning.yaml
+    type: component
+    description: Machine learning and AI tools
+    tags: [science, machine-learning, ai, tensorflow, pytorch]
+    category: science
+    has_variables: true
+    variables:
+      - enable_gpu
+
+  - name: science-mathematics
+    file: science-mathematics.yaml
+    type: component
+    description: Mathematics software for scientific computing
+    tags: [science, mathematics, octave, maxima]
+    category: science
+    has_variables: false
+
+  - name: science-physics
+    file: science-physics.yaml
+    type: component
+    description: Physics simulation and analysis tools
+    tags: [science, physics, simulation, geant4]
+    category: science
+    has_variables: true
+    variables:
+      - enable_high_energy
+
+  # ============================================================================
+  # MEDICAL COMPONENTS (Debian Med Blend)
+  # ============================================================================
+  - name: med-imaging
+    file: med-imaging.yaml
+    type: component
+    description: Medical imaging tools (DICOM, PACS, viewers)
+    tags: [medical, imaging, dicom, pacs, radiology]
+    category: medical
+    has_variables: true
+    variables:
+      - enable_pacs
+
+  - name: med-practice
+    file: med-practice.yaml
+    type: component
+    description: Medical practice management tools
+    tags: [medical, practice, emr, ehr]
+    category: medical
+    has_variables: false
+
+  - name: med-research
+    file: med-research.yaml
+    type: component
+    description: Medical research and statistics tools
+    tags: [medical, research, statistics, epidemiology]
+    category: medical
+    has_variables: false
+
+  # ============================================================================
+  # GIS COMPONENTS (Debian GIS Blend)
+  # ============================================================================
+  - name: gis-desktop
+    file: gis-desktop.yaml
+    type: component
+    description: Desktop GIS applications (QGIS, GRASS)
+    tags: [gis, desktop, qgis, grass, mapping]
+    category: gis
+    has_variables: false
+
+  - name: gis-development
+    file: gis-development.yaml
+    type: component
+    description: GIS development libraries and tools
+    tags: [gis, development, gdal, programming, spatial]
+    category: gis
+    has_variables: false
+
+  - name: gis-osm
+    file: gis-osm.yaml
+    type: component
+    description: OpenStreetMap editing and rendering tools
+    tags: [gis, osm, openstreetmap, josm]
+    category: gis
+    has_variables: false
+
+  - name: gis-remote-sensing
+    file: gis-remote-sensing.yaml
+    type: component
+    description: Remote sensing and Earth observation tools
+    tags: [gis, remote-sensing, earth-observation, otb]
+    category: gis
+    has_variables: false
+
+  - name: gis-server
+    file: gis-server.yaml
+    type: component
+    subtype: service
+    description: GIS server components (GeoServer, MapServer)
+    tags: [gis, server, geoserver, mapserver, wms]
+    category: gis
+    has_variables: true
+    variables:
+      - geoserver_port
+
+  # ============================================================================
+  # WEB SERVER COMPONENTS
+  # ============================================================================
+  - name: apache
+    file: apache.yaml
+    type: component
+    subtype: service
+    description: Apache web server
+    tags: [web, server, http]
+    category: web
+    has_variables: true
+    variables:
+      - www_root
+      - http_port
+      - https_port
+
+  - name: nginx
+    file: nginx.yaml
+    type: component
+    subtype: service
+    description: Nginx web server
+    tags: [web, server, http, nginx]
+    category: web
+    has_variables: true
+    variables:
+      - www_root
+      - http_port
+      - https_port
+
+  - name: php
+    file: php.yaml
+    type: component
+    description: PHP runtime
+    tags: [web, php, runtime]
+    category: web
+    has_variables: true
+    variables:
+      - memory_limit
+      - max_execution_time
+      - upload_max_filesize
+
+  # ============================================================================
+  # DATABASE COMPONENTS
+  # ============================================================================
+  - name: elasticsearch
+    file: elasticsearch.yaml
+    type: component
+    subtype: service
+    description: Elasticsearch search engine
+    tags: [database, search, elasticsearch]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - cluster_name
+
+  - name: mongodb
+    file: mongodb.yaml
+    type: component
+    subtype: service
+    description: MongoDB document database
+    tags: [database, nosql, mongodb]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - bind_ip
+      - db_path
+
+  - name: mysql
+    file: mysql.yaml
+    type: component
+    subtype: service
+    description: MySQL database server
+    tags: [database, mysql]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - bind_address
+      - root_password
+
+  - name: postgresql
+    file: postgresql.yaml
+    type: component
+    subtype: service
+    description: PostgreSQL database server
+    tags: [database, postgresql]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - listen_addresses
+      - auth_method
+
+  - name: redis
+    file: redis.yaml
+    type: component
+    subtype: service
+    description: Redis cache server
+    tags: [database, cache, redis]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - bind
+      - maxmemory
+
+  # ============================================================================
+  # AI COMPONENTS
+  # ============================================================================
+  - name: gpu-compute
+    file: gpu-compute.yaml
+    type: component
+    description: "Dual-GPU compute stack — NVIDIA CUDA and AMD ROCm with auto-detection"
+    tags: [gpu, nvidia, amd, cuda, rocm, compute, ai, ml]
+    category: ai
+    has_variables: true
+    variables:
+      - gpu_vendor
+      - cuda_version
+      - rocm_version
+      - install_tensorrt
+      - install_oneapi
+
+  - name: uv-python
+    file: uv-python.yaml
+    type: component
+    subtype: bootstrap
+    description: "UV Python package manager — replaces conda, pip, poetry, pyenv"
+    tags: [python, uv, package-manager, development]
+    category: ai
+    has_variables: true
+    variables:
+      - default_python
+      - install_jupyter
+      - install_dev_tools
+
+  - name: ai-inference
+    file: ai-inference.yaml
+    type: component
+    description: "AI inference + engineering tools — Ollama, OpenCode, HF CLI, glab"
+    tags: [ai, llm, inference, ollama, llama-cpp, vllm, opencode, huggingface, gitlab]
+    category: ai
+    has_variables: true
+    variables:
+      - ollama_port
+      - openwebui_port
+      - install_ollama
+      - install_llamacpp
+      - install_vllm
+      - install_openwebui
+      - default_model
+      - install_opencode
+      - install_huggingface_cli
+      - install_glab
+
+  - name: ai-containers
+    file: ai-containers.yaml
+    type: component
+    description: "Docker configured for AI workloads — GPU passthrough, CUDA/ROCm images"
+    tags: [docker, ai, ml, containers, gpu, nvidia, rocm, cuda]
+    category: ai
+    has_variables: true
+    variables:
+      - nvidia_container_toolkit
+      - docker_ai_storage
+      - pre_pull_cuda_image
+      - pre_pull_rocm_image
+
+  - name: ollama
+    file: ollama.yaml
+    type: component
+    subtype: service
+    description: Local LLM runner (Ollama daemon)
+    tags: [ai, llm, ollama]
+    category: ai
+    has_variables: false
+
+  - name: whisper
+    file: whisper.yaml
+    type: component
+    description: Speech-to-text (OpenAI Whisper)
+    tags: [ai, speech, whisper]
+    category: ai
+    has_variables: false
+
+  # ============================================================================
+  # BUNDLE COMPONENTS
+  # These are pure composition — no own packages, just orchestrate requires:.
+  # The engine skips install phases and only resolves the dependency graph.
+  # ============================================================================
+  - name: ai
+    file: ai.yaml
+    type: component
+    subtype: bundle
+    description: AI and machine learning tools bundle
+    tags: [ai, ml, bundle, layer]
+    category: ai
+    layer: 6
+    has_variables: false
+
+  - name: ai-workstation
+    file: ai-workstation.yaml
+    type: component
+    subtype: bundle
+    description: "Complete AI engineering workstation — GPU compute, inference, Python"
+    tags: [ai, workstation, bundle, layer]
+    category: ai
+    layer: 7
+    has_variables: false
+
+  - name: container
+    file: container.yaml
+    type: component
+    subtype: bundle
+    description: Container runtime and orchestration tools bundle
+    tags: [docker, containers, bundle, layer]
+    category: infrastructure
+    layer: 5
+    has_variables: false
+
+  - name: database
+    file: database.yaml
+    type: component
+    subtype: bundle
+    description: Database servers and storage systems bundle
+    tags: [database, bundle, layer]
+    category: database
+    layer: 3
+    has_variables: false
+
+  - name: runtime
+    file: runtime.yaml
+    type: component
+    subtype: bundle
+    description: Language runtimes bundle (Python, Node.js, Ruby, etc.)
+    tags: [runtime, python, nodejs, ruby, bundle, layer]
+    category: development
+    layer: 2
+    has_variables: false
+
+  - name: web
+    file: web.yaml
+    type: component
+    subtype: bundle
+    description: Web servers and application frameworks bundle
+    tags: [web, nginx, apache, bundle, layer]
+    category: web
+    layer: 4
+    has_variables: false
+
+# ============================================================================
+# FRAGMENTS (YAML anchor libraries — pre-loaded by the engine, not registry entries)
+# These live under components/fragments/ and are never installed directly.
+# ============================================================================
+fragments:
+  - name: base-anchors
+    file: fragments/base-anchors.yaml
+    description: Base YAML anchors for DRY configuration
+
+  - name: blend-anchors
+    file: fragments/blend-anchors.yaml
+    description: Shared anchors for Debian Pure Blend recipes
+
+  - name: service-templates
+    file: fragments/service-templates.yaml
+    description: Reusable service templates with merge keys
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+#
+# Include components in a recipe:
+#   includes:
+#     - components/terminal.yaml
+#     - components/editors.yaml
+#     - components/nginx.yaml      # subtype: service — auto-verified after install
+#
+# Use a bundle (composition only):
+#   includes:
+#     - components/ai-workstation.yaml   # subtype: bundle — engine resolves requires:
+#
+# Bootstrap installer (resolved first):
+#   includes:
+#     - components/uv-python.yaml        # subtype: bootstrap — trust prompt shown
+#
+# Override variables:
+#   --var=port=3307
+#   --var=enable_gpu=true
+#
+# Recipe classification (kind: field in recipe files):
+#   kind: distro       — opinionated named OS  (--distro=NAME)
+#   kind: pure blend   — Debian domain blend    (--blend=NAME)
+#   kind: recipe       — explicit custom build  (--recipe=NAME)
+#
+# ============================================================================

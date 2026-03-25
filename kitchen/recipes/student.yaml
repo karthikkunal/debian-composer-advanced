@@ -1,0 +1,324 @@
+# ============================================================================
+# Student Persona - Base Template
+# ============================================================================
+# Version: 2.0.0 (Mixin Architecture)
+#
+# Core student environment - notes, research, productivity
+# Specialize with mixins: --mixin=programming, --mixin=design, --mixin=education
+#
+# Usage:
+#   sudo debian-composer --persona=student
+#   sudo debian-composer --persona=student --mixin=programming
+#   sudo debian-composer --persona=student --var=study_field=cs
+
+name: persona-student
+version: 2.0.0
+description: Core student environment - notes, research, productivity, writing
+author: Debian Composer Team
+license: MIT
+tags: [persona, student, education, notes, research, writing]
+kind: persona
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/desktop-apps.yaml
+  - components/cli-tools.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  study_field:
+    type: string
+    default: general
+    choices: [general, cs, engineering, science, arts, business, medicine]
+    description: Primary field of study
+
+  latex_editor:
+    type: string
+    default: texstudio
+    choices: [texstudio, lyx, vscode]
+    description: LaTeX editor preference
+
+  cloud_sync:
+    type: boolean
+    default: true
+    description: Enable cloud storage sync (Nextcloud)
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - firefox-esr
+  - libreoffice
+  - libreoffice-l10n-en
+  - hunspell-en-us
+  - thunderbird
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Notes & Writing
+  # --------------------------------------------------------------------------
+  notes:
+    <<: *service_template
+    description: "Note-taking and document writing"
+    install:
+      packages:
+        - libreoffice-writer
+        - libreoffice-calc
+        - libreoffice-impress
+        - hunspell-en-us
+        - hyphen-en-us
+    verify:
+      commands:
+        - libreoffice --version
+
+  latex:
+    <<: *service_template
+    description: "LaTeX document preparation"
+    install:
+      packages:
+        - texlive-latex-base
+        - texlive-latex-extra
+        - texlive-latex-recommended
+        - texlive-pictures
+        - texlive-science
+        - texstudio
+    verify:
+      commands:
+        - pdflatex --version
+
+  pdf:
+    <<: *service_template
+    description: "PDF reader and annotation"
+    install:
+      packages:
+        - okular
+        - pdfarranger
+        - qpdf
+    verify:
+      commands:
+        - okular --version
+
+  mindmaps:
+    <<: *service_template
+    description: "Mind mapping and diagramming"
+    install:
+      packages:
+        - freeplane
+        - dia
+    verify:
+      commands:
+        - freeplane --version
+
+  # --------------------------------------------------------------------------
+  # Research
+  # --------------------------------------------------------------------------
+  reference:
+    <<: *service_template
+    description: "Reference management"
+    install:
+      packages:
+        - zotero
+        - jabref
+    verify:
+      commands:
+        - zotero --version 2>&1 || true
+
+  browser:
+    <<: *service_template
+    description: "Web browser"
+    install:
+      packages:
+        - firefox-esr
+        - chromium
+    verify:
+      commands:
+        - firefox-esr --version
+
+  # --------------------------------------------------------------------------
+  # Study Field Specific
+  # --------------------------------------------------------------------------
+  cs-studies:
+    condition: study_field == cs
+    <<: *service_template
+    description: "Computer Science tools"
+    install:
+      packages:
+        - code
+        - git
+        - python3
+        - python3-pip
+    verify:
+      commands:
+        - code --version
+        - python3 --version
+
+  engineering:
+    condition: study_field == engineering
+    <<: *service_template
+    description: "Engineering tools"
+    install:
+      packages:
+        - freecad
+        - openscad
+        - kicad
+        - octave
+    verify:
+      commands:
+        - freecad --version
+        - octave --version
+
+  science-field:
+    condition: study_field == science
+    <<: *service_template
+    description: "Science tools"
+    install:
+      packages:
+        - python3-scipy
+        - python3-matplotlib
+        - r-base
+    verify:
+      commands:
+        - python3 --version
+
+  media-studies:
+    condition: study_field == arts
+    <<: *service_template
+    description: "Media and design tools"
+    install:
+      packages:
+        - gimp
+        - inkscape
+        - kdenlive
+    verify:
+      commands:
+        - gimp --version
+        - inkscape --version
+
+  # --------------------------------------------------------------------------
+  # Collaboration
+  # --------------------------------------------------------------------------
+  collaboration:
+    <<: *service_template
+    description: "Student collaboration tools"
+    install:
+      packages:
+        - thunderbird
+        - zoom
+        - obs-studio
+    verify:
+      commands:
+        - thunderbird --version
+
+  cloud-storage:
+    condition: cloud_sync == true
+    <<: *service_template
+    description: "Cloud storage sync"
+    install:
+      packages:
+        - nextcloud-desktop
+    verify:
+      commands:
+        - nextcloudcmd --version
+
+  # --------------------------------------------------------------------------
+  # Utilities
+  # --------------------------------------------------------------------------
+  productivity:
+    <<: *service_template
+    description: "Productivity utilities"
+    install:
+      packages:
+        - anki
+        - gnome-clocks
+        - gnome-calendar
+        - redshift-gtk
+    verify:
+      commands:
+        - anki --version
+
+  media-player:
+    <<: *service_template
+    description: "Media player"
+    install:
+      packages:
+        - vlc
+    verify:
+      commands:
+        - vlc --version
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  basic-student:
+    description: "Basic student setup - notes, browser, productivity"
+    categories:
+      - notes
+      - pdf
+      - browser
+      - productivity
+
+  university-student:
+    description: "University student - adds LaTeX, research tools"
+    categories:
+      - notes
+      - latex
+      - pdf
+      - reference
+      - browser
+      - productivity
+
+  cs-student:
+    description: "Computer Science student"
+    categories:
+      - notes
+      - latex
+      - pdf
+      - cs-studies
+      - cloud-storage
+      - productivity
+
+  engineering-student:
+    description: "Engineering student"
+    categories:
+      - notes
+      - latex
+      - pdf
+      - engineering
+      - productivity
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 30
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "=== Student Persona Installed ==="
+  - "Study Field: ${study_field}"
+  - "LaTeX Editor: ${latex_editor}"
+  - "Cloud Sync: ${cloud_sync}"
+  - ""
+  - "Recommended apps:"
+  - "  - Notes: LibreOffice Writer"
+  - "  - PDF: Okular for annotations"
+  - "  - LaTeX: ${latex_editor}"
+  - "  - Reference: Zotero"
+  - "  - Flash cards: Anki"
+  - ""
+  - "Add mixins: --mixin=programming, --mixin=design"

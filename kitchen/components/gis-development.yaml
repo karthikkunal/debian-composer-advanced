@@ -1,0 +1,75 @@
+# ============================================================================
+# GIS Development Component
+# ============================================================================
+# GIS development libraries and tools
+#
+# Reusable component for any recipe needing GIS development
+
+name: gis-development
+version: 1.0.0
+description: GIS development libraries and tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [gis, development, gdal, programming, spatial]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Core GIS libraries
+    - libgdal-dev
+    - libgeos-dev
+    - libproj-dev
+    - libspatialite-dev
+    - librttopo-dev
+    - librasterlite2-dev
+    # Python GIS
+    - python3-gdal
+    - python3-shapely
+    - python3-fiona
+    - python3-geopandas
+    - python3-rasterio
+    # R GIS
+    - r-cran-sp
+    - r-cran-raster
+    - r-cran-gstat
+    - r-cran-spatstat
+    - r-cran-sf
+    # Web GIS
+    - leaflet
+    - openlayers
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - gdal-config --version
+    - python3 -c "from osgeo import gdal; print('GDAL:', gdal.__version__)"
+    - python3 -c "import geopandas; print('GeoPandas:', geopandas.__version__)"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "GDAL: Geospatial data abstraction library"
+  - "GEOS: Geometry engine"
+  - "PROJ: Cartographic projections"
+  - "GeoPandas: Python geospatial data"
+  - "R spatial packages: sp, raster, sf"

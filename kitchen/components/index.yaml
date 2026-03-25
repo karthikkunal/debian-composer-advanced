@@ -1,0 +1,495 @@
+# Component Registry Index
+# Auto-generated index of all available components
+# Generated: 2026-03-19
+
+components:
+  # ============================================================================
+  # BASE COMPONENTS
+  # ============================================================================
+  - name: base
+    file: base.yaml
+    description: Base system packages
+    tags: [base, system]
+    category: infrastructure
+    has_variables: false
+
+  # ============================================================================
+  # DESKTOP COMPONENTS
+  # ============================================================================
+  - name: audio
+    file: audio.yaml
+    description: PipeWire audio stack for modern audio management
+    tags: [audio, pipewire, pulseaudio, alsa]
+    category: desktop
+    has_variables: false
+
+  - name: cli-tools
+    file: cli-tools.yaml
+    description: Modern replacements for standard CLI tools
+    tags: [cli, modern-cli, jq, httpie, tree]
+    category: desktop
+    has_variables: false
+
+  - name: desktop-apps
+    file: desktop-apps.yaml
+    description: Desktop applications for productivity and media
+    tags: [applications, desktop, productivity, media]
+    category: desktop
+    has_variables: false
+
+  - name: dev-fonts
+    file: dev-fonts.yaml
+    description: Developer-friendly monospace fonts
+    tags: [fonts, monospace, developer-fonts]
+    category: desktop
+    has_variables: false
+
+  - name: editors
+    file: editors.yaml
+    description: NeoVim and modern terminal UI tools for Git/Docker
+    tags: [editors, neovim, vim, lazygit, lazydocker]
+    category: desktop
+    has_variables: false
+
+  - name: hardware-support
+    file: hardware-support.yaml
+    description: Hardware support packages and firmware
+    tags: [hardware, firmware, microcode, drivers]
+    category: system
+    has_variables: false
+
+  - name: system-utils
+    file: system-utils.yaml
+    description: System utilities and monitoring tools
+    tags: [system, monitoring, network, security, utilities]
+    category: system
+    has_variables: false
+
+  - name: terminal
+    file: terminal.yaml
+    description: Modern terminal experience with Zsh, Starship, and Zellij
+    tags: [terminal, zsh, tmux, fzf, zoxide, modern-cli]
+    category: desktop
+    has_variables: false
+
+  - name: wayland-desktop
+    file: wayland-desktop.yaml
+    description: Wayland-based desktop utilities (Sway/Waybar)
+    tags: [wayland, sway, desktop, waybar, wofi]
+    category: desktop
+    has_variables: false
+
+  - name: web-apps
+    file: web-apps.yaml
+    description: Web app shortcuts for popular services (PWA-style)
+    tags: [web-apps, pwa, shortcuts, hey, whatsapp, youtube]
+    category: desktop
+    has_variables: false
+
+  # ============================================================================
+  # DEVELOPMENT COMPONENTS
+  # ============================================================================
+  - name: dev-toolchain
+    file: dev-toolchain.yaml
+    description: Development toolchains and build tools
+    tags: [development, toolchain, compilers, build-tools]
+    category: development
+    has_variables: false
+
+  # ============================================================================
+  # EDUCATION COMPONENTS (Debian Edu Blend)
+  # ============================================================================
+  - name: edu-astronomy
+    file: edu-astronomy.yaml
+    description: Astronomy education software
+    tags: [education, astronomy, space, planetarium]
+    category: education
+    has_variables: false
+
+  - name: edu-chemistry
+    file: edu-chemistry.yaml
+    description: Chemistry education software
+    tags: [education, chemistry, molecular]
+    category: education
+    has_variables: false
+
+  - name: edu-electronics
+    file: edu-electronics.yaml
+    description: Electronics education tools
+    tags: [education, electronics, circuit, arduino]
+    category: education
+    has_variables: false
+
+  - name: edu-graphics
+    file: edu-graphics.yaml
+    description: Graphics and art education tools
+    tags: [education, graphics, art, design]
+    category: education
+    has_variables: false
+
+  - name: edu-language
+    file: edu-language.yaml
+    description: Language learning tools
+    tags: [education, language, learning, typing]
+    category: education
+    has_variables: false
+
+  - name: edu-mathematics
+    file: edu-mathematics.yaml
+    description: Mathematics education tools
+    tags: [education, mathematics, geometry, algebra]
+    category: education
+    has_variables: false
+
+  - name: edu-music
+    file: edu-music.yaml
+    description: Music education tools
+    tags: [education, music, audio]
+    category: education
+    has_variables: false
+
+  - name: edu-programming
+    file: edu-programming.yaml
+    description: Programming education tools for students
+    tags: [education, programming, python, learning]
+    category: education
+    has_variables: false
+
+  - name: edu-server
+    file: edu-server.yaml
+    description: School server components (LDAP, GOsa)
+    tags: [education, server, ldap, gosa]
+    category: education
+    has_variables: false
+
+  # ============================================================================
+  # SCIENCE COMPONENTS (Debian Science Blend)
+  # ============================================================================
+  - name: bioinformatics
+    file: bioinformatics.yaml
+    description: Bioinformatics tools for sequence and structural analysis
+    tags: [bioinformatics, sequence, genomics, bwa, samtools]
+    category: science
+    has_variables: true
+    variables:
+      - enable_structural
+
+  - name: science-biology
+    file: science-biology.yaml
+    description: Computational biology tools
+    tags: [science, biology, bioinformatics, emboss]
+    category: science
+    has_variables: false
+
+  - name: science-chemistry
+    file: science-chemistry.yaml
+    description: Computational chemistry tools
+    tags: [science, chemistry, quantum, molecular]
+    category: science
+    has_variables: false
+
+  - name: science-engineering
+    file: science-engineering.yaml
+    description: Engineering CAD/FEM/CFD tools
+    tags: [science, engineering, cad, fem, cfd]
+    category: science
+    has_variables: true
+    variables:
+      - enable_cad
+      - enable_fem
+      - enable_cfd
+
+  - name: science-machine-learning
+    file: science-machine-learning.yaml
+    description: Machine learning and AI tools
+    tags: [science, machine-learning, ai, tensorflow, pytorch]
+    category: science
+    has_variables: true
+    variables:
+      - enable_gpu
+
+  - name: science-mathematics
+    file: science-mathematics.yaml
+    description: Mathematics software for scientific computing
+    tags: [science, mathematics, octave, maxima]
+    category: science
+    has_variables: false
+
+  - name: science-physics
+    file: science-physics.yaml
+    description: Physics simulation and analysis tools
+    tags: [science, physics, simulation, geant4]
+    category: science
+    has_variables: true
+    variables:
+      - enable_high_energy
+
+  # ============================================================================
+  # MEDICAL COMPONENTS (Debian Med Blend)
+  # ============================================================================
+  - name: med-imaging
+    file: med-imaging.yaml
+    description: Medical imaging tools (DICOM, PACS, viewers)
+    tags: [medical, imaging, dicom, pacs, radiology]
+    category: medical
+    has_variables: true
+    variables:
+      - enable_pacs
+
+  - name: med-practice
+    file: med-practice.yaml
+    description: Medical practice management tools
+    tags: [medical, practice, emr, ehr]
+    category: medical
+    has_variables: false
+
+  - name: med-research
+    file: med-research.yaml
+    description: Medical research and statistics tools
+    tags: [medical, research, statistics, epidemiology]
+    category: medical
+    has_variables: false
+
+  # ============================================================================
+  # GIS COMPONENTS (Debian GIS Blend)
+  # ============================================================================
+  - name: gis-desktop
+    file: gis-desktop.yaml
+    description: Desktop GIS applications (QGIS, GRASS)
+    tags: [gis, desktop, qgis, grass, mapping]
+    category: gis
+    has_variables: false
+
+  - name: gis-development
+    file: gis-development.yaml
+    description: GIS development libraries and tools
+    tags: [gis, development, gdal, programming, spatial]
+    category: gis
+    has_variables: false
+
+  - name: gis-osm
+    file: gis-osm.yaml
+    description: OpenStreetMap editing and rendering tools
+    tags: [gis, osm, openstreetmap, josm]
+    category: gis
+    has_variables: false
+
+  - name: gis-remote-sensing
+    file: gis-remote-sensing.yaml
+    description: Remote sensing and Earth observation tools
+    tags: [gis, remote-sensing, earth-observation, otb]
+    category: gis
+    has_variables: false
+
+  - name: gis-server
+    file: gis-server.yaml
+    description: GIS server components (GeoServer, MapServer)
+    tags: [gis, server, geoserver, mapserver, wms]
+    category: gis
+    has_variables: true
+    variables:
+      - geoserver_port
+
+  # ============================================================================
+  # WEB SERVER COMPONENTS
+  # ============================================================================
+  - name: apache
+    file: apache.yaml
+    description: Apache web server
+    tags: [web, server, http]
+    category: web
+    has_variables: true
+    variables:
+      - www_root
+      - http_port
+      - https_port
+
+  - name: nginx
+    file: nginx.yaml
+    description: Nginx web server
+    tags: [web, server, http, nginx]
+    category: web
+    has_variables: true
+    variables:
+      - www_root
+      - http_port
+      - https_port
+
+  - name: php
+    file: php.yaml
+    description: PHP runtime
+    tags: [web, php, runtime]
+    category: web
+    has_variables: true
+    variables:
+      - memory_limit
+      - max_execution_time
+      - upload_max_filesize
+
+  # ============================================================================
+  # DATABASE COMPONENTS
+  # ============================================================================
+  - name: elasticsearch
+    file: elasticsearch.yaml
+    description: Elasticsearch search engine
+    tags: [database, search, elasticsearch]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - cluster_name
+
+  - name: mongodb
+    file: mongodb.yaml
+    description: MongoDB document database
+    tags: [database, nosql, mongodb]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - bind_ip
+      - db_path
+
+  - name: mysql
+    file: mysql.yaml
+    description: MySQL database server
+    tags: [database, mysql]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - bind_address
+      - root_password
+
+  - name: postgresql
+    file: postgresql.yaml
+    description: PostgreSQL database server
+    tags: [database, postgresql]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - listen_addresses
+      - auth_method
+
+  - name: redis
+    file: redis.yaml
+    description: Redis cache server
+    tags: [database, cache, redis]
+    category: database
+    has_variables: true
+    variables:
+      - port
+      - bind
+      - maxmemory
+
+  # ============================================================================
+  # AI COMPONENTS
+  # ============================================================================
+  - name: ollama
+    file: ollama.yaml
+    description: Local LLM runner
+    tags: [ai, llm, ollama]
+    category: ai
+    has_variables: false
+
+  - name: whisper
+    file: whisper.yaml
+    description: Speech-to-text
+    tags: [ai, speech, whisper]
+    category: ai
+    has_variables: false
+
+# ============================================================================
+# MIXINS (Cross-cutting concerns)
+# ============================================================================
+mixins:
+  - name: logging
+    file: logging.yaml
+    description: ELK stack or Loki for centralized logging
+    tags: [logging, elk, loki, elasticsearch]
+    applies_to: [web, database, server]
+
+  - name: monitoring
+    file: monitoring.yaml
+    description: Prometheus, Grafana, and node exporter setup
+    tags: [monitoring, prometheus, grafana, metrics]
+    applies_to: [web, database, server, container]
+
+  - name: security-hardening
+    file: security-hardening.yaml
+    description: Security hardening configuration
+    tags: [security, hardening]
+    applies_to: [web, database, server]
+
+# ============================================================================
+# LAYERS (Ordered component stacks)
+# ============================================================================
+layers:
+  - name: ai
+    file: ai.yaml
+    description: AI and machine learning tools
+    order: 6
+
+  - name: base
+    file: base.yaml
+    description: Foundation packages required by all systems
+    order: 1
+
+  - name: container
+    file: container.yaml
+    description: Container runtime and orchestration tools
+    order: 5
+
+  - name: database
+    file: database.yaml
+    description: Database servers and storage systems
+    order: 3
+
+  - name: runtime
+    file: runtime.yaml
+    description: Language runtimes (Python, Node.js, Ruby, etc.)
+    order: 2
+
+  - name: web
+    file: web.yaml
+    description: Web servers and application frameworks
+    order: 4
+
+# ============================================================================
+# FRAGMENTS (Template libraries)
+# ============================================================================
+fragments:
+  - name: base-anchors
+    file: base-anchors.yaml
+    description: Base YAML anchors for DRY configuration
+
+  - name: blend-anchors
+    file: blend-anchors.yaml
+    description: Shared anchors for Debian Pure Blend recipes
+
+  - name: service-templates
+    file: service-templates.yaml
+    description: Reusable service templates with merge keys
+
+# ============================================================================
+# USAGE EXAMPLES
+# ============================================================================
+#
+# Include components in recipe:
+#   includes:
+#     - components/terminal.yaml
+#     - components/editors.yaml
+#
+# Use mixins:
+#   includes:
+#     - mixins/security-hardening.yaml
+#
+# Use layers:
+#   layers: [base, runtime, database, web]
+#
+# Use variables:
+#   --var=port=3307
+#   --var=enable_gpu=true
+#
+# ============================================================================

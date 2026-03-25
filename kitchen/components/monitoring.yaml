@@ -1,0 +1,54 @@
+# Monitoring Mixin
+# Adds monitoring and metrics collection
+
+name: monitoring
+version: 1.0.0
+description: Prometheus, Grafana, and node exporter setup
+author: Debian Composer Team
+license: MIT
+tags: [monitoring, prometheus, grafana, metrics]
+
+install:
+  packages:
+    - prometheus
+    - prometheus-node-exporter
+    - grafana
+    - alertmanager
+    - promtail
+    - node-exporter
+    - consul
+
+configure:
+  prometheus:
+    scrape_interval: 15s
+    retention: 15d
+    ports:
+      - 9090
+  grafana:
+    port: 3000
+    default_user: admin
+  node_exporter:
+    port: 9100
+    enabled_collectors:
+      - cpu
+      - mem
+      - disk
+      - net
+      - load
+
+verify:
+  commands:
+    - prometheus --version
+    - node_exporter --version
+  services_running:
+    - prometheus
+    - prometheus-node-exporter
+  ports_listening:
+    - 9090
+    - 9100
+    - 3000
+
+post_install:
+  - "Prometheus: http://localhost:9090"
+  - "Grafana: http://localhost:3000 (admin/admin)"
+  - "Node Exporter: http://localhost:9100/metrics"

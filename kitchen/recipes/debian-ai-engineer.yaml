@@ -1,0 +1,372 @@
+# ============================================================================
+# Distro: debian-ai-engineer
+# ============================================================================
+# An opinionated Debian workstation for AI engineers.
+#
+# Philosophy:
+#   - Open source first (95%+ of stack)
+#   - Proprietary only where no alternative exists (CUDA, cuDNN)
+#   - No Snap, no Conda — UV replaces all Python tooling
+#   - Dual-GPU support (NVIDIA + AMD auto-detect)
+#   - Production-grade inference tools pre-installed
+#
+# Architecture:
+#   Base:          Debian 13 (Trixie) — no snap, no conda, DFSG-aligned
+#   GPU:           NVIDIA CUDA + cuDNN / AMD ROCm (auto-detect)
+#   Python:        UV — replaces conda, pip, poetry, pyenv
+#   Inference:     Ollama, llama.cpp, vLLM, Open WebUI
+#   AI Tools:      OpenCode, Hugging Face CLI, GitLab CLI (glab)
+#   Desktop:       GNOME (default) or minimal (terminal-only)
+#   Containers:    Docker + NVIDIA Container Toolkit + AI images
+#
+# Usage:
+#   sudo debian-composer --distro=debian-ai-engineer
+#   sudo debian-composer --distro=debian-ai-engineer --var=gpu_vendor=nvidia
+#   sudo debian-composer --distro=debian-ai-engineer --var=gpu_vendor=amd
+#   sudo debian-composer --distro=debian-ai-engineer --stack=minimal
+#   sudo debian-composer --distro=debian-ai-engineer --var=desktop=hyprland
+#
+# Tags:
+#   AI engineering, machine learning, LLM inference, CUDA, ROCm,
+#   PyTorch, vLLM, Ollama, Jupyter, Debian 13
+
+name: debian-ai-engineer
+version: 1.0.0
+description: "Opinionated Debian workstation for AI engineers — open source first"
+author: Debian Composer Team
+license: MIT
+tags: [distro, ai-engineer, workstation, cuda, rocm, ollama, pytorch, jupyter]
+kind: distro
+distro_type: workstation
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/bases/desktop.yaml
+  - components/gpu-compute.yaml
+  - components/uv-python.yaml
+  - components/ai-inference.yaml
+  - components/ai-containers.yaml
+  - components/dev-toolchain.yaml
+  - components/cli-tools.yaml
+  - components/terminal.yaml
+  - components/editors.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  gpu_vendor:
+    type: string
+    default: auto
+    choices: [auto, nvidia, amd, intel, none]
+    description: "GPU vendor for compute stack"
+
+  desktop:
+    type: string
+    default: gnome
+    choices: [gnome, kde, hyprland, minimal]
+    description: "Desktop environment (minimal = terminal only)"
+
+  cuda_version:
+    type: string
+    default: "13-0"
+    description: "CUDA toolkit version"
+
+  install_tensorrt:
+    type: boolean
+    default: false
+    description: "Install NVIDIA TensorRT (opt-in proprietary)"
+
+  install_vllm:
+    type: boolean
+    default: false
+    description: "Install vLLM production serving engine"
+
+  default_model:
+    type: string
+    default: "llama3.2:8b"
+    description: "Default LLM model to pre-pull"
+
+  install_jupyter:
+    type: boolean
+    default: true
+    description: "Install JupyterLab"
+
+# ============================================================================
+# PACKAGES - Base packages for AI engineering
+# ============================================================================
+packages:
+  # Version control
+  - git
+  - git-lfs
+  - gh
+  # Build tools
+  - build-essential
+  - cmake
+  - make
+  - pkg-config
+  # Dev libraries (common ML dependencies)
+  - libssl-dev
+  - zlib1g-dev
+  - libbz2-dev
+  - libreadline-dev
+  - libsqlite3-dev
+  - libncurses5-dev
+  - libncursesw5-dev
+  - liblzma-dev
+  - libffi-dev
+  - libgdbm-dev
+  - libxml2-dev
+  - libxslt1-dev
+  # System utilities
+  - curl
+  - wget
+  - jq
+  - tmux
+  - htop
+  - btop
+  - tree
+  - unzip
+  - xz-utils
+  # Network (for model downloads, API calls)
+  - ca-certificates
+  - apt-transport-https
+
+# ============================================================================
+# CATEGORIES - Conditional categories
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Desktop Environment
+  # --------------------------------------------------------------------------
+  desktop/gnome:
+    condition: desktop == gnome
+    description: "GNOME desktop environment"
+    install:
+      packages:
+        - gnome-core
+        - gnome-tweaks
+        - gnome-shell-extensions
+        - gnome-software
+        - firefox-esr  # APT version, not snap
+
+  desktop/kde:
+    condition: desktop == kde
+    description: "KDE Plasma desktop"
+    install:
+      packages:
+        - kde-plasma-desktop
+        - plasma-workspace
+        - kde-spectacle
+        - dolphin
+
+  desktop/hyprland:
+    condition: desktop == hyprland
+    description: "Hyprland Wayland compositor"
+    install:
+      packages:
+        - hyprland
+        - waybar
+        - wofi
+        - grim
+        - slurp
+        - wl-clipboard
+
+  desktop/minimal:
+    condition: desktop == minimal
+    description: "Terminal-only (no desktop environment)"
+    install:
+      packages: []
+    post_install:
+      - "Minimal mode: No desktop environment installed"
+      - "Access via SSH or TTY console"
+
+# ============================================================================
+# STACKS - Pre-configured installation profiles
+# ============================================================================
+stacks:
+  # --------------------------------------------------------------------------
+  # Default — full AI workstation
+  # --------------------------------------------------------------------------
+  default:
+    description: "Full AI engineer workstation (GPU + inference + Jupyter + Desktop)"
+    categories:
+      - desktop/gnome
+    variables:
+      gpu_vendor: auto
+      install_jupyter: true
+      install_vllm: false
+      default_model: "llama3.2:8b"
+
+  # --------------------------------------------------------------------------
+  # Minimal — terminal-only inference server
+  # --------------------------------------------------------------------------
+  minimal:
+    description: "Minimal terminal-only AI inference server (no desktop)"
+    categories:
+      - desktop/minimal
+    variables:
+      gpu_vendor: auto
+      install_jupyter: false
+      install_vllm: false
+      default_model: "llama3.2:8b"
+
+  # --------------------------------------------------------------------------
+  # NVIDIA — NVIDIA GPU focused setup
+  # --------------------------------------------------------------------------
+  nvidia:
+    description: "AI workstation with explicit NVIDIA CUDA setup"
+    categories:
+      - desktop/gnome
+    variables:
+      gpu_vendor: nvidia
+      cuda_version: "13-0"
+      install_tensorrt: false
+      install_jupyter: true
+      install_vllm: true
+
+  # --------------------------------------------------------------------------
+  # AMD — AMD ROCm focused setup (fully open source GPU stack)
+  # --------------------------------------------------------------------------
+  amd:
+    description: "AI workstation with AMD ROCm (fully open source compute)"
+    categories:
+      - desktop/gnome
+    variables:
+      gpu_vendor: amd
+      install_jupyter: true
+      install_vllm: true
+      default_model: "llama3.2:8b"
+
+  # --------------------------------------------------------------------------
+  # Headless — server deployment
+  # --------------------------------------------------------------------------
+  headless:
+    description: "Headless AI inference server (no desktop, SSH only)"
+    categories:
+      - desktop/minimal
+    variables:
+      gpu_vendor: auto
+      install_jupyter: false
+      install_vllm: true
+      install_tensorrt: false
+      default_model: "llama3.2:8b"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 8192
+  min_disk: 50
+  gpu: any  # GPU recommended but not required (CPU fallback)
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=============================================="
+  - "  debian-ai-engineer installed successfully"
+  - "=============================================="
+  - ""
+  - "Stack overview:"
+  - "  Base:       Debian 13 (Trixie)"
+  - "  GPU:        ${gpu_vendor} (auto-detected)"
+  - "  Python:     UV (replaces conda/pip/poetry)"
+  - "  Desktop:    ${desktop}"
+  - "  Inference:  Ollama + llama.cpp"
+  - "  AI Tools:   OpenCode + HF CLI + glab"
+  - "  Containers: Docker + NVIDIA Container Toolkit"
+  - ""
+  - "Proprietary components (no open alternative):"
+  - "  - NVIDIA CUDA toolkit ${cuda_version}"
+  - "  - NVIDIA cuDNN"
+  - "  - NVIDIA TensorRT: ${install_tensorrt}"
+  - ""
+  - "All other components: open source (MIT / Apache 2.0 / BSD)"
+  - ""
+  - "--- Quick Start ---"
+  - ""
+  - "1. Start chatting with an LLM:"
+  - "   ollama run ${default_model}"
+  - ""
+  - "2. Create a Python project:"
+  - "   mkdir my-project && cd my-project"
+  - "   uv venv .venv --python 3.12"
+  - "   source .venv/bin/activate"
+  - "   uv pip install torch torchvision"
+  - ""
+  - "3. Start JupyterLab:"
+  - "   jupyter lab"
+  - ""
+  - "4. Open WebUI:"
+  - "   http://localhost:3000"
+  - ""
+  - "5. Download models:"
+  - "   ollama pull mistral:7b"
+  - "   ollama pull phi3:3.8b"
+  - "   huggingface-cli download meta-llama/Llama-3.2-8B"
+  - ""
+  - "6. AI coding assistant:"
+  - "   opencode"
+  - ""
+  - "7. Docker for AI (GPU passthrough):"
+  - "   docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu24.04 nvidia-smi"
+  - "   docker run --rm --gpus all -v ~/.cache/huggingface:/root/.cache/huggingface pytorch/pytorch:latest"
+  - ""
+  - "--- AI Tools ---"
+  - ""
+  - "OpenCode:       opencode (AI coding assistant)"
+  - "HF CLI:         huggingface-cli download <org/model>"
+  - "GitLab CLI:     glab auth login && glab mr list"
+  - ""
+  - "--- GPU Verification ---"
+  - ""
+  - "NVIDIA: nvidia-smi"
+  - "AMD:    rocminfo"
+  - "Either: lspci -k | grep -i vga"
+  - ""
+  - "--- Documentation ---"
+  - ""
+  - "UV docs:     https://docs.astral.sh/uv/"
+  - "Ollama docs: https://github.com/ollama/ollama"
+  - "HF docs:     https://huggingface.co/docs/huggingface_hub/"
+  - "PyTorch:     https://pytorch.org/get-started/locally/"
+  - ""
+  - "Next steps:"
+  - "  - Log out and back in for Docker group"
+  - "  - Run 'ollama run ${default_model}' to verify GPU"
+  - "  - Run 'huggingface-cli login' for gated models"
+  - ""
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: "Full AI workstation (auto-detect GPU)"
+    description: "Complete setup with GNOME, GPU auto-detect, and all inference tools"
+    command: "sudo debian-composer --distro=debian-ai-engineer"
+
+  - title: "NVIDIA-focused setup"
+    description: "Explicit NVIDIA CUDA stack with vLLM for production serving"
+    command: "sudo debian-composer --distro=debian-ai-engineer --stack=nvidia"
+
+  - title: "AMD ROCm setup (fully open source GPU)"
+    description: "AMD GPU with ROCm — fully open source compute stack"
+    command: "sudo debian-composer --distro=debian-ai-engineer --stack=amd"
+
+  - title: "Minimal inference server"
+    description: "Terminal-only server with Ollama and Docker"
+    command: "sudo debian-composer --distro=debian-ai-engineer --stack=minimal"
+
+  - title: "Hyprland desktop"
+    description: "AI workstation with Hyprland tiling WM"
+    command: "sudo debian-composer --distro=debian-ai-engineer --var=desktop=hyprland"
+
+  - title: "Headless production server"
+    description: "Server deployment with vLLM for high-throughput inference"
+    command: "sudo debian-composer --distro=debian-ai-engineer --stack=headless"

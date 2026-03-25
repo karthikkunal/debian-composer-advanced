@@ -1,0 +1,73 @@
+# ============================================================================
+# Developer Fonts Component
+# ============================================================================
+# Developer-friendly monospace fonts
+#
+# Reusable component for any recipe needing developer fonts
+
+name: dev-fonts
+version: 1.0.0
+description: Developer-friendly monospace fonts
+author: Debian Composer Team
+license: MIT
+tags: [fonts, monospace, developer-fonts, jetbrains-mono, fira-code]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Base fonts
+    - fonts-dejavu-core
+    - fonts-dejavu-extra
+    - fonts-liberation
+    # Noto fonts
+    - fonts-noto-core
+    - fonts-noto-color-emoji
+    - fonts-noto-cjk
+    # Developer fonts
+    - fonts-firacode
+    - fonts-jetbrains-mono
+    - fonts-source-code-pro
+    - fonts-cascadia-code
+    # Icon fonts
+    - fonts-font-awesome
+    # Ubuntu fonts
+    - fonts-ubuntu
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - fc-list | grep -i "mono" | head -10
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 256
+  min_disk: 2
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Fonts: Developer fonts installed"
+  - "List fonts: fc-list | grep -i mono"
+  - "Refresh cache: fc-cache -fv"

@@ -1,0 +1,63 @@
+# ============================================================================
+# Science Mathematics Component
+# ============================================================================
+# Mathematics software for scientific computing
+#
+# Reusable component for any recipe needing mathematics tools
+
+name: science-mathematics
+version: 1.0.0
+description: Mathematics software for scientific computing
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [science, mathematics, octave, maxima, algebra]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Numerical computation
+    - octave
+    - octave-forge
+    # Symbolic mathematics
+    - maxima
+    - axiom
+    # Number theory
+    - gap
+    - pari-gp
+    # Statistics
+    - r-base
+    - r-base-dev
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - octave --version
+    - maxima --version
+    - R --version | head -1
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Octave: Numerical computation (MATLAB-compatible)"
+  - "Maxima: Symbolic algebra system"
+  - "R: Statistical computing"

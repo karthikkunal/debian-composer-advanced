@@ -1,0 +1,29 @@
+# Security Hardening Mixin
+# Applies common security configurations
+
+name: security-hardening
+version: 1.0.0
+description: Security hardening configuration
+author: Debian Composer Team
+license: MIT
+tags: [security, hardening]
+
+configure:
+  security:
+    disable_server_tokens: true
+    enable_ssl: true
+    ssl_redirect: true
+    security_headers:
+      - "X-Frame-Options: SAMEORIGIN"
+      - "X-Content-Type-Options: nosniff"
+      - "X-XSS-Protection: 1; mode=block"
+
+firewall:
+  enabled: false
+  default_rules:
+    deny_incoming: true
+    allow_outgoing: true
+
+post_install:
+  - "Configure firewall with ufw"
+  - "Review security headers for your application"

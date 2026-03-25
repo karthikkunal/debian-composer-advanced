@@ -1,0 +1,63 @@
+# ============================================================================
+# Medical Research Component
+# ============================================================================
+# Medical research and statistics tools
+#
+# Reusable component for any recipe needing medical research software
+
+name: med-research
+version: 1.0.0
+description: Medical research and statistics tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [medical, research, statistics, epidemiology, r]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Statistics
+    - r-base
+    - r-base-dev
+    # Medical statistics packages
+    - r-cran-survival
+    - r-cran-epi
+    - r-cran-epicalc
+    # Python statistics
+    - python3-statsmodels
+    - python3-lifelines
+    # Epidemiology
+    - epiinfo
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - R --version | head -1
+    - python3 -c "import statsmodels; print('statsmodels:', statsmodels.__version__)"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "R: Statistical computing"
+  - "survival: Survival analysis"
+  - "epi: Epidemiological analysis"
+  - "statsmodels: Python statistical models"

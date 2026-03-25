@@ -1,0 +1,171 @@
+# ============================================================================
+# Hyprland Desktop Component
+# ============================================================================
+# Hyprland Wayland compositor with modern desktop utilities
+#
+# Reusable component for any recipe needing Hyprland desktop environment
+# Inspired by Omarchy OS but adapted for Debian
+#
+# Usage:
+#   sudo debian-composer --recipe=my-recipe --component=hyprland-desktop
+
+name: hyprland-desktop
+version: 1.0.0
+description: Hyprland Wayland compositor with modern desktop utilities
+author: Debian Composer Team
+license: MIT
+tags: [wayland, hyprland, desktop, waybar, wofi, tiling-wm]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Hyprland compositor and plugins
+    - hyprland
+    - hyprpaper        # Wallpaper daemon
+    - hyprlock         # Lock screen
+    - hypridle         # Idle daemon
+    - hyprcursor       # Cursor theming
+    - hyprlang         # Configuration language
+    - xdph-hyprland    # XDG desktop portal for Hyprland
+
+    # Panel and app launcher
+    - waybar           # Status bar
+    - wofi             # App launcher (Wayland-native)
+    - rofi             # Legacy app launcher
+
+    # Notifications
+    - mako             # Notification daemon
+
+    # Screenshot and screencast
+    - grim             # Screenshot tool
+    - slurp            # Region selector
+    - swappy           # Screenshot editor
+    - wf-recorder      # Screen recording
+
+    # Clipboard
+    - wl-clipboard     # Wayland clipboard utilities
+    - cliphist         # Clipboard history
+
+    # Audio control
+    - pavucontrol      # PulseAudio volume control
+    - wireplumber      # PipeWire session manager
+
+    # GTK portal for app integration
+    - xdg-desktop-portal-gtk
+    - xdg-desktop-portal-hyprland
+    - xdg-terminal-exec
+
+    # Icon themes
+    - adwaita-icon-theme
+    - hicolor-icon-theme
+    - gnome-themes-extra
+    - papirus-icon-theme
+
+    # Qt Wayland support
+    - qt5-wayland
+    - qt6-wayland
+
+    # Display manager
+    - sddm
+    - sddm-theme-debian-maui
+
+    # Fonts (basic)
+    - fonts-noto-core
+    - fonts-noto-color-emoji
+    - fonts-font-awesome
+
+    # Terminal (Alacritty - Hyprland's default)
+    - alacritty
+
+    # Misc utilities
+    - polkit-kde-agent-1  # Authentication dialog
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  wayland:
+    enabled: true
+  hyprland:
+    enabled: true
+  hooks:
+    post_configure:
+      - type: command
+        command: "systemctl enable sddm"
+        description: "Enable SDDM display manager"
+      - type: command
+        command: "mkdir -p ~/.config/hypr 2>/dev/null || true"
+        description: "Create Hyprland config directory"
+      - type: command
+        command: "echo 'Hyprland session configured'"
+        description: "Log configuration"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - hyprland --version
+    - waybar --version
+    - hyprlock --version
+  files_exist:
+    - /usr/share/wayland-sessions/hyprland.desktop
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096        # Hyprland needs more RAM than Sway
+  min_disk: 10
+  gpu: true            # Hyprland requires GPU for compositing
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Hyprland: Select Hyprland session at login (SDDM)"
+  - "Display Manager: SDDM enabled and configured"
+  - "Config: ~/.config/hypr/hyprland.conf"
+  - "Terminal: Alacritty installed (Super+Return to open)"
+  - "App Launcher: Wofi (Super+Space to open)"
+  - "Screenshot: Print key (full), Super+Print (region)"
+  - "Lock Screen: Super+L or hyprlock command"
+  - "Clipboard: Super+V for clipboard history"
+
+# ============================================================================
+# KEYBINDINGS (Default Hyprland)
+# ============================================================================
+# Super = Windows/Command key
+#
+# Super+Return      - Open terminal (Alacritty)
+# Super+Space       - Open app launcher (Wofi)
+# Super+Q           - Close focused window
+# Super+1-9         - Switch to workspace 1-9
+# Super+Left/Right  - Move focus left/right
+# Super+H/J/K/L     - Move focus (vim-style)
+# Super+Shift+1-9   - Move window to workspace 1-9
+# Super+Shift+C     - Open config file
+# Super+Shift+R     - Reload Hyprland config
+# Super+Shift+Q     - Exit Hyprland
+# Super+L           - Lock screen
+# Super+V           - Clipboard history
+# Print             - Screenshot (full)
+# Super+Print       - Screenshot (region)
+# ============================================================================

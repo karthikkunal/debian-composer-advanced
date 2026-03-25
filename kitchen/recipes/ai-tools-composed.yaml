@@ -1,0 +1,158 @@
+# AI Tools Recipe
+# Composed version using component includes
+
+name: ai-tools
+version: 2.0.0
+description: Open source AI tools for local LLM, image generation, and speech-to-text
+author: Debian Composer Team
+license: MIT
+tags: [ai, ml, ollama, llm, stable-diffusion, whisper]
+
+# ============================================================================
+# INCLUDES - Compose from components
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/ollama.yaml
+  - components/whisper.yaml
+
+# ============================================================================
+# DEFAULT PACKAGES (base requirements)
+# ============================================================================
+packages:
+  - git
+  - curl
+  - wget
+  - python3
+  - python3-pip
+  - python3-venv
+  - ffmpeg
+  - libgl1-mesa-glx
+  - libglib2.0-0
+  - libsm6
+  - libxext6
+  - cmake
+  - build-essential
+  - libsndfile1
+
+# ============================================================================
+# CATEGORIES - Using components
+# ============================================================================
+categories:
+  ollama:
+    includes:
+      - components/ollama.yaml
+
+  whisper:
+    includes:
+      - components/whisper.yaml
+
+  lmstudio:
+    description: "LM Studio requires manual download"
+    install:
+      packages: []
+
+  stable-diffusion:
+    description: "Stable Diffusion WebUI"
+    install:
+      packages:
+        - git
+        - python3-dev
+        - libgl1-mesa-glx
+        - libglib2.0-0
+        - ffmpeg
+        - libsm6
+        - libxext6
+        - cmake
+        - build-essential
+      install_path: /opt/stable-diffusion
+    configure:
+      - type: command
+        command: "mkdir -p /opt/stable-diffusion"
+
+  opencode:
+    description: "OpenCode CLI (manual download)"
+    install:
+      packages: []
+
+  openwork:
+    description: "OpenWork desktop (requires OpenCode)"
+    install:
+      packages:
+        - libgtk-3-0
+        - libwebkit2gtk-4.0
+        - libappindicator3-1
+        - librsvg2-common
+      install_path: /opt/openwork
+
+# ============================================================================
+# TEMPLATE VARIABLES
+# ============================================================================
+variables:
+  ollama_port:
+    type: integer
+    default: 11434
+    description: "Ollama API port"
+
+  ollama_model:
+    type: string
+    default: "llama3.2"
+    description: "Default Ollama model"
+
+  whisper_model:
+    type: string
+    default: "base"
+    description: "Whisper model size (tiny, base, small, medium, large)"
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  llm:
+    description: "Local LLM with Ollama"
+    components:
+      - ollama
+
+  speech:
+    description: "Speech-to-text with Whisper"
+    components:
+      - whisper
+
+  full:
+    description: "Complete AI development environment"
+    components:
+      - ollama
+      - whisper
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 8192
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Ollama: Run 'ollama run ${ollama_model}' to start"
+  - "Ollama API: http://localhost:${ollama_port}"
+  - "Whisper: Use 'whisper-transcribe audio.mp3 --model ${whisper_model}'"
+  - "Warning: Some tools require significant disk space (10-50 GB)"
+  - "Warning: NVIDIA GPU recommended for Stable Diffusion and LLMs"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install Ollama Only
+    description: Install only Ollama for local LLM inference
+    command: ./debian-composer.sh --recipe=ai-tools --category=ollama
+
+  - title: Install All AI Tools
+    description: Install complete AI development environment
+    command: ./debian-composer.sh --recipe=ai-tools --stack=full
+
+  - title: Install with custom port
+    description: Install Ollama on custom port
+    command: ./debian-composer.sh --recipe=ai-tools --var=ollama_port=11435

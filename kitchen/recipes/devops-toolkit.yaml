@@ -1,0 +1,255 @@
+# DevOps/SRE Toolkit
+# Complete DevOps environment with container orchestration, monitoring, and cloud-native tools
+#
+# Uses YAML anchors for DRY configuration
+
+name: devops-toolkit
+version: 1.0.0
+description: DevOps and SRE toolkit with Kubernetes, monitoring, logging, and IaC tools
+author: Debian Composer Team
+license: MIT
+tags: [devops, sre, kubernetes, docker, monitoring, infrastructure]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+layers:
+  - base
+  - runtime
+  - container
+
+includes:
+  - components/base.yaml
+  - mixins/security-hardening.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor references
+# ============================================================================
+packages:
+  - *devops_k8s         # kubectl, helm, kustomize, kind, k9s
+  - *devops_monitoring  # prometheus, grafana, loki, promtail, alertmanager
+  - *devops_iac         # terraform, terragrunt, ansible, vault, consul
+  # Additional Kubernetes tools
+  - k3s
+  - k3d
+  - minikube
+  - kubectx
+  - kubens
+  # Additional logging
+  - fluentd
+  # Additional IaC
+  - ansible-lint
+  - consul-template
+  - nomad
+  - packer
+  # Service mesh
+  - envoy
+  - istio
+  - linkerd
+  # GitOps
+  - argocd
+  - flux
+  # Dev tools
+  - skaffold
+  - tilt
+  - stern
+  - kail
+  # Message queues
+  - kafka
+  - zookeeper
+  - rabbitmq
+  - nats
+  # Databases
+  - etcd
+  - cockroachdb
+  - timescaledb
+  - timescaledb-toolkit
+  - timescaledb-2-postgresql-15
+
+# ============================================================================
+# CATEGORIES - Using merge keys
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Kubernetes - Using container service template
+  # --------------------------------------------------------------------------
+  kubernetes:
+    <<: *container_service_template
+    install:
+      packages:
+        - kubectl
+        - kubelet
+        - kubeadm
+    verify:
+      commands:
+        - kubectl version --client
+        - kubeadm version
+
+  # --------------------------------------------------------------------------
+  # Helm - Using service template
+  # --------------------------------------------------------------------------
+  helm:
+    <<: *service_template
+    install:
+      packages:
+        - helm
+    verify:
+      commands:
+        - helm version
+
+  # --------------------------------------------------------------------------
+  # Prometheus - Using service template
+  # --------------------------------------------------------------------------
+  prometheus:
+    <<: *service_template
+    install:
+      packages:
+        - prometheus
+        - prometheus-node-exporter
+    configure:
+      service:
+        name: prometheus
+        enable: true
+        start: true
+    verify:
+      commands:
+        - prometheus --version
+      services_running:
+        - prometheus
+
+  # --------------------------------------------------------------------------
+  # Grafana - Using service template
+  # --------------------------------------------------------------------------
+  grafana:
+    <<: *service_template
+    install:
+      packages:
+        - grafana
+    configure:
+      service:
+        name: grafana-server
+        enable: true
+        start: true
+    verify:
+      commands:
+        - grafana-cli --version
+      services_running:
+        - grafana-server
+
+  # --------------------------------------------------------------------------
+  # Terraform - Using service template
+  # --------------------------------------------------------------------------
+  terraform:
+    <<: *service_template
+    install:
+      packages:
+        - terraform
+    verify:
+      commands:
+        - terraform --version
+
+  # --------------------------------------------------------------------------
+  # Ansible - Using service template
+  # --------------------------------------------------------------------------
+  ansible:
+    <<: *service_template
+    install:
+      packages:
+        - ansible
+        - ansible-lint
+    verify:
+      commands:
+        - ansible --version
+        - ansible-lint --version
+
+  # --------------------------------------------------------------------------
+  # Vault - Using service template
+  # --------------------------------------------------------------------------
+  vault:
+    <<: *service_template
+    install:
+      packages:
+        - vault
+    configure:
+      service:
+        name: vault
+        enable: false  # Manual setup required
+    verify:
+      commands:
+        - vault version
+
+  # --------------------------------------------------------------------------
+  # Consul - Using service template
+  # --------------------------------------------------------------------------
+  consul:
+    <<: *service_template
+    install:
+      packages:
+        - consul
+    configure:
+      service:
+        name: consul
+        enable: false  # Manual setup required
+    verify:
+      commands:
+        - consul --version
+
+# ============================================================================
+# STACKS (pre-configured tool combinations)
+# ============================================================================
+stacks:
+  local-k8s:
+    description: "Local Kubernetes development (k3d)"
+    components: []
+
+  monitoring:
+    description: "Complete monitoring stack (Prometheus + Grafana)"
+    components: []
+
+  gitops:
+    description: "GitOps with ArgoCD/Flux"
+    components: []
+
+  tf-backend:
+    description: "Terraform backend (Consul + Vault)"
+    components: []
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor reference
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 16384  # 16GB for DevOps tools
+  min_disk: 50
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Kubernetes: Run 'kubectl cluster-info' to verify"
+  - "Helm: Add repos with 'helm repo add'"
+  - "Prometheus: Access at http://localhost:9090"
+  - "Grafana: Access at http://localhost:3000 (admin/admin)"
+  - "Terraform: Initialize with 'terraform init'"
+  - "Ansible: Test with 'ansible localhost -m ping'"
+  - "Vault: Requires manual setup and unsealing"
+  - "Consul: Requires manual bootstrap"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install Kubernetes Tools
+    description: Install kubectl, helm, and local Kubernetes
+    command: sudo debian-composer --recipe=devops-toolkit --category=kubernetes
+  - title: Install Monitoring Stack
+    description: Install Prometheus and Grafana
+    command: sudo debian-composer --recipe=devops-toolkit --category=prometheus --category=grafana
+  - title: Install IaC Tools
+    description: Install Terraform and Ansible
+    command: sudo debian-composer --recipe=devops-toolkit --category=terraform --category=ansible
+  - title: Full DevOps Toolkit
+    description: Install complete DevOps environment
+    command: sudo debian-composer --recipe=devops-toolkit

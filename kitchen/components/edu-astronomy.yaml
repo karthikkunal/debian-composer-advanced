@@ -1,0 +1,57 @@
+# ============================================================================
+# Education Astronomy Component
+# ============================================================================
+# Astronomy education software
+#
+# Reusable component for any recipe needing astronomy tools
+
+name: edu-astronomy
+version: 1.0.0
+description: Astronomy education software
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, astronomy, space, planetarium, learning]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Planetarium software
+    - stellarium
+    - kstars
+    - celestia
+    # Astronomy tools
+    - xephem
+    - saoimage-ds9
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - stellarium --version
+    - kstars --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Stellarium: Planetarium software"
+  - "KStars: Desktop planetarium"
+  - "Celestia: Space simulation"

@@ -1,0 +1,276 @@
+# ============================================================================
+# Distro: popos-composer
+# ============================================================================
+# Transform a clean Debian install into Pop!_OS-inspired system.
+# Pop!_OS is based on Ubuntu with COSMIC desktop by System76.
+#
+# Usage:
+#   sudo debian-composer --distro=popos-composer
+#   sudo debian-composer --distro=popos-composer --var=enable_nvidia=true
+#   sudo debian-composer --distro=popos-composer --stack=gaming
+
+name: popos-composer
+version: 1.0.0
+description: "Transform Debian into Pop!_OS-inspired system with COSMIC desktop"
+author: Debian Composer Team
+license: MIT
+tags: [distro, pop-os, system76, cosmic, ubuntu-based, nvidia]
+kind: distro
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  ubuntu_release:
+    type: string
+    default: noble
+    choices: [noble, jammy]
+    description: "Ubuntu base release (noble=24.04, jammy=22.04)"
+
+  enable_nvidia:
+    type: boolean
+    default: false
+    description: "Enable NVIDIA driver and CUDA support"
+
+  cosmic_version:
+    type: string
+    default: cosmic
+    choices: [cosmic, gnome]
+    description: "Desktop: COSMIC (new) or GNOME (classic)"
+
+  disk_encryption:
+    type: boolean
+    default: false
+    description: "Enable LUKS disk encryption tools"
+
+repositories:
+  - name: system76
+    url: "deb https://apt.system76.com/ ${ubuntu_release} main"
+    key: "https://apt.system76.com/pop-keyring.gpg"
+    keyring: /usr/share/keyrings/pop-archive-keyring.gpg
+
+  - name: ubuntu-main
+    url: "deb http://archive.ubuntu.com/ubuntu ${ubuntu_release} main restricted universe multiverse"
+    key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C"
+
+packages:
+  - pop-keyring
+  - pop-default-settings
+  - systemd-timesyncd
+  - apt-transport-https
+  - ca-certificates
+  - curl
+
+categories:
+  desktop/cosmic:
+    condition: cosmic_version == cosmic
+    description: "COSMIC desktop (System76's Rust-based DE)"
+    install:
+      packages:
+        - cosmic-desktop
+        - cosmic-comp
+        - cosmic-panel
+        - cosmic-applets
+        - cosmic-edit
+        - cosmic-files
+        - cosmic-term
+        - cosmic-store
+        - cosmic-launcher
+    verify:
+      commands:
+        - cosmic-comp --version 2>&1 | head -1 || true
+
+  desktop/gnome:
+    condition: cosmic_version == gnome
+    description: "GNOME desktop (Pop!_OS classic)"
+    install:
+      packages:
+        - pop-shell
+        - gnome-shell
+        - gnome-control-center
+        - gnome-tweaks
+        - gnome-terminal
+    verify:
+      commands:
+        - gnome-shell --version
+
+  nvidia/driver:
+    condition: enable_nvidia == true
+    description: "NVIDIA proprietary driver"
+    install:
+      packages:
+        - system76-driver-nvidia
+        - nvidia-driver-555
+        - libnvidia-extra
+    configure:
+      service:
+        name: system76
+        enable: true
+    verify:
+      commands:
+        - nvidia-smi 2>&1 | head -1 || true
+
+  nvidia/cuda:
+    condition: enable_nvidia == true
+    description: "CUDA development toolkit"
+    install:
+      packages:
+        - system76-cuda
+        - nvidia-cuda-toolkit
+    verify:
+      commands:
+        - nvcc --version 2>&1 | head -1 || true
+
+  hardware/system76:
+    description: "System76 hardware support"
+    install:
+      packages:
+        - system76-driver
+        - system76-firmware
+        - system76-io
+        - system76-thelio-io
+    configure:
+      service:
+        name: system76
+        enable: true
+    verify:
+      commands:
+        - system76-driver --version 2>&1 | head -1 || true
+
+  power-management:
+    description: "Pop!_OS power management"
+    install:
+      packages:
+        - system76-power
+        - tlp
+        - tlp-rdw
+    configure:
+      service:
+        name: tlp
+        enable: true
+    verify:
+      commands:
+        - system76-power --version 2>&1 | head -1 || true
+
+  disk/encryption:
+    condition: disk_encryption == true
+    description: "Disk encryption tools"
+    install:
+      packages:
+        - cryptsetup
+        - gnome-disk-utility
+        - dislocker
+    verify:
+      commands:
+        - cryptsetup --version
+
+  themes/pop:
+    description: "Pop!_OS themes and styling"
+    install:
+      packages:
+        - pop-gtk-theme
+        - pop-icon-theme
+        - pop-wallpapers
+        - pop-session
+    verify:
+      commands:
+        - pop-theme --version 2>&1 | head -1 || true
+
+  launcher/launcher:
+    description: "Pop!_OS launcher and window management"
+    install:
+      packages:
+        - pop-launcher
+        - cosmic-launcher
+        - gnome-shell-extension-pop-shell
+    verify:
+      commands:
+        - pop-launcher --version 2>&1 | head -1 || true
+
+stacks:
+  default:
+    description: "Pop!_OS with COSMIC desktop"
+    categories:
+      - desktop/cosmic
+      - hardware/system76
+      - power-management
+      - themes/pop
+      - launcher/launcher
+
+  gnome:
+    description: "Pop!_OS with GNOME (classic)"
+    categories:
+      - desktop/gnome
+      - hardware/system76
+      - power-management
+      - themes/pop
+      - launcher/launcher
+
+  nvidia:
+    description: "Pop!_OS NVIDIA edition"
+    categories:
+      - desktop/cosmic
+      - hardware/system76
+      - nvidia/driver
+      - nvidia/cuda
+      - power-management
+      - themes/pop
+
+  gaming:
+    description: "Pop!_OS Gaming edition"
+    categories:
+      - desktop/cosmic
+      - hardware/system76
+      - nvidia/driver
+      - power-management
+      - themes/pop
+
+  developer:
+    description: "Pop!_OS Developer edition"
+    categories:
+      - desktop/cosmic
+      - hardware/system76
+      - power-management
+      - themes/pop
+      - launcher/launcher
+
+requirements:
+  min_ram: 4096
+  min_disk: 30
+
+conflicts:
+  packages:
+    - ubuntu-desktop
+
+post_install:
+  - "=== Pop!_OS Composer installed ==="
+  - ""
+  - "Your system is now Pop!_OS-inspired."
+  - "Base: Ubuntu ${ubuntu_release}"
+  - "Desktop: ${cosmic_version}"
+  - "NVIDIA: ${enable_nvidia}"
+  - ""
+  - "System76 features:"
+  - "  - Power profiles: system76-power profile"
+  - "  - Fan control: system76-fan-control"
+  - "  - Firmware updates: system76-firmware-cli"
+  - ""
+  - "COSMIC tips:"
+  - "  - Super key opens launcher"
+  - "  - Super + Esc opens task manager"
+  - "  - Super + / opens file manager"
+
+examples:
+  - title: "Pop!_OS COSMIC (default)"
+    command: "sudo debian-composer --distro=popos-composer"
+  - title: "Pop!_OS with NVIDIA"
+    command: "sudo debian-composer --distro=popos-composer --var=enable_nvidia=true --stack=nvidia"
+  - title: "Pop!_OS GNOME classic"
+    command: "sudo debian-composer --distro=popos-composer --stack=gnome"
+  - title: "Pop!_OS Gaming"
+    command: "sudo debian-composer --distro=popos-composer --stack=gaming"
+  - title: "Pop!_OS Developer"
+    command: "sudo debian-composer --distro=popos-composer --stack=developer"

@@ -1,0 +1,267 @@
+# ============================================================================
+# Distro: devuan-composer
+# ============================================================================
+# Transform a clean Debian install into Devuan (Debian without systemd).
+# Replaces systemd with sysvinit/runit and uses Devuan repositories.
+#
+# Usage:
+#   sudo debian-composer --distro=devuan-composer
+#   sudo debian-composer --distro=devuan-composer --var=init_system=runit
+#   sudo debian-composer --distro=devuan-composer --stack=server
+
+name: devuan-composer
+version: 1.0.0
+description: "Transform Debian into Devuan — Debian without systemd"
+author: Debian Composer Team
+license: MIT
+tags: [distro, devuan, sysvinit, runit, init, freedom]
+kind: distro
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  devuan_release:
+    type: string
+    default: daedalus
+    choices: [daedalus, chimaera, beowulf]
+    description: "Devuan release (daedalus=5.0, chimaera=4.0, beowulf=3.1)"
+
+  init_system:
+    type: string
+    default: sysvinit
+    choices: [sysvinit, runit, openrc]
+    description: "Init system to use"
+
+  desktop:
+    type: string
+    default: xfce
+    choices: [xfce, mate, lxqt, i3, none]
+    description: "Desktop environment (Devuan favors lightweight)"
+
+  enable_nonfree:
+    type: boolean
+    default: false
+    description: "Enable non-free firmware and software"
+
+repositories:
+  - name: devuan-main
+    url: "deb https://deb.devuan.org/devuan ${devuan_release} main"
+    key: "https://keyserver.devuan.org/pks/lookup?op=get&search=0x654C5E51D2C6F204"
+    keyring: /usr/share/keyrings/devuan-keyring.gpg
+
+  - name: devuan-updates
+    url: "deb https://deb.devuan.org/devuan ${devuan_release}-updates main"
+    key: "https://keyserver.devuan.org/pks/lookup?op=get&search=0x654C5E51D2C6F204"
+
+packages:
+  - devuan-keyring
+  - devuan-baseconf
+  - eudev
+  - libpam-elogind
+  - sysvinit-core
+  - sysv-rc
+  - file-rc
+
+categories:
+  init/sysvinit:
+    condition: init_system == sysvinit
+    description: "SysVinit init system (classic Unix)"
+    install:
+      packages:
+        - sysvinit
+        - sysvinit-utils
+        - insserv
+    configure:
+      service:
+        name: cron
+        enable: true
+    verify:
+      commands:
+        - pidof systemd || echo "systemd not running"
+
+  init/runit:
+    condition: init_system == runit
+    description: "Runit init system (lightweight supervision)"
+    install:
+      packages:
+        - runit
+        - runit-init
+    configure:
+      service:
+        name: runsvdir-default
+        enable: true
+    verify:
+      commands:
+        - sv status default 2>/dev/null || true
+
+  init/openrc:
+    condition: init_system == openrc
+    description: "OpenRC init system (dependency-based)"
+    install:
+      packages:
+        - openrc
+        - sysvinit
+    verify:
+      commands:
+        - rc-status 2>/dev/null || true
+
+  desktop/xfce:
+    condition: desktop == xfce
+    description: "XFCE desktop (Devuan default)"
+    install:
+      packages:
+        - task-xfce-desktop
+        - xfce4
+        - xfce4-goodies
+        - lightdm
+
+  desktop/mate:
+    condition: desktop == mate
+    description: "MATE desktop"
+    install:
+      packages:
+        - task-mate-desktop
+        - mate-desktop-environment
+        - lightdm
+
+  desktop/lxqt:
+    condition: desktop == lxqt
+    description: "LXQt desktop (ultra lightweight)"
+    install:
+      packages:
+        - task-lxqt-desktop
+        - lxqt
+        - sddm
+
+  desktop/i3:
+    condition: desktop == i3
+    description: "i3 window manager"
+    install:
+      packages:
+        - i3
+        - i3status
+        - i3lock
+        - dmenu
+        - lightdm
+        - rxvt-unicode
+    verify:
+      commands:
+        - i3 --version
+
+  desktop/none:
+    condition: desktop == none
+    description: "No desktop (headless server)"
+    install:
+      packages: []
+
+  firmware/nonfree:
+    condition: enable_nonfree == true
+    description: "Non-free firmware support"
+    install:
+      packages:
+        - firmware-linux-nonfree
+        - firmware-misc-nonfree
+      repositories:
+        - name: devuan-nonfree
+          url: "deb https://deb.devuan.org/devuan ${devuan_release}-nonfree non-free"
+          trusted: true
+
+  tools/elogind:
+    description: "elogind for seat management without systemd"
+    install:
+      packages:
+        - elogind
+        - libpam-elogind
+    configure:
+      service:
+        name: elogind
+        enable: true
+    verify:
+      commands:
+        - loginctl --version 2>&1 | head -1 || true
+
+stacks:
+  default:
+    description: "Devuan desktop with XFCE"
+    categories:
+      - init/sysvinit
+      - desktop/xfce
+      - tools/elogind
+
+  minimal:
+    description: "Minimal Devuan base"
+    categories:
+      - init/sysvinit
+
+  lightweight:
+    description: "Lightweight Devuan with LXQt"
+    categories:
+      - init/sysvinit
+      - desktop/lxqt
+      - tools/elogind
+
+  wm:
+    description: "Window manager only (i3)"
+    categories:
+      - init/sysvinit
+      - desktop/i3
+      - tools/elogind
+
+  server:
+    description: "Devuan server (no desktop)"
+    categories:
+      - init/sysvinit
+      - desktop/none
+
+  runit:
+    description: "Devuan with runit init system"
+    categories:
+      - init/runit
+      - desktop/xfce
+      - tools/elogind
+
+requirements:
+  min_ram: 1024
+  min_disk: 10
+
+conflicts:
+  packages:
+    - systemd
+    - systemd-sysv
+    - libsystemd0
+
+post_install:
+  - "=== Devuan Composer installed ==="
+  - ""
+  - "Your Debian system is now Devuan (systemd-free)."
+  - "Release: ${devuan_release}"
+  - "Init system: ${init_system}"
+  - "Desktop: ${desktop}"
+  - ""
+  - "Important notes:"
+  - "  - Systemd has been removed"
+  - "  - Using elogind for session management"
+  - "  - Check init system: cat /proc/1/comm"
+  - ""
+  - "Service management:"
+  - "  - SysVinit: service <name> start|stop|status"
+  - "  - Runit: sv start|stop|status <name>"
+  - "  - OpenRC: rc-service <name> start|stop"
+
+examples:
+  - title: "Devuan with XFCE (default)"
+    command: "sudo debian-composer --distro=devuan-composer"
+  - title: "Devuan minimal server"
+    command: "sudo debian-composer --distro=devuan-composer --stack=minimal"
+  - title: "Devuan with runit"
+    command: "sudo debian-composer --distro=devuan-composer --var=init_system=runit"
+  - title: "Devuan with OpenRC"
+    command: "sudo debian-composer --distro=devuan-composer --var=init_system=openrc"
+  - title: "Lightweight Devuan with LXQt"
+    command: "sudo debian-composer --distro=devuan-composer --stack=lightweight"
+  - title: "Devuan with non-free firmware"
+    command: "sudo debian-composer --distro=devuan-composer --var=enable_nonfree=true"

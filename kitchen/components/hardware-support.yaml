@@ -1,0 +1,82 @@
+# ============================================================================
+# Hardware Support Component
+# ============================================================================
+# Hardware support packages and firmware
+#
+# Reusable component for any recipe needing hardware support
+
+name: hardware-support
+version: 1.0.0
+description: Hardware support packages and firmware
+author: Debian Composer Team
+license: MIT
+tags: [hardware, firmware, microcode, drivers]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # CPU microcode
+    - intel-microcode
+    - amd64-microcode
+    # Thermal management
+    - thermald
+    - lm-sensors
+    # NVIDIA (if needed)
+    - nvidia-driver
+    - nvidia-settings
+    # Vulkan
+    - vulkan-tools
+    - libvulkan1
+    - vulkan-validationlayers
+    # Input devices
+    - xserver-xorg-input-libinput
+    - xserver-xorg-input-synaptics
+    # Firmware
+    - firmware-linux
+    - firmware-linux-nonfree
+    - firmware-misc-nonfree
+    - firmware-iwlwifi
+    - firmware-realtek
+    - firmware-atheros
+    - firmware-brcm80211
+    - firmware-mwlwifi
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - lspci -k | head -20
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 512
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Hardware: Firmware and microcode installed"
+  - "Check drivers: lspci -k"
+  - "NVIDIA: May require reboot for driver to load"
+  - "Intel CPU: Microcode loaded on next boot"

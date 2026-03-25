@@ -1,0 +1,98 @@
+# ============================================================================
+# Web Apps Component
+# ============================================================================
+# Web app shortcuts for popular services (PWA-style)
+#
+# Reusable component for any recipe needing web app shortcuts
+
+name: web-apps
+version: 1.0.0
+description: Web app shortcuts for popular services
+author: Debian Composer Team
+license: MIT
+tags: [web-apps, pwa, shortcuts, hey, whatsapp, youtube]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+  packages:
+    - chromium
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages: []
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  hooks:
+    post_install:
+      - type: script
+        script: |
+          #!/bin/bash
+          TARGET_HOME="/home/${SUDO_USER}"
+          # Create web apps directory
+          mkdir -p "${TARGET_HOME}/.local/share/applications"
+          # HEY email
+          cat > "${TARGET_HOME}/.local/share/applications/hey-webapp.desktop" << 'EOF'
+          [Desktop Entry]
+          Name=HEY
+          Exec=chromium --app=https://hey.com
+          Type=Application
+          Categories=Network;WebBrowser;
+          EOF
+          # WhatsApp
+          cat > "${TARGET_HOME}/.local/share/applications/whatsapp-webapp.desktop" << 'EOF'
+          [Desktop Entry]
+          Name=WhatsApp
+          Exec=chromium --app=https://web.whatsapp.com
+          Type=Application
+          Categories=Network;InstantMessaging;
+          EOF
+          # YouTube
+          cat > "${TARGET_HOME}/.local/share/applications/youtube-webapp.desktop" << 'EOF'
+          [Desktop Entry]
+          Name=YouTube
+          Exec=chromium --app=https://youtube.com
+          Type=Application
+          Categories=Network;Video;
+          EOF
+          chown -R "${SUDO_USER}:${SUDO_USER}" "${TARGET_HOME}/.local/share/applications"
+        description: "Install web app shortcuts"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - test -f /home/${SUDO_USER}/.local/share/applications/hey-webapp.desktop && echo "HEY webapp installed"
+    - test -f /home/${SUDO_USER}/.local/share/applications/whatsapp-webapp.desktop && echo "WhatsApp webapp installed"
+    - test -f /home/${SUDO_USER}/.local/share/applications/youtube-webapp.desktop && echo "YouTube webapp installed"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 256
+  min_disk: 1
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Web Apps: Desktop shortcuts installed for HEY, WhatsApp, YouTube"
+  - "Launch: Find in application menu or run from terminal"

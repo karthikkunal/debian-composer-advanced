@@ -1,0 +1,188 @@
+# ============================================================================
+# Distro: debian-homelab
+# ============================================================================
+# Opinionated self-hosted homelab server — no desktop, services only.
+# Inspired by Omarchy — makes the choice for you.
+#
+# Usage:
+#   sudo debian-composer --distro=debian-homelab
+#   sudo debian-composer --distro=debian-homelab --var=enable_media=false
+
+name: debian-homelab
+version: 1.0.0
+description: "Self-hosted homelab — Docker, monitoring, and home services"
+author: Debian Composer Team
+license: MIT
+tags: [distro, server, homelab, self-hosted, docker, opinionated]
+kind: distro
+distro_type: server
+
+includes:
+  - components/bases/server.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  enable_media:
+    type: boolean
+    default: true
+    description: "Install Jellyfin media server"
+
+  enable_monitoring:
+    type: boolean
+    default: true
+    description: "Install Prometheus + Grafana monitoring stack"
+
+  enable_reverse_proxy:
+    type: boolean
+    default: true
+    description: "Install Traefik reverse proxy"
+
+  enable_dns:
+    type: boolean
+    default: false
+    description: "Install Pi-hole DNS with ad blocking"
+
+packages:
+  - docker.io
+  - docker-compose
+  - git
+  - htop
+  - ncdu
+  - curl
+  - wget
+  - ufw
+  - fail2ban
+
+categories:
+  base/containers:
+    description: "Docker container runtime"
+    install:
+      packages:
+        - docker.io
+        - docker-compose
+    configure:
+      service:
+        name: docker
+        enable: true
+        start: true
+    verify:
+      commands:
+        - docker --version
+        - docker compose version
+
+  security/hardening:
+    description: "Basic server hardening (UFW + fail2ban)"
+    install:
+      packages:
+        - fail2ban
+        - ufw
+    configure:
+      service:
+        name: fail2ban
+        enable: true
+    verify:
+      commands:
+        - fail2ban-client --version
+
+  services/media:
+    condition: enable_media == true
+    description: "Jellyfin media server"
+    install:
+      packages:
+        - jellyfin
+    configure:
+      service:
+        name: jellyfin
+        enable: true
+    verify:
+      commands:
+        - systemctl is-enabled jellyfin 2>/dev/null || true
+
+  services/monitoring:
+    condition: enable_monitoring == true
+    description: "Prometheus and Grafana monitoring"
+    install:
+      packages:
+        - prometheus
+        - grafana
+    configure:
+      service:
+        name: grafana-server
+        enable: true
+    verify:
+      commands:
+        - prometheus --version 2>&1 | head -1
+
+  services/proxy:
+    condition: enable_reverse_proxy == true
+    description: "Traefik reverse proxy"
+    install:
+      packages:
+        - traefik
+    configure:
+      service:
+        name: traefik
+        enable: true
+
+  services/dns:
+    condition: enable_dns == true
+    description: "Pi-hole DNS with ad blocking"
+    install:
+      packages:
+        - pi-hole-standalone
+    verify:
+      commands:
+        - pihole --version 2>&1 | head -1 || true
+
+stacks:
+  default:
+    description: "Full homelab (containers + media + monitoring + proxy)"
+    categories:
+      - base/containers
+      - security/hardening
+      - services/media
+      - services/monitoring
+      - services/proxy
+
+  minimal:
+    description: "Minimal homelab (Docker + security only)"
+    categories:
+      - base/containers
+      - security/hardening
+
+  media-server:
+    description: "Media server (Docker + Jellyfin + proxy)"
+    categories:
+      - base/containers
+      - security/hardening
+      - services/media
+      - services/proxy
+
+requirements:
+  min_ram: 2048
+  min_disk: 50
+
+post_install:
+  - "=== debian-homelab installed ==="
+  - ""
+  - "Your homelab server is ready."
+  - "Media server (Jellyfin): ${enable_media}"
+  - "Monitoring (Prometheus + Grafana): ${enable_monitoring}"
+  - "Reverse proxy (Traefik): ${enable_reverse_proxy}"
+  - "DNS (Pi-hole): ${enable_dns}"
+  - ""
+  - "Next steps:"
+  - "  - Configure UFW: 'ufw allow 80/tcp && ufw allow 443/tcp && ufw enable'"
+  - "  - Jellyfin UI: http://localhost:8096"
+  - "  - Grafana UI: http://localhost:3000 (admin/admin)"
+
+examples:
+  - title: "Full homelab setup"
+    command: "sudo debian-composer --distro=debian-homelab"
+  - title: "Minimal Docker homelab"
+    command: "sudo debian-composer --distro=debian-homelab --stack=minimal"
+  - title: "Media server only"
+    command: "sudo debian-composer --distro=debian-homelab --stack=media-server"
+  - title: "With Pi-hole DNS"
+    command: "sudo debian-composer --distro=debian-homelab --var=enable_dns=true"

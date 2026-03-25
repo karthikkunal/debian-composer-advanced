@@ -1,0 +1,374 @@
+# ============================================================================
+# Debian Edu Pure Blend - Educational Environment
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian Edu Pure Blend configuration for educational institutions.
+# Provides tools for students, teachers, and administrators from preschool
+# through university level.
+#
+# Usage:
+#   # Basic workstation installation
+#   sudo debian-composer --blend=debian-edu
+#
+#   # With education level specification
+#   sudo debian-composer --blend=debian-edu --var=education_level=primary
+#   sudo debian-composer --blend=debian-edu --var=education_level=high-school
+#   sudo debian-composer --blend=debian-edu --var=education_level=university
+#
+#   # School server with LTSP
+#   sudo debian-composer --blend=debian-edu --stack=school-server
+#   sudo debian-composer --blend=debian-edu --var=enable_server=true --var=enable_ltsp=true
+#
+# References:
+#   - Debian Edu: https://blends.debian.org/edu/
+#   - Debian Edu Wiki: https://wiki.debian.org/DebianEdu/
+# ============================================================================
+
+name: debian-edu
+version: 1.0.0
+description: Debian Edu Pure Blend - Educational tools and configurations
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/edu/
+tags: [blend, education, school, university, learning, debian-edu]
+kind: pure blend
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: education
+  target_audience: [students, teachers, administrators, schools]
+  difficulty: beginner
+  min_ram: 4096
+  min_disk: 30
+  recommended_disk: 50
+  gpu_required: false
+  gpu_recommended: false
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies: []
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  education_level:
+    type: string
+    default: general
+    choices: [preschool, primary, high-school, university, general]
+    description: Education level focus
+
+  enable_server:
+    type: boolean
+    default: false
+    description: Enable server components (LDAP, GOsa, Kerberos)
+
+  enable_ltsp:
+    type: boolean
+    default: false
+    description: Enable LTSP thin-client infrastructure
+
+  enable_music:
+    type: boolean
+    default: true
+    description: Enable music education tools
+
+  enable_programming:
+    type: boolean
+    default: true
+    description: Enable programming education tools
+
+  enable_graphics:
+    type: boolean
+    default: true
+    description: Enable graphics and art tools
+
+# ============================================================================
+# CATEGORIES - Using tasksel task package
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # Grade Levels
+  # --------------------------------------------------------------------------
+  grade/preschool:
+    condition: education_level == preschool or education_level == general
+    <<: *service_template
+    description: "Pre-school applications (ages 3-6)"
+    install:
+      packages:
+        - *edu_primary_school
+    verify:
+      commands:
+        - gcompris-qt --version 2>&1 | head -1
+
+  grade/primary:
+    condition: education_level == primary or education_level == general
+    <<: *service_template
+    description: "Primary school (ages 6-11)"
+    install:
+      packages:
+        - *edu_primary_school
+    verify:
+      commands:
+        - gcompris-qt --version 2>&1 | head -1
+        - tuxmath --version 2>&1 | head -1
+        - tuxtype --version 2>&1 | head -1
+
+  grade/high-school:
+    condition: education_level == high-school or education_level == university
+    <<: *service_template
+    description: "High school (ages 14-18)"
+    install:
+      packages:
+        - *edu_high_school
+    verify:
+      commands:
+        - cantor --version 2>&1 | head -1
+        - geogebra --version 2>&1 | head -1
+        - scratch 2>&1 | head -1
+
+  grade/university:
+    condition: education_level == university
+    <<: *service_template
+    description: "University level tools"
+    install:
+      packages:
+        - *edu_development
+    verify:
+      commands:
+        - octave --version
+
+  # --------------------------------------------------------------------------
+  # Subject Areas
+  # --------------------------------------------------------------------------
+  subject/music:
+    condition: enable_music == true
+    <<: *service_template
+    description: "Music education tools"
+    install:
+      packages:
+        - *edu_all
+    verify:
+      commands:
+        - audacity --version 2>&1 | head -1
+        - musescore3 --version 2>&1 | head -1
+
+  subject/language:
+    <<: *service_template
+    description: "Language learning tools"
+    install:
+      packages:
+        - *edu_all
+    verify:
+      commands:
+        - klavaro --version
+
+  subject/graphics-art:
+    condition: enable_graphics == true
+    <<: *service_template
+    description: "Graphics and art tools"
+    install:
+      packages:
+        - *edu_all
+    verify:
+      commands:
+        - inkscape --version
+
+  subject/mathematics:
+    <<: *service_template
+    description: "Mathematics education tools"
+    install:
+      packages:
+        - *edu_all
+    verify:
+      commands:
+        - geogebra --version
+
+  subject/astronomy:
+    <<: *service_template
+    description: "Astronomy education"
+    install:
+      packages:
+        - *edu_all
+    verify:
+      commands:
+        - stellarium --version
+
+  subject/chemistry:
+    condition: education_level == high-school or education_level == university
+    <<: *service_template
+    description: "Chemistry education"
+    install:
+      packages:
+        - *edu_all
+    verify:
+      commands:
+        - kalzium --version
+
+  subject/programming:
+    condition: enable_programming == true
+    <<: *service_template
+    description: "Programming education"
+    install:
+      packages:
+        - *edu_all
+    verify:
+      commands:
+        - python3 --version 2>&1 | head -1
+        - thonny --version 2>&1 | head -1
+        - scratch 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Infrastructure
+  # --------------------------------------------------------------------------
+  infra/workstation:
+    <<: *service_template
+    description: "Educational workstation"
+    install:
+      packages:
+        - *edu_all
+    verify:
+      commands:
+        - libreoffice --version
+
+  infra/server:
+    condition: enable_server == true
+    <<: *service_template
+    description: "Educational server (LDAP, GOsa, Kerberos)"
+    install:
+      packages:
+        - *edu_all
+    configure:
+      services:
+        - name: slapd
+          enable: true
+          start: true
+    verify:
+      commands:
+        - slapd -V | head -1
+
+  infra/ltsp:
+    condition: enable_ltsp == true
+    <<: *service_template
+    description: "LTSP thin-client infrastructure"
+    install:
+      packages:
+        - *edu_all
+    configure:
+      services:
+        - name: ltsp
+          enable: true
+          start: false
+        - name: nfs-kernel-server
+          enable: true
+          start: false
+    verify:
+      commands:
+        - ltsp --version
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  primary-school:
+    description: "Primary school setup (preschool + primary grades)"
+    categories:
+      - grade/preschool
+      - grade/primary
+      - subject/music
+      - subject/programming
+
+  high-school:
+    description: "High school setup"
+    categories:
+      - grade/high-school
+      - subject/mathematics
+      - subject/astronomy
+      - subject/chemistry
+      - subject/programming
+
+  university:
+    description: "University/research setup"
+    categories:
+      - grade/university
+      - subject/programming
+      - subject/mathematics
+      - subject/graphics-art
+
+  workstation:
+    description: "Educational workstation for general use"
+    categories:
+      - infra/workstation
+      - subject/programming
+      - subject/music
+      - subject/graphics-art
+
+  school-server:
+    description: "Complete school server with LDAP and LTSP"
+    categories:
+      - infra/server
+      - infra/ltsp
+
+  school-server-basic:
+    description: "Basic school server (LDAP only)"
+    categories:
+      - infra/server
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_edu
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Edu Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Education Level: ${education_level}"
+  - "  Server Mode: ${enable_server}"
+  - "  LTSP: ${enable_ltsp}"
+  - "  Music Education: ${enable_music}"
+  - "  Programming: ${enable_programming}"
+  - "  Graphics/Art: ${enable_graphics}"
+  - ""
+  - "Next Steps:"
+  - "  1. Run: sudo debian-edu-config"
+  - "  2. For server: Configure LDAP with 'debian-edu-ldap-config'"
+  - "  3. For LTSP: Set up thin clients with 'ltsp-server'"
+  - ""
+  - "Resources:"
+  - "  - Debian Edu: https://blends.debian.org/edu/"
+  - "  - Wiki: https://wiki.debian.org/DebianEdu/"
+  - "  - Mailing List: https://lists.debian.org/debian-edu/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Primary School Workstation
+    description: Install Debian Edu for primary school students
+    command: sudo debian-composer --blend=debian-edu --var=education_level=primary
+
+  - title: High School Lab
+    description: Install Debian Edu for high school science lab
+    command: sudo debian-composer --blend=debian-edu --var=education_level=high-school --stack=workstation
+
+  - title: School Server
+    description: Install complete school server with LDAP and LTSP
+    command: sudo debian-composer --blend=debian-edu --stack=school-server
+
+  - title: University Research Station
+    description: Install Debian Edu for university research
+    command: sudo debian-composer --blend=debian-edu --var=education_level=university

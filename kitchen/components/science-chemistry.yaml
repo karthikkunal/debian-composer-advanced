@@ -1,0 +1,63 @@
+# ============================================================================
+# Science Chemistry Component
+# ============================================================================
+# Computational chemistry tools
+#
+# Reusable component for any recipe needing chemistry software
+
+name: science-chemistry
+version: 1.0.0
+description: Computational chemistry tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [science, chemistry, quantum, molecular, gromacs]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Molecular dynamics
+    - gromacs
+    - lammps
+    - namd
+    # Quantum chemistry
+    - quantum-espresso
+    - cp2k
+    # Cheminformatics
+    - openbabel
+    - rdkit
+    - avogadro
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - gmx --version 2>&1 | head -1
+    - obabel -V 2>&1 | head -1
+    - avogadro --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 16384
+  min_disk: 50
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "GROMACS: Molecular dynamics"
+  - "LAMMPS: Molecular dynamics simulator"
+  - "OpenBabel: Chemical file format conversion"
+  - "Avogadro: Molecular editor"

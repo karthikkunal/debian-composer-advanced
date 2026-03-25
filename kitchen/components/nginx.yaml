@@ -1,0 +1,112 @@
+# Nginx Component
+# Reusable Nginx web server configuration with variables
+#
+# Template variables: ${nginx_port}, ${nginx_https_port}, ${nginx_root}, ${nginx_server_name}
+# Uses YAML anchors and templates for DRY configuration
+
+name: nginx
+version: 1.0.0
+description: Nginx web server with configurable options
+author: Debian Composer Team
+license: MIT
+tags: [nginx, web, server, http, proxy]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  nginx_http_port:
+    type: port
+    default: 80
+    description: HTTP port
+
+  nginx_https_port:
+    type: port
+    default: 443
+    description: HTTPS port
+
+  nginx_root:
+    type: path
+    default: /var/www/html
+    description: Web root directory
+
+  nginx_server_name:
+    type: string
+    default: localhost
+    description: Server name
+
+  nginx_enable_ssl:
+    type: boolean
+    default: true
+    description: Enable SSL/HTTPS
+
+  nginx_worker_processes:
+    type: string
+    default: auto
+    description: Worker processes (auto or number)
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    - nginx
+    - nginx-extras
+
+# ============================================================================
+# CONFIGURE - Using nginx service template with overrides
+# ============================================================================
+configure:
+  <<: *nginx_service
+  directories:
+    www: ${nginx_root}
+  settings:
+    worker_processes: ${nginx_worker_processes}
+    server_name: ${nginx_server_name}
+    listen_http: ${nginx_http_port}
+    listen_https: ${nginx_https_port}
+  security:
+    hide_version: true
+    ssl_enabled: ${nginx_enable_ssl}
+
+# ============================================================================
+# VERIFY - Using nginx verification template
+# ============================================================================
+verify:
+  <<: *verify_nginx
+  ports_listening:
+    - ${nginx_http_port}
+    - ${nginx_https_port}
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 256
+  min_disk: 1
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Nginx web server running"
+  - "HTTP: port ${nginx_http_port}"
+  - "HTTPS: port ${nginx_https_port}"
+  - "Web root: ${nginx_root}"
+  - "Server name: ${nginx_server_name}"
+  - "SSL: ${nginx_enable_ssl}"
+  - "Config: /etc/nginx/nginx.conf"

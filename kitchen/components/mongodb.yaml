@@ -1,0 +1,82 @@
+# MongoDB Component
+# Reusable MongoDB document database configuration
+# Template variables: ${port}, ${bind_ip}, ${db_path}
+# Uses YAML anchors and templates for DRY configuration
+
+name: mongodb
+version: 1.0.0
+description: MongoDB document database
+author: Debian Composer Team
+license: MIT
+tags: [database, mongodb, nosql]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# Template variables
+variables:
+  port:
+    type: integer
+    default: 27017
+    description: "MongoDB port"
+  bind_ip:
+    type: string
+    default: "127.0.0.1"
+    description: "Bind IP address"
+  db_path:
+    type: string
+    default: "/var/lib/mongodb"
+    description: "Database storage path"
+
+install:
+  packages:
+    - mongodb-org
+    - mongodb-org-server
+    - mongodb-org-shell
+    - mongodb-org-mongos
+  repositories:
+    - name: mongodb
+      key: https://www.mongodb.org/static/pgp/server-7.0.asc
+      keyring: /usr/share/keyrings/mongodb-server-7.0.gpg
+      url: "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main"
+
+# ============================================================================
+# CONFIGURE - Using service template with overrides
+# ============================================================================
+configure:
+  <<: *service_template
+  service:
+    name: mongod
+    enable: true
+    start: true
+  settings:
+    port: ${port}
+    bind_ip: ${bind_ip}
+    storage:
+      db_path: ${db_path}
+      journal: true
+
+# ============================================================================
+# VERIFY - Using service template verification with mongodb-specific overrides
+# ============================================================================
+verify:
+  commands:
+    - mongod --version
+    - mongosh --eval "db.adminCommand('ping')"
+  services_running:
+    - mongod
+  ports_listening:
+    - ${port}
+
+requirements:
+  min_ram: 2048
+  min_disk: 10
+
+post_install:
+  - "Default connection: mongodb://localhost:${port}"
+  - "Database path: ${db_path}"
+  - "Requires MongoDB repo to be added first"

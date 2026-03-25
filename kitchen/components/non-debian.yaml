@@ -1,0 +1,356 @@
+# ============================================================================
+# Component: Non-Debian Package Support
+# ============================================================================
+# Universal package support with multi-installer capability
+#
+# Supports: Flatpak, AppImage, Third-party repos, Binary installations
+#
+# Usage:
+#   # Auto mode (prefer apt, fallback to others)
+#   sudo debian-composer --recipe=components/non-debian
+#
+#   # Prefer Flatpak
+#   sudo debian-composer --recipe=components/non-debian --var=preferred_installer=flatpak
+#
+#   # Prefer AppImage
+#   sudo debian-composer --recipe=components/non-debian --var=preferred_installer=appimage
+#
+#   # Install specific categories
+#   sudo debian-composer --recipe=components/non-debian --category=dev/tools
+# ============================================================================
+
+name: component-non-debian
+version: 2.0.0
+description: Non-Debian package support (Flatpak, AppImage, Binary, Third-party repos)
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [component, flatpak, appimage, binary, third-party, universal-packages]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  preferred_installer:
+    type: string
+    default: auto
+    choices: [auto, apt, flatpak, appimage, binary]
+    description: "Preferred package installer (auto selects best available)"
+
+  enable_flathub:
+    type: boolean
+    default: true
+    description: "Enable Flathub repository for Flatpak packages"
+
+  appimage_dir:
+    type: string
+    default: /opt/appimages
+    description: "Directory to store AppImages"
+
+  binary_dir:
+    type: string
+    default: /opt/binaries
+    description: "Directory to store binary installations"
+
+# ============================================================================
+# CORE PACKAGES (Apt)
+# ============================================================================
+packages:
+  - libfuse2
+  - desktop-file-utils
+  - librsvg2-bin
+  - software-properties-common
+  - apt-transport-https
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Development Tools
+  # --------------------------------------------------------------------------
+  dev/tools:
+    <<: *service_template
+    description: "Development tools with multi-installer support"
+    packages:
+      # VSCode - prefer apt from Microsoft repo, fallback to flatpak
+      - name: code
+        type: apt
+        apt_fallback: code
+
+      # Docker - prefer apt from Docker repo
+      - name: docker-ce
+        type: apt
+        apt_fallback: docker.io
+
+      # Node.js - prefer apt, fallback to binary
+      - name: nodejs
+        type: apt
+        apt_fallback: nodejs
+
+      # IntelliJ IDEA - Flatpak preferred
+      - name: org.jetbrains.IntelliJ-IDEA-Community
+        type: flatpak
+        remote: flathub
+        apt_fallback: intellij-idea-community
+
+      # Obsidian - AppImage preferred
+      - name: Obsidian
+        type: appimage
+        url: https://github.com/obsidianmd/obsidian-releases/releases/download/v1.5.3/obsidian-1.5.3.AppImage
+        apt_fallback: joplin
+
+      # Postman - Binary installation
+      - name: postman
+        type: binary
+        binary_url: https://dl.pstmn.io/download/latest/linux_64
+        apt_fallback: insomnia
+
+    verify:
+      commands:
+        - code --version | head -1
+        - docker --version | head -1
+        - node --version
+
+  # --------------------------------------------------------------------------
+  # Creative Tools
+  # --------------------------------------------------------------------------
+  creative/design:
+    <<: *service_template
+    description: "Design and creative tools"
+    packages:
+      # GIMP - user preference based
+      - name: org.gimp.GIMP
+        type: flatpak
+        remote: flathub
+        apt_fallback: gimp
+
+      # Inkscape - Flatpak preferred
+      - name: org.inkscape.Inkscape
+        type: flatpak
+        remote: flathub
+        apt_fallback: inkscape
+
+      # Krita - AppImage preferred
+      - name: Krita
+        type: appimage
+        url: https://download.kde.org/stable/krita/5.2.2/krita-5.2.2-x86_64.appimage
+        apt_fallback: krita
+
+      # Blender - AppImage preferred
+      - name: Blender
+        type: appimage
+        url: https://download.blender.org/release/Blender3.6/blender-3.6.5-linux-x64.appimage
+        apt_fallback: blender
+
+    verify:
+      commands:
+        - gimp --version | head -1
+        - inkscape --version | head -1
+
+  # --------------------------------------------------------------------------
+  # Media Applications
+  # --------------------------------------------------------------------------
+  media/players:
+    <<: *service_template
+    description: "Media players and streaming"
+    packages:
+      # VLC - Flatpak preferred
+      - name: org.videolan.VLC
+        type: flatpak
+        remote: flathub
+        apt_fallback: vlc
+
+      # Spotify - Flatpak preferred
+      - name: com.spotify.Client
+        type: flatpak
+        remote: flathub
+        apt_fallback: spotify-client
+
+      # Kdenlive - AppImage preferred
+      - name: Kdenlive
+        type: appimage
+        url: https://download.kde.org/stable/kdenlive/23.08/Linux/Kdenlive-23.08.5-x86_64.appimage
+        apt_fallback: kdenlive
+
+      # Audacity - Flatpak preferred
+      - name: org.audacity.Audacity
+        type: flatpak
+        remote: flathub
+        apt_fallback: audacity
+
+    verify:
+      commands:
+        - flatpak list --app | grep -E "vlc|spotify|kdenlive|audacity"
+
+  # --------------------------------------------------------------------------
+  # Communication
+  # --------------------------------------------------------------------------
+  communication/messaging:
+    <<: *service_template
+    description: "Communication and messaging apps"
+    packages:
+      # Telegram - Flatpak
+      - name: org.telegram.desktop
+        type: flatpak
+        remote: flathub
+        apt_fallback: telegram-desktop
+
+      # Discord - Flatpak
+      - name: com.discordapp.Discord
+        type: flatpak
+        remote: flathub
+        apt_fallback: discord
+
+      # Signal - Flatpak
+      - name: org.signal.Signal
+        type: flatpak
+        remote: flathub
+        apt_fallback: signal-desktop
+
+      # Thunderbird - Apt preferred
+      - name: thunderbird
+        type: apt
+        apt_fallback: thunderbird
+
+    verify:
+      commands:
+        - flatpak list --app | grep -E "telegram|discord|signal"
+
+  # --------------------------------------------------------------------------
+  # Gaming
+  # --------------------------------------------------------------------------
+  gaming/platforms:
+    <<: *service_template
+    description: "Gaming platforms and launchers"
+    packages:
+      # Steam - Flatpak preferred
+      - name: com.valvesoftware.Steam
+        type: flatpak
+        remote: flathub
+        apt_fallback: steam
+
+      # Heroic Games Launcher - Flatpak
+      - name: com.heroicgameslauncher.hgl
+        type: flatpak
+        remote: flathub
+        apt_fallback: heroic
+
+      # Lutris - Apt preferred
+      - name: lutris
+        type: apt
+        apt_fallback: lutris
+
+    verify:
+      commands:
+        - flatpak list --app | grep -E "steam|heroic"
+
+  # --------------------------------------------------------------------------
+  # Productivity
+  # --------------------------------------------------------------------------
+  productivity/office:
+    <<: *service_template
+    description: "Office and productivity tools"
+    packages:
+      # LibreOffice - Flatpak preferred
+      - name: org.libreoffice.LibreOffice
+        type: flatpak
+        remote: flathub
+        apt_fallback: libreoffice
+
+      # Firefox - Flatpak preferred
+      - name: org.mozilla.firefox
+        type: flatpak
+        remote: flathub
+        apt_fallback: firefox-esr
+
+      # Chrome - Apt from Google repo
+      - name: google-chrome-stable
+        type: apt
+        apt_fallback: chromium
+
+    verify:
+      commands:
+        - flatpak list --app | grep -E "libreoffice|firefox"
+
+# ============================================================================
+# REPOSITORIES (Third-party)
+# ============================================================================
+repositories:
+  # Docker repository
+  - name: docker
+    url: https://download.docker.com/linux/debian
+    gpg_key: https://download.docker.com/linux/debian/gpg
+    components: stable
+    condition: preferred_installer == auto or preferred_installer == apt
+
+  # VSCode repository
+  - name: vscode
+    url: https://packages.microsoft.com/repos/code
+    gpg_key: https://packages.microsoft.com/keys/microsoft.asc
+    components: main
+    condition: preferred_installer == auto or preferred_installer == apt
+
+  # Google Chrome repository
+  - name: google-chrome
+    url: https://dl.google.com/linux/chrome/deb/
+    gpg_key: https://dl.google.com/linux/linux_signing_key.pub
+    components: stable
+    condition: preferred_installer == auto or preferred_installer == apt
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Non-Debian Package Support Enabled ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Preferred Installer: ${preferred_installer}"
+  - "  Flathub Enabled: ${enable_flathub}"
+  - "  AppImage Directory: ${appimage_dir}"
+  - "  Binary Directory: ${binary_dir}"
+  - ""
+  - "Useful commands:"
+  - "  Flatpak:"
+  - "    flatpak search <name>     - Search for applications"
+  - "    flatpak install <app>     - Install an application"
+  - "    flatpak list              - List installed applications"
+  - "    flatpak update            - Update all applications"
+  - ""
+  - "  AppImage:"
+  - "    /opt/appimages/<App>.AppImage  - Run an AppImage directly"
+  - "    chmod +x <file>.AppImage       - Make AppImage executable"
+  - ""
+  - "Browse apps at:"
+  - "  - Flatpak: https://flathub.org/apps"
+  - "  - AppImage: https://www.appimagehub.com/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Auto mode (default)
+    description: Install with auto installer selection (prefer apt)
+    command: sudo debian-composer --recipe=components/non-debian
+
+  - title: Prefer Flatpak
+    description: Install applications using Flatpak when available
+    command: sudo debian-composer --recipe=components/non-debian --var=preferred_installer=flatpak
+
+  - title: Prefer AppImage
+    description: Install applications using AppImage when available
+    command: sudo debian-composer --recipe=components/non-debian --var=preferred_installer=appimage
+
+  - title: Development tools only
+    description: Install only development tools
+    command: sudo debian-composer --recipe=components/non-debian --category=dev/tools
+
+  - title: Creative tools
+    description: Install design and creative tools
+    command: sudo debian-composer --recipe=components/non-debian --category=creative/design

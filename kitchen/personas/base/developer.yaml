@@ -1,0 +1,357 @@
+# ============================================================================
+# Developer Persona - Base Template
+# ============================================================================
+# Version: 2.0.0 (Mixin Architecture)
+#
+# Core development environment - editors, VCS, toolchains
+# Specialize with mixins: --mixin=ai-ml, --mixin=web-dev, --mixin=devops
+#
+# Usage:
+#   sudo debian-composer --persona=developer
+#   sudo debian-composer --persona=developer --mixin=ai-ml
+#   sudo debian-composer --persona=developer --var=primary_lang=rust
+
+name: persona-developer
+version: 2.0.0
+description: Core development environment - IDEs, version control, build tools
+author: Debian Composer Team
+license: MIT
+tags: [persona, developer, programming, vcs, ide]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/editors.yaml
+  - components/dev-toolchain.yaml
+  - components/cli-tools.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  primary_lang:
+    type: string
+    default: python
+    choices: [python, javascript, rust, go, java, cpp, ruby, php, dotnet]
+    description: Primary programming language
+
+  editor_choice:
+    type: string
+    default: vscode
+    choices: [vscode, neovim, emacs, jetbrains]
+    description: Primary code editor
+
+  shell_choice:
+    type: string
+    default: zsh
+    choices: [zsh, bash, fish]
+    description: Preferred shell
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - git
+  - git-lfs
+  - gh
+  - build-essential
+  - make
+  - cmake
+  - ninja-build
+  - pkg-config
+  - curl
+  - wget
+  - jq
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Version Control
+  # --------------------------------------------------------------------------
+  vcs:
+    <<: *service_template
+    description: "Version control systems"
+    install:
+      packages:
+        - git
+        - git-lfs
+        - gh
+        - tig
+        - git-delta
+    verify:
+      commands:
+        - git --version
+        - gh --version
+
+  # --------------------------------------------------------------------------
+  # Editors
+  # --------------------------------------------------------------------------
+  editor-vscode:
+    condition: editor_choice == vscode
+    <<: *service_template
+    description: "Visual Studio Code"
+    install:
+      packages:
+        - code
+    verify:
+      commands:
+        - code --version
+
+  editor-neovim:
+    condition: editor_choice == neovim
+    <<: *service_template
+    description: "Neovim"
+    install:
+      packages:
+        - neovim
+        - python3-neovim
+        - nodejs
+        - npm
+    verify:
+      commands:
+        - nvim --version
+
+  editor-emacs:
+    condition: editor_choice == emacs
+    <<: *service_template
+    description: "Emacs"
+    install:
+      packages:
+        - emacs
+        - emacs-goodies-el
+    verify:
+      commands:
+        - emacs --version
+
+  editor-jetbrains:
+    condition: editor_choice == jetbrains
+    <<: *service_template
+    description: "JetBrains Toolbox"
+    install:
+      packages:
+        - jetbrains-toolbox
+    verify:
+      commands:
+        - jetbrains-toolbox --version 2>&1 || true
+
+  # --------------------------------------------------------------------------
+  # Language Runtimes (Base - mixins add specialized tooling)
+  # --------------------------------------------------------------------------
+  runtime-python:
+    condition: primary_lang == python
+    <<: *service_template
+    description: "Python development"
+    install:
+      packages:
+        - python3
+        - python3-pip
+        - python3-venv
+        - python3-dev
+    verify:
+      commands:
+        - python3 --version
+        - pip3 --version
+
+  runtime-javascript:
+    condition: primary_lang == javascript
+    <<: *service_template
+    description: "JavaScript/Node.js development"
+    install:
+      packages:
+        - nodejs
+        - npm
+        - npx
+    verify:
+      commands:
+        - node --version
+        - npm --version
+
+  runtime-rust:
+    condition: primary_lang == rust
+    <<: *service_template
+    description: "Rust development"
+    install:
+      packages:
+        - rustc
+        - cargo
+        - rustfmt
+    verify:
+      commands:
+        - rustc --version
+        - cargo --version
+
+  runtime-go:
+    condition: primary_lang == go
+    <<: *service_template
+    description: "Go development"
+    install:
+      packages:
+        - golang-go
+    verify:
+      commands:
+        - go version
+
+  runtime-java:
+    condition: primary_lang == java
+    <<: *service_template
+    description: "Java development"
+    install:
+      packages:
+        - default-jdk
+        - maven
+        - gradle
+    verify:
+      commands:
+        - java --version
+        - mvn --version
+
+  runtime-cpp:
+    condition: primary_lang == cpp
+    <<: *service_template
+    description: "C/C++ development"
+    install:
+      packages:
+        - g++
+        - gdb
+        - valgrind
+        - clang
+        - clangd
+    verify:
+      commands:
+        - g++ --version
+
+  # --------------------------------------------------------------------------
+  # Shell & Terminal
+  # --------------------------------------------------------------------------
+  shell-zsh:
+    condition: shell_choice == zsh
+    <<: *service_template
+    description: "Zsh shell"
+    install:
+      packages:
+        - zsh
+        - zsh-autosuggestions
+        - zsh-syntax-highlighting
+        - fzf
+        - zoxide
+    verify:
+      commands:
+        - zsh --version
+
+  shell-fish:
+    condition: shell_choice == fish
+    <<: *service_template
+    description: "Fish shell"
+    install:
+      packages:
+        - fish
+    verify:
+      commands:
+        - fish --version
+
+  shell-bash:
+    condition: shell_choice == bash
+    <<: *service_template
+    description: "Bash shell enhancements"
+    install:
+      packages:
+        - bash-completion
+        - fzf
+        - zoxide
+    verify:
+      commands:
+        - bash --version
+
+  terminal:
+    <<: *service_template
+    description: "Terminal multiplexers"
+    install:
+      packages:
+        - tmux
+        - screen
+    verify:
+      commands:
+        - tmux -V
+
+  # --------------------------------------------------------------------------
+  # Essential Tools
+  # --------------------------------------------------------------------------
+  api-tools:
+    <<: *service_template
+    description: "API development and testing"
+    install:
+      packages:
+        - curl
+        - httpie
+        - jq
+        - wget
+    verify:
+      commands:
+        - httpie --version
+        - jq --version
+
+  db-clients:
+    <<: *service_template
+    description: "Database clients"
+    install:
+      packages:
+        - postgresql-client
+        - mariadb-client
+        - sqlite3
+    verify:
+      commands:
+        - psql --version
+        - sqlite3 --version
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  basic-dev:
+    description: "Basic development environment"
+    categories:
+      - vcs
+      - editor-vscode
+      - shell-zsh
+      - terminal
+      - api-tools
+
+  full-dev:
+    description: "Full development setup with language runtime"
+    categories:
+      - vcs
+      - runtime-python
+      - editor-vscode
+      - shell-zsh
+      - terminal
+      - api-tools
+      - db-clients
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "=== Developer Persona Installed ==="
+  - "Primary Language: ${primary_lang}"
+  - "Editor: ${editor_choice}"
+  - "Shell: ${shell_choice}"
+  - ""
+  - "Next steps:"
+  - "  - Add mixins: --mixin=ai-ml, --mixin=web-dev, --mixin=devops"
+  - "  - Git setup: git config --global user.name \"Your Name\""
+  - "  - GitHub CLI: gh auth login"
+  - "  - Shell: chsh -s /bin/${shell_choice}"

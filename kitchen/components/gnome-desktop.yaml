@@ -1,0 +1,126 @@
+# ============================================================================
+# GNOME Desktop Component
+# ============================================================================
+# GNOME desktop environment - Modern, polished, and user-friendly
+#
+# Reusable component for any recipe needing GNOME desktop
+#
+# Variables:
+#   gtk_theme: GTK theme name (default: Adwaita)
+#   icon_theme: Icon theme name (default: Adwaita)
+#   display_manager: Display manager (default: gdm3)
+#   enable_flatpak: Install Flatpak support (default: true)
+#   enable_extensions: Install GNOME Extensions support (default: true)
+#
+# Usage:
+#   sudo debian-composer --recipe=my-recipe --component=gnome-desktop
+#   sudo debian-composer --recipe=my-recipe --component=gnome-desktop --var=gtk_theme=TokyoNight
+
+name: gnome-desktop
+version: 1.0.0
+description: GNOME desktop environment - Modern, polished, and user-friendly
+author: Debian Composer Team
+license: MIT
+tags: [desktop, gnome, wayland, gui]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  gtk_theme:
+    type: string
+    default: "Adwaita"
+    description: "GTK theme name"
+  icon_theme:
+    type: string
+    default: "Adwaita"
+    description: "Icon theme name"
+  display_manager:
+    type: string
+    default: "gdm3"
+    description: "Display manager (gdm3, lightdm, sddm)"
+  enable_flatpak:
+    type: boolean
+    default: true
+    description: "Install Flatpak support"
+  enable_extensions:
+    type: boolean
+    default: true
+    description: "Install GNOME Extensions support"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages: *desktop_gnome
+  repositories:
+    - name: flatpak
+      url: "deb https://dl.flathub.org/repo/flathub stable main"
+      key: "https://dl.flathub.org/repo/gpg"
+      condition: enable_flatpak == true
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  display_manager:
+    service: "${display_manager}"
+    enable: true
+  wayland:
+    enabled: true
+  hooks:
+    post_configure:
+      - type: command
+        command: "gsettings set org.gnome.desktop.interface gtk-theme '${gtk_theme}' 2>/dev/null || true"
+        description: "Set GTK theme"
+      - type: command
+        command: "gsettings set org.gnome.desktop.interface icon-theme '${icon_theme}' 2>/dev/null || true"
+        description: "Set icon theme"
+      - type: command
+        command: "update-desktop-database 2>/dev/null || true"
+        description: "Update desktop database"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - gnome-shell --version
+    - gnome-tweaks --version
+  files_exist:
+    - /usr/share/xsessions/gnome.desktop
+    - /usr/share/wayland-sessions/gnome.desktop
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 15
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "GNOME: Select GNOME session at login"
+  - "Display Manager: ${display_manager} enabled"
+  - "GTK Theme: ${gtk_theme}"
+  - "Icon Theme: ${icon_theme}"
+  - "Customize: Run gnome-tweaks for additional settings"
+  - "Extensions: Install extensions via https://extensions.gnome.org"
+  - "Flatpak: ${enable_flatpak}"

@@ -1,0 +1,244 @@
+# ============================================================================
+# Student Persona Template
+# ============================================================================
+# Pre-configured environment for students (high school to university)
+# Includes productivity, programming, research, and note-taking tools
+#
+# Usage:
+#   sudo debian-composer --persona=student
+#   sudo debian-composer --persona=student --var=study_field=cs
+#   sudo debian-composer --persona=student --var=year=3
+
+name: persona-student
+version: 1.0.0
+description: Student persona - productivity, programming, research tools
+author: Debian Composer Team
+license: MIT
+tags: [persona, student, education, productivity, programming]
+persona_type: student
+
+includes:
+  - components/base.yaml
+
+variables:
+  year:
+    type: integer
+    default: 1
+    description: "Academic year (1-4 for undergrad, 5+ for graduate)"
+
+  study_field:
+    type: string
+    default: general
+    choices: [general, cs, engineering, science, arts, business, medicine]
+    description: "Primary field of study"
+
+  enable_latex:
+    type: boolean
+    default: true
+    description: "Install LaTeX for document preparation"
+
+  enable_cloud_notes:
+    type: boolean
+    default: true
+    description: "Install cloud note-taking apps"
+
+packages:
+  - eza
+  - bat
+  - fd-find
+  - ripgrep
+  - btop
+  - fzf
+  - zoxide
+  - tealdeer
+  - git
+  - curl
+  - wget
+  - build-essential
+  - make
+  - python3
+  - python3-pip
+  - python3-venv
+  - firefox-esr
+  - libreoffice
+  - pandoc
+  - zotero
+  - gnome-calendar
+  - gnome-contacts
+  - evolution
+  - okular
+
+categories:
+  productivity:
+    description: "General productivity tools"
+    install:
+      packages:
+        - libreoffice-writer
+        - libreoffice-calc
+        - libreoffice-impress
+        - libreoffice-draw
+        - libreoffice-math
+        - pandoc
+        - texlive-latex-base
+        - texlive-latex-extra
+        - fonts-noto
+        - fonts-noto-core
+        - evince
+        - okular
+        - eog
+        - simple-scan
+        - gnome-screenshot
+    verify:
+      commands:
+        - libreoffice --version
+        - pandoc --version
+
+  note_taking:
+    description: "Note-taking applications"
+    install:
+      packages:
+        - remarkable
+        - cherrytree
+        - joplin
+        - zotero
+        - gnome-notes
+        - xournal
+    verify:
+      commands:
+        - joplin --version
+
+  programming:
+    condition: study_field == cs or study_field == engineering or study_field == general
+    description: "Programming tools for CS/Engineering"
+    install:
+      packages:
+        - python3
+        - idle-python3
+        - thonny
+        - geany
+        - bluej
+        - greenfoot
+      packages_extra:
+        - code
+        - vim
+        - neovim
+        - git
+        - git-lfs
+        - make
+        - cmake
+        - clang
+    verify:
+      commands:
+        - code --version || echo "VS Code: install manually"
+        - vim --version
+        - git --version
+
+  research:
+    condition: year >= 3 or study_field == science or study_field == medicine
+    description: "Research and academic tools"
+    install:
+      packages:
+        - zotero
+        - mendeleydesktop
+        - JabRef
+        - libreoffice-base
+        - dia
+        - drawio
+        - python3-pip
+    verify:
+      commands:
+        - zotero --version || echo "Zotero: manual install"
+        - dia --version
+
+  latex:
+    condition: enable_latex == true
+    description: "LaTeX document preparation"
+    install:
+      packages:
+        - texlive-full
+        - texlive-bibtex-extra
+        - texlive-science
+        - latexmk
+        - chktex
+        - texlive-fonts-extra
+    verify:
+      commands:
+        - pdflatex --version
+
+  cloud:
+    condition: enable_cloud_notes == true
+    description: "Cloud synchronization"
+    install:
+      packages:
+        - dropbox
+        - onedriver
+        - nextcloud-desktop
+    verify:
+      commands:
+        - nextcloud --version || echo "Nextcloud: configure manually"
+
+  collaboration:
+    description: "Collaboration tools"
+    install:
+      packages:
+        - telegram-desktop
+        - signal-desktop
+        - thunderbird
+        - evolution
+        - cheese
+    verify:
+      commands:
+        - thunderbird --version
+
+  reference:
+    description: "Reference management"
+    install:
+      packages:
+        - goldendict
+        - stellarium
+        - gperiodic
+        - kalzium
+        - marble
+    verify:
+      commands:
+        - goldendict --version
+
+stacks:
+  default:
+    description: "Default student setup"
+    categories:
+      - productivity
+      - note_taking
+      - programming
+      - collaboration
+
+  researcher:
+    description: "Research-oriented setup"
+    categories:
+      - productivity
+      - research
+      - latex
+      - reference
+      - collaboration
+
+  humanities:
+    description: "Humanities student setup"
+    categories:
+      - productivity
+      - note_taking
+      - cloud
+      - collaboration
+
+requirements:
+  min_ram: 2048
+  min_disk: 25
+  gpu: false
+
+post_install:
+  - "=== Student Persona Installed ==="
+  - "Field: ${study_field}, Year: ${year}"
+  - "LibreOffice: Office suite for documents"
+  - "Zotero: Reference management"
+  - "Joplin: Cross-platform notes"
+  - "LaTeX: Document preparation (if enabled)"
+  - "Run 'code' to install VS Code"

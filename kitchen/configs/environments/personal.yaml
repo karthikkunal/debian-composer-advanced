@@ -1,0 +1,180 @@
+# ============================================================================
+# Personal Environment Configuration
+# ============================================================================
+# Version: 1.0.0
+#
+# A personalized desktop setup for daily use with:
+# - Productivity applications
+# - Media and entertainment
+# - Communication tools
+# - Personal customization
+#
+# Usage:
+#   debian-composer --config=personal
+# ============================================================================
+
+name: personal
+version: 1.0.0
+description: Personal desktop environment configuration
+environment: personal
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  environment: personal
+  debug: false
+  verbose: false
+
+  # Preferences
+  preferred_browser: firefox  # firefox, chrome, brave
+  preferred_office: libreoffice  # libreoffice, onlyoffice
+  enable_gaming: true
+  enable_creative: false
+
+  # Privacy
+  enable_privacy_tools: true
+  enable_encryption: true
+
+# ============================================================================
+# EXTENDS
+# ============================================================================
+extends:
+  - base
+
+# ============================================================================
+# PACKAGES
+# ============================================================================
+packages:
+  # Core desktop
+  - firefox-esr
+  - thunderbird
+  - libreoffice
+  - evince
+  - file-roller
+
+  # Media
+  - vlc
+  - audacity
+  - gimp
+  - shotwell
+
+  # Communication
+  - name: org.telegram.desktop
+    type: flatpak
+    apt_fallback: telegram-desktop
+
+  - name: com.discordapp.Discord
+    type: flatpak
+    apt_fallback: discord
+
+  # Browser options
+  - name: google-chrome-stable
+    condition: preferred_browser == chrome
+  - name: chromium
+    condition: preferred_browser == brave
+
+  # Gaming (optional)
+  - name: steam
+    condition: enable_gaming == true
+  - name: lutris
+    condition: enable_gaming == true
+
+  # Creative tools (optional)
+  - name: obs-studio
+    condition: enable_creative == true
+  - name: kdenlive
+    condition: enable_creative == true
+
+  # Privacy tools (optional)
+  - name: veracrypt
+    condition: enable_encryption == true
+  - name: keepassxc
+    condition: enable_privacy_tools == true
+
+# ============================================================================
+# RECIPES
+# ============================================================================
+recipes:
+  - components/non-debian
+
+# ============================================================================
+# SETTINGS
+# ============================================================================
+settings:
+  # Desktop preferences
+  desktop:
+    theme: Adwaita
+    icon_theme: Adwaita
+    cursor_theme: Adwaita
+    font: Cantarell 11
+
+  # Privacy
+  privacy:
+    telemetry: false
+    analytics: false
+    crash_reports: false
+
+  # Backup
+  backup:
+    enabled: true
+    schedule: weekly
+    destination: external
+
+  # Power
+  power:
+    laptop_mode: true
+    suspend_on_lid_close: true
+
+# ============================================================================
+# HOOKS
+# ============================================================================
+hooks:
+  pre_apply:
+    - echo "Setting up personal environment..."
+
+  post_apply:
+    - echo "Personal environment ready!"
+    - echo "Configure Firefox Sync in about:preferences"
+    - echo "Set up Thunderbird email accounts"
+    - echo "Install Steam games and enable Proton"
+
+# ============================================================================
+# DESKTOP CUSTOMIZATION
+# ============================================================================
+desktop:
+  # GNOME extensions
+  extensions:
+    - dash-to-dock
+    - user-themes
+    - weather-openweathermap
+    - system-monitor
+
+  # Wallpaper
+  wallpaper:
+    source: default
+    slideshow: false
+
+  # Panel
+  panel:
+    position: bottom
+    autohide: false
+    show_workspaces: true
+
+# ============================================================================
+# APPLICATIONS
+# ============================================================================
+applications:
+  # Default applications
+  defaults:
+    web_browser: firefox-esr.desktop
+    email: thunderbird.desktop
+    terminal: org.gnome.Terminal.desktop
+    files: org.gnome.Nautilus.desktop
+    image_viewer: org.gnome.Loupe.desktop
+
+  # Startup applications
+  startup:
+    - nm-applet
+    - keepassxc
+    - dropbox

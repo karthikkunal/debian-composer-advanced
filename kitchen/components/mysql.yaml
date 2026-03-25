@@ -1,0 +1,101 @@
+# MySQL Component
+# Reusable MySQL/MariaDB database configuration with variables
+#
+# Template variables: ${mysql_port}, ${mysql_root_password}, ${mysql_bind_address}
+# Uses YAML anchors and templates for DRY configuration
+
+name: mysql
+version: 1.0.0
+description: MySQL/MariaDB relational database server
+author: Debian Composer Team
+license: MIT
+tags: [mysql, mariadb, database, sql, rdbms]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  mysql_port:
+    type: port
+    default: 3306
+    description: MySQL server port
+
+  mysql_variant:
+    type: string
+    default: mysql
+    choices: [mysql, mariadb]
+    description: Database variant (mysql or mariadb)
+
+  mysql_bind_address:
+    type: string
+    default: "127.0.0.1"
+    description: MySQL bind address
+
+  mysql_max_connections:
+    type: integer
+    default: 151
+    min: 10
+    max: 1000
+    description: Maximum connections
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    - ${mysql_variant}-server
+    - ${mysql_variant}-client
+    - ${mysql_variant}-common
+    - python3-pymysql
+    - libmariadb-dev
+
+# ============================================================================
+# CONFIGURE - Using database service template with overrides
+# ============================================================================
+configure:
+  <<: *mysql_service
+  settings:
+    port: ${mysql_port}
+    bind_address: ${mysql_bind_address}
+    max_connections: ${mysql_max_connections}
+  security:
+    root_password_required: true
+    remove_anonymous: true
+    disallow_root_login_remotely: true
+    remove_test_db: true
+
+# ============================================================================
+# VERIFY - Using mysql verification template with overrides
+# ============================================================================
+verify:
+  <<: *verify_mysql
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 512
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "${mysql_variant^} running on ${mysql_bind_address}:${mysql_port}"
+  - "Connect: mysql -u root -p"
+  - "Run mysql_secure_installation for initial setup"
+  - "Max connections: ${mysql_max_connections}"

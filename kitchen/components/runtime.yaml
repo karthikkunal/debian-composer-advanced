@@ -1,0 +1,28 @@
+# Runtime Layer
+# Language runtimes and interpreters
+
+name: runtime
+version: 1.0.0
+description: Language runtimes (Python, Node.js, Ruby, etc.)
+order: 2
+author: Debian Composer Team
+license: MIT
+
+components: []
+
+packages:
+  - python3
+  - python3-pip
+  - python3-venv
+  - nodejs
+  - npm
+  - ruby
+  - ruby-bundler
+
+requirements:
+  min_ram: 512
+  min_disk: 2
+
+post_install:
+  - "Runtime layer installed"
+  - "Python: python3, npm: nodejs"

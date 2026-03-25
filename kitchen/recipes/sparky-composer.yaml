@@ -1,0 +1,322 @@
+# ============================================================================
+# Distro: sparky-composer
+# ============================================================================
+# Transform a clean Debian install into SparkyLinux-inspired system.
+# SparkyLinux is a lightweight, fast and simple Linux based on Debian Testing/Stable.
+#
+# Usage:
+#   sudo debian-composer --distro=sparky-composer
+#   sudo debian-composer --distro=sparky-composer --var=desktop=lxqt
+#   sudo debian-composer --distro=sparky-composer --stack=gaming
+
+name: sparky-composer
+version: 1.0.0
+description: "Transform Debian into SparkyLinux-inspired system with lightweight tools"
+author: Debian Composer Team
+license: MIT
+tags: [distro, sparky, lightweight, debian-testing, rolling]
+kind: distro
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  debian_base:
+    type: string
+    default: stable
+    choices: [stable, testing, unstable]
+    description: "Debian base (stable, testing, or unstable)"
+
+  desktop:
+    type: string
+    default: openbox
+    choices: [openbox, xfce, lxqt, lxde, kde, i3, mate]
+    description: "Desktop environment"
+
+  enable_gaming:
+    type: boolean
+    default: false
+    description: "Install gaming tools (Steam, Lutris)"
+
+  enable_multimedia:
+    type: boolean
+    default: true
+    description: "Install multimedia codecs and players"
+
+  enable_testing_repo:
+    type: boolean
+    default: false
+    description: "Enable Sparky testing repository"
+
+repositories:
+  - name: sparky-main
+    url: "deb https://repo.sparkylinux.org/debian ${debian_base} main non-free contrib"
+    key: "https://repo.sparkylinux.org/sparky-repo-key.asc"
+    keyring: /usr/share/keyrings/sparky-archive-keyring.gpg
+
+packages:
+  - sparky-keyring
+  - sparky-default-settings
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - wget
+
+categories:
+  desktop/openbox:
+    condition: desktop == openbox
+    description: "Openbox window manager (Sparky default)"
+    install:
+      packages:
+        - openbox
+        - tint2
+        - obconf
+        - obmenu
+        - rofi
+        - featherpad
+        - pcmanfm
+        - lightdm
+    verify:
+      commands:
+        - openbox --version
+
+  desktop/xfce:
+    condition: desktop == xfce
+    description: "XFCE desktop"
+    install:
+      packages:
+        - task-xfce-desktop
+        - xfce4
+        - xfce4-goodies
+        - lightdm
+    verify:
+      commands:
+        - xfce4-session --version
+
+  desktop/lxqt:
+    condition: desktop == lxqt
+    description: "LXQt desktop (ultra lightweight)"
+    install:
+      packages:
+        - task-lxqt-desktop
+        - lxqt
+        - sddm
+    verify:
+      commands:
+        - lxqt-session --version 2>&1 | head -1 || true
+
+  desktop/lxde:
+    condition: desktop == lxde
+    description: "LXDE desktop (lightweight)"
+    install:
+      packages:
+        - task-lxde-desktop
+        - lxde
+        - lightdm
+    verify:
+      commands:
+        - lxde-session --version 2>&1 | head -1 || true
+
+  desktop/kde:
+    condition: desktop == kde
+    description: "KDE Plasma desktop"
+    install:
+      packages:
+        - kde-plasma-desktop
+        - kde-standard
+        - sddm
+    verify:
+      commands:
+        - plasmashell --version 2>&1 | head -1 || true
+
+  desktop/i3:
+    condition: desktop == i3
+    description: "i3 window manager"
+    install:
+      packages:
+        - i3
+        - i3status
+        - i3lock
+        - dmenu
+        - rofi
+        - lightdm
+        - rxvt-unicode
+        - feh
+    verify:
+      commands:
+        - i3 --version
+
+  desktop/mate:
+    condition: desktop == mate
+    description: "MATE desktop"
+    install:
+      packages:
+        - task-mate-desktop
+        - mate-desktop-environment
+        - lightdm
+    verify:
+      commands:
+        - mate-session --version 2>&1 | head -1 || true
+
+  multimedia/codecs:
+    condition: enable_multimedia == true
+    description: "Multimedia codecs and players"
+    install:
+      packages:
+        - vlc
+        - audacious
+        - mpv
+        - ffmpeg
+        - gstreamer1.0-plugins-bad
+        - gstreamer1.0-plugins-ugly
+        - libavcodec-extra
+        - libdvd-pkg
+    verify:
+      commands:
+        - vlc --version 2>&1 | head -1 || true
+
+  gaming/steam:
+    condition: enable_gaming == true
+    description: "Steam and gaming tools"
+    install:
+      packages:
+        - steam
+        - lutris
+        - gamemode
+        - mangohud
+        - wine
+        - winetricks
+    verify:
+      commands:
+        - steam --version 2>&1 | head -1 || true
+
+  tools/sparky:
+    description: "SparkyLinux system tools"
+    install:
+      packages:
+        - sparky-center
+        - sparky-backup
+        - sparky-aptus
+        - sparky-aptus-core
+        - sparky-tips
+    verify:
+      commands:
+        - sparky-center --version 2>&1 | head -1 || true
+
+  tools/live:
+    description: "Live system tools"
+    install:
+      packages:
+        - live-build
+        - xorriso
+        - grub-pc-bin
+        - grub-efi-amd64-bin
+    verify:
+      commands:
+        - xorriso -version 2>&1 | head -1
+
+  repo/testing:
+    condition: enable_testing_repo == true
+    description: "Sparky testing repository"
+    install:
+      repositories:
+        - name: sparky-testing
+          url: "deb https://repo.sparkylinux.org/debian testing main"
+          trusted: true
+
+stacks:
+  default:
+    description: "Sparky with Openbox (standard)"
+    categories:
+      - desktop/openbox
+      - tools/sparky
+      - multimedia/codecs
+
+  desktop:
+    description: "Sparky with XFCE desktop"
+    categories:
+      - desktop/xfce
+      - tools/sparky
+      - multimedia/codecs
+
+  lightweight:
+    description: "Sparky lightweight (LXQt)"
+    categories:
+      - desktop/lxqt
+      - tools/sparky
+      - multimedia/codecs
+
+  gaming:
+    description: "Sparky Gaming edition"
+    categories:
+      - desktop/openbox
+      - tools/sparky
+      - multimedia/codecs
+      - gaming/steam
+
+  i3:
+    description: "Sparky i3 window manager"
+    categories:
+      - desktop/i3
+      - tools/sparky
+
+  kde:
+    description: "Sparky KDE Plasma"
+    categories:
+      - desktop/kde
+      - tools/sparky
+      - multimedia/codecs
+
+  rolling:
+    description: "Sparky rolling release (testing)"
+    categories:
+      - desktop/openbox
+      - tools/sparky
+      - multimedia/codecs
+      - repo/testing
+
+  live-build:
+    description: "Sparky with live-build tools"
+    categories:
+      - desktop/openbox
+      - tools/sparky
+      - tools/live
+
+requirements:
+  min_ram: 512
+  min_disk: 8
+
+post_install:
+  - "=== Sparky Composer installed ==="
+  - ""
+  - "Your Debian system is now SparkyLinux-inspired."
+  - "Base: Debian ${debian_base}"
+  - "Desktop: ${desktop}"
+  - "Gaming: ${enable_gaming}"
+  - "Multimedia: ${enable_multimedia}"
+  - ""
+  - "Sparky tools:"
+  - "  - Sparky Center: sparky-center"
+  - "  - Sparky Backup: sparky-backup"
+  - "  - Package manager: sparky-aptus"
+  - ""
+  - "Tips:"
+  - "  - Lightweight Openbox uses minimal resources"
+  - "  - Use 'sparky-tips' for desktop shortcuts"
+
+examples:
+  - title: "Sparky Openbox (default)"
+    command: "sudo debian-composer --distro=sparky-composer"
+  - title: "Sparky XFCE desktop"
+    command: "sudo debian-composer --distro=sparky-composer --stack=desktop"
+  - title: "Sparky lightweight LXQt"
+    command: "sudo debian-composer --distro=sparky-composer --stack=lightweight"
+  - title: "Sparky Gaming"
+    command: "sudo debian-composer --distro=sparky-composer --stack=gaming"
+  - title: "Sparky rolling (testing)"
+    command: "sudo debian-composer --distro=sparky-composer --stack=rolling"
+  - title: "Sparky i3"
+    command: "sudo debian-composer --distro=sparky-composer --stack=i3"

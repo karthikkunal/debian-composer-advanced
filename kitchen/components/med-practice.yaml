@@ -1,0 +1,58 @@
+# ============================================================================
+# Medical Practice Component
+# ============================================================================
+# Medical practice management tools
+#
+# Reusable component for any recipe needing practice management
+
+name: med-practice
+version: 1.0.0
+description: Medical practice management tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [medical, practice, emr, ehr, management]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Practice management
+    - medinformatix
+    - kmed
+    # Electronic health records
+    - gnumed-client
+    - gnumed-server
+    - openmrs
+    # Patient management
+    - bahmni
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - gnumed --version 2>&1 | head -1
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "GNUmed: Electronic medical records"
+  - "OpenMRS: Medical record system"
+  - "Bahmni: Hospital management system"

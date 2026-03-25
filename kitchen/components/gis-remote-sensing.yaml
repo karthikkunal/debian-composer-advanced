@@ -1,0 +1,59 @@
+# ============================================================================
+# GIS Remote Sensing Component
+# ============================================================================
+# Remote sensing and Earth observation tools
+#
+# Reusable component for any recipe needing remote sensing
+
+name: gis-remote-sensing
+version: 1.0.0
+description: Remote sensing and Earth observation tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [gis, remote-sensing, earth-observation, otb, snap]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # ORFEO Toolbox
+    - otb
+    - otb-bin
+    - otb-bin-qt
+    # SNAP toolbox
+    - snap
+    - snap-engine
+    # Remote sensing
+    - polsarpro
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - otbcli --version
+    - gpt --version 2>&1 | head -1
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 16384
+  min_disk: 50
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "OTB: ORFEO Toolbox for remote sensing"
+  - "SNAP: Sentinel Application Processing"
+  - "PolsarPro: Polarimetric SAR processing"

@@ -1,0 +1,77 @@
+# Elasticsearch Component
+# Reusable Elasticsearch search engine configuration
+# Template variables: ${port}, ${cluster_name}
+# Uses YAML anchors and templates for DRY configuration
+
+name: elasticsearch
+version: 1.0.0
+description: Elasticsearch search engine
+author: Debian Composer Team
+license: MIT
+tags: [database, elasticsearch, search]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# Template variables
+variables:
+  port:
+    type: integer
+    default: 9200
+    description: "Elasticsearch HTTP port"
+  cluster_name:
+    type: string
+    default: "elasticsearch"
+    description: "Cluster name"
+
+install:
+  packages:
+    - elasticsearch
+    - elasticsearch-keystore
+  repositories:
+    - name: elasticsearch
+      key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      url: "deb https://artifacts.elastic.co/packages/8.x/apt stable main"
+
+# ============================================================================
+# CONFIGURE - Using service template with overrides
+# ============================================================================
+configure:
+  <<: *service_template
+  service:
+    name: elasticsearch
+    enable: true
+    start: true
+  settings:
+    port: ${port}
+    cluster_name: ${cluster_name}
+    discovery_type: single-node
+  security:
+    xpack_security_enabled: true
+    ssl_enabled: true
+
+# ============================================================================
+# VERIFY - Custom verification with elasticsearch-specific checks
+# ============================================================================
+verify:
+  commands:
+    - elasticsearch --version
+    - curl -s http://localhost:${port}/_cluster/health
+  services_running:
+    - elasticsearch
+  ports_listening:
+    - ${port}
+    - 9300
+
+requirements:
+  min_ram: 4096
+  min_disk: 20
+
+post_install:
+  - "Check health at http://localhost:${port}/_cluster/health"
+  - "Cluster name: ${cluster_name}"
+  - "Requires significant memory, 4GB+ recommended"

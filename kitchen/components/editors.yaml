@@ -1,0 +1,78 @@
+# ============================================================================
+# Editors Component
+# ============================================================================
+# NeoVim and modern terminal UI tools for Git/Docker
+#
+# Reusable component for any recipe needing modern editor setup
+
+name: editors
+version: 1.0.0
+description: NeoVim and modern terminal UI tools for Git/Docker
+author: Debian Composer Team
+license: MIT
+tags: [editors, neovim, vim, lazygit, lazydocker, git-delta]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Editors
+    - neovim
+    - vim
+    - nano
+    # Git tools
+    - git-delta
+    - tig
+    # Terminal UI tools
+    - lazygit
+    - lazydocker
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  hooks:
+    post_install:
+      - type: command
+        command: "rm -rf /home/${SUDO_USER}/.config/nvim && sudo -u ${SUDO_USER} git clone https://github.com/basecamp/omarchy-nvim /home/${SUDO_USER}/.config/nvim"
+        description: "Clone Omarchy NeoVim configuration"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - nvim --version
+    - git --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 1024
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Editors: NeoVim config cloned to ~/.config/nvim"
+  - "First launch: nvim (will pull LazyVim plugins)"
+  - "LazyGit: Run 'lazygit' command"
+  - "LazyDocker: Run 'lazydocker' command"

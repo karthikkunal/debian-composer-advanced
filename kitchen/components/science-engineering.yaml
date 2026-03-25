@@ -1,0 +1,104 @@
+# ============================================================================
+# Science Engineering Component
+# ============================================================================
+# Engineering CAD/FEM/CFD tools
+#
+# Reusable component for any recipe needing engineering software
+
+name: science-engineering
+version: 1.0.0
+description: Engineering CAD/FEM/CFD tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [science, engineering, cad, fem, cfd, freecad]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_cad:
+    type: boolean
+    default: true
+    description: Enable CAD tools
+
+  enable_fem:
+    type: boolean
+    default: true
+    description: Enable FEM simulation
+
+  enable_cfd:
+    type: boolean
+    default: true
+    description: Enable CFD tools
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Common dependencies
+    - python3-numpy
+    - python3-scipy
+
+# ============================================================================
+# CAD TOOLS
+# ============================================================================
+install_cad:
+  condition: enable_cad == true
+  packages:
+    - freecad
+    - openscad
+    - librecad
+
+# ============================================================================
+# FEM TOOLS
+# ============================================================================
+install_fem:
+  condition: enable_fem == true
+  packages:
+    - calculix
+    - fenics
+    - code-aster
+
+# ============================================================================
+# CFD TOOLS
+# ============================================================================
+install_cfd:
+  condition: enable_cfd == true
+  packages:
+    - openfoam
+    - gerris
+    - su2
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - freecad --version 2>&1 | head -1
+    - ccx -v 2>&1 | head -1
+    - simpleFoam -help 2>&1 | head -1
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 16384
+  min_disk: 50
+  gpu: true
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "FreeCAD: 3D CAD modeler"
+  - "CalculiX: FEM analysis"
+  - "OpenFOAM: Computational fluid dynamics"

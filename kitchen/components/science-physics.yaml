@@ -1,0 +1,79 @@
+# ============================================================================
+# Science Physics Component
+# ============================================================================
+# Physics simulation and analysis tools
+#
+# Reusable component for any recipe needing physics tools
+
+name: science-physics
+version: 1.0.0
+description: Physics simulation and analysis tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [science, physics, simulation, geant4, analysis]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  enable_high_energy:
+    type: boolean
+    default: false
+    description: Enable high energy physics tools
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # General physics
+    - step
+    - physcalc
+    # Simulation
+    - gerris
+    - openfoam
+    # Data analysis
+    - root-system
+    - pythia8
+
+# ============================================================================
+# HIGH ENERGY PHYSICS (conditional)
+# ============================================================================
+install_high_energy:
+  condition: enable_high_energy == true
+  packages:
+    - geant4
+    - geant4-data
+    - root-system-bin
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - geant4-config --version 2>&1 | head -1
+    - root --version 2>&1 | head -1
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 8192
+  min_disk: 50
+  gpu: false
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Geant4: Particle physics simulation"
+  - "ROOT: Data analysis framework"
+  - "OpenFOAM: Computational fluid dynamics"

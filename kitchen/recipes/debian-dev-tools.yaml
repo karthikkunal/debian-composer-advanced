@@ -1,0 +1,292 @@
+# Debian Developer Tools Recipe
+# YAML Configuration for package management
+#
+# Structure: install (what to install) is separate from configure (how to set it up)
+#
+# Uses YAML anchors and merge keys for DRY configuration
+
+name: debian-dev-tools
+version: 1.0.0
+description: Install common development tools on Debian
+author: Debian Composer Team
+license: MIT
+tags: [development, programming, docker, nodejs, python, go, rust]
+
+# ============================================================================
+# COMPOSABILITY - Uses base component and anchor fragments
+# ============================================================================
+includes:
+  - components/base.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+depends_on:
+  recipes: []
+  external:
+    - name: apt
+      check: "{{preferred_package_manager}} --version"
+    - name: curl
+      check: "curl --version"
+
+# ============================================================================
+# CONFLICTS
+# ============================================================================
+conflicts:
+  recipes: []
+  packages: []
+  services: []
+
+# ============================================================================
+# PROVIDES
+# ============================================================================
+provides:
+  - development-tools
+  - programming-environment
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor reference
+# ============================================================================
+packages: *dev_packages
+
+# ============================================================================
+# CATEGORIES - Using merge keys to inherit from templates
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Docker - Using container service template
+  # --------------------------------------------------------------------------
+  docker:
+    <<: *container_service_template
+    install:
+      packages:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+      repositories:
+        - name: docker
+          key: https://download.docker.com/linux/debian/gpg
+          keyring: /etc/apt/keyrings/docker.asc
+          url: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{VERSION_CODENAME}} stable"
+    configure:
+      service:
+        name: docker
+        enable: true
+        start: true
+      user_groups:
+        - docker
+      daemon:
+        log_driver: json-file
+        log_opts:
+          max-size: 10m
+          max-file: "3"
+    verify:
+      commands:
+        - docker --version
+        - docker compose version
+      services_running:
+        - docker
+      files_exist:
+        - /etc/docker/daemon.json
+
+  # --------------------------------------------------------------------------
+  # Node.js - Using service template
+  # --------------------------------------------------------------------------
+  nodejs:
+    <<: *service_template
+    install:
+      packages:
+        - nodejs
+        - npm
+      repositories:
+        - name: nodesource
+          setup_script: https://deb.nodesource.com/setup_lts.x
+    configure:
+      service:
+        name: nodejs
+      npm:
+        global_prefix: /usr/local
+    verify:
+      commands:
+        - node --version
+        - npm --version
+
+  # --------------------------------------------------------------------------
+  # Python - Using Python base anchor
+  # --------------------------------------------------------------------------
+  python:
+    <<: *service_template
+    install:
+      packages: *python_dev
+    configure:
+      pip:
+        upgrade: true
+        packages:
+          - pip
+          - setuptools
+          - wheel
+    verify:
+      commands:
+        - python3 --version
+        - pip3 --version
+
+  # --------------------------------------------------------------------------
+  # Go - Using service template
+  # --------------------------------------------------------------------------
+  go:
+    <<: *service_template
+    install:
+      packages:
+        - golang-go
+        - golang-src
+    configure:
+      environment:
+        GOPATH: "$HOME/go"
+        GOBIN: "$HOME/go/bin"
+    verify:
+      commands:
+        - go version
+        - go env GOPATH
+
+  # --------------------------------------------------------------------------
+  # Rust - Using service template with script install
+  # --------------------------------------------------------------------------
+  rust:
+    <<: *script_install_template
+    install:
+      packages:
+        - curl
+        - build-essential
+      script:
+        url: https://sh.rustup.rs
+        env:
+          RUSTUP_INIT_SKIP_PATH_CHECK: yes
+    configure:
+      environment:
+        CARGO_HOME: "$HOME/.cargo"
+        RUSTUP_HOME: "$HOME/.rustup"
+    verify:
+      commands:
+        - rustc --version
+        - cargo --version
+
+  # --------------------------------------------------------------------------
+  # Java - Using service template
+  # --------------------------------------------------------------------------
+  java:
+    <<: *service_template
+    install:
+      packages:
+        - default-jdk
+        - default-jre
+        - maven
+        - gradle
+    configure:
+      environment:
+        JAVA_HOME: /usr/lib/jvm/default-java
+    verify:
+      commands:
+        - java --version
+        - javac --version
+        - mvn --version
+        - gradle --version
+
+  # --------------------------------------------------------------------------
+  # Ruby - Using service template
+  # --------------------------------------------------------------------------
+  ruby:
+    <<: *service_template
+    install:
+      packages:
+        - ruby
+        - ruby-dev
+        - ruby-bundler
+    verify:
+      commands:
+        - ruby --version
+        - gem --version
+
+  # --------------------------------------------------------------------------
+  # PHP - Using service template
+  # --------------------------------------------------------------------------
+  php:
+    <<: *service_template
+    install:
+      packages:
+        - php
+        - php-cli
+        - php-mbstring
+        - php-xml
+        - php-curl
+        - php-zip
+    verify:
+      commands:
+        - php --version
+
+# ============================================================================
+# TOOLS - Additional utilities
+# ============================================================================
+tools:
+  docker:
+    description: "Container runtime"
+    install_method: apt
+    service_name: docker
+
+  nodejs:
+    description: "JavaScript runtime"
+    install_method: apt
+
+  python:
+    description: "Python programming language"
+    install_method: apt
+
+  go:
+    description: "Go programming language"
+    install_method: apt
+
+  rust:
+    description: "Rust programming language"
+    install_method: script
+
+  java:
+    description: "Java development kit"
+    install_method: apt
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor reference
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 10
+  gpu: false
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Docker: Add user to docker group: 'usermod -aG docker $USER'"
+  - "Node.js: Install global packages with 'npm install -g <package>'"
+  - "Python: Create virtual environments with 'python3 -m venv env'"
+  - "Go: Set GOPATH in ~/.bashrc: 'export GOPATH=$HOME/go'"
+  - "Rust: Cargo binaries in ~/.cargo/bin"
+  - "Java: JAVA_HOME set to /usr/lib/jvm/default-java"
+  - "Ruby: Install gems with 'gem install <gem>' or use bundler"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install Docker Only
+    description: Install only Docker container runtime
+    command: sudo debian-composer --recipe=debian-dev-tools --category=docker
+  - title: Install Python and Node.js
+    description: Install Python and Node.js development environments
+    command: sudo debian-composer --recipe=debian-dev-tools --category=python --category=nodejs
+  - title: Install All Development Tools
+    description: Install complete development environment
+    command: sudo debian-composer --recipe=debian-dev-tools

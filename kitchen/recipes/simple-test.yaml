@@ -1,0 +1,29 @@
+name: simple-test
+version: 1.0.0
+description: Simple test recipe without complex includes
+kind: recipe
+
+packages:
+  - git
+  - curl
+  - wget
+  - vim
+  - htop
+
+categories:
+  python:
+    description: Python development
+    install:
+      packages:
+        - python3
+        - python3-pip
+
+stacks:
+  minimal:
+    description: Minimal setup
+    categories:
+      - python
+
+requirements:
+  min_ram: 512
+  min_disk: 5

@@ -1,0 +1,87 @@
+# ============================================================================
+# Terminal Component
+# ============================================================================
+# Modern terminal experience with Zsh, Starship, and Zellij
+#
+# Reusable component for any recipe needing a modern terminal setup
+
+name: terminal
+version: 1.0.0
+description: Modern terminal experience with Zsh, Starship, and Zellij
+author: Debian Composer Team
+license: MIT
+tags: [terminal, zsh, tmux, fzf, zoxide, modern-cli]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Shell and terminal multiplexer
+    - zsh
+    - tmux
+    - bash-completion
+    # Search and navigation
+    - fzf
+    - zoxide
+    # Modern grep/find
+    - ripgrep
+    - fd-find
+    # Modern cat/ls
+    - bat
+    - eza
+    # System monitoring
+    - btop
+    - htop
+    # Documentation
+    - tldr
+    - man-db
+    - less
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  hooks:
+    pre_configure:
+      - type: command
+        command: "chsh -s $(which zsh) ${SUDO_USER}"
+        description: "Set default shell to Zsh"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - zsh --version
+    - tmux -V
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 512
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Terminal: Zsh is now your default shell (restart terminal or run: chsh -s $(which zsh))"
+  - "Starship: Add to ~/.zshrc: eval \"$(starship init zsh)\""
+  - "Zoxide: Add to ~/.zshrc: eval \"$(zoxide init zsh)\""

@@ -1,0 +1,75 @@
+# ============================================================================
+# Budgie Desktop Component
+# ============================================================================
+# Budgie - Modern, simple, and elegant desktop
+#
+# Reusable component for any recipe needing Budgie desktop
+#
+# Usage:
+#   sudo debian-composer --recipe=my-recipe --component=budgie-desktop
+
+name: budgie-desktop
+version: 1.0.0
+description: Budgie desktop - Modern, simple, and elegant desktop
+author: Debian Composer Team
+license: MIT
+tags: [desktop, budgie, modern, elegant]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages: *desktop_budgie
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  display_manager:
+    service: lightdm
+    enable: true
+  hooks:
+    post_configure:
+      - type: command
+        command: "update-desktop-database 2>/dev/null || true"
+        description: "Update desktop database"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - budgie-desktop --version
+  files_exist:
+    - /usr/share/xsessions/budgie-desktop.desktop
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_minimal
+  min_ram: 2048
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Budgie: Select Budgie session at login"
+  - "Display Manager: LightDM enabled"
+  - "Modern: Simple and elegant desktop"
+  - "Customize: Use Budgie Desktop Settings"

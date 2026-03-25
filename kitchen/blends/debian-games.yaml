@@ -1,0 +1,336 @@
+# ============================================================================
+# Debian Games Pure Blend - Gaming Environment
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian Games Pure Blend configuration for gamers. Provides a
+# comprehensive collection of free games from various genres including
+# arcade, strategy, RPG, puzzle, and more.
+#
+# Usage:
+#   # Install all games (complete blend)
+#   sudo debian-composer --blend=debian-games
+#
+#   # Install specific genre
+#   sudo debian-composer --blend=debian-games --var=game_genre=strategy
+#   sudo debian-composer --blend=debian-games --var=game_genre=rpg
+#   sudo debian-composer --blend=debian-games --var=game_genre=puzzle
+#
+#   # Install with emulation support
+#   sudo debian-composer --blend=debian-games --var=enable_emulators=true
+#
+#   # Game development setup
+#   sudo debian-composer --blend=debian-games --stack=dev-complete
+#
+# References:
+#   - Debian Games: https://blends.debian.org/games/
+#   - Debian Games Wiki: https://wiki.debian.org/Games/
+# ============================================================================
+
+name: debian-games
+version: 1.0.0
+description: Debian Games Pure Blend - Free gaming collection
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/games/
+tags: [blend, games, gaming, entertainment, arcade, strategy, rpg, emulation]
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: entertainment
+  target_audience: [gamers, game-developers, entertainment-users]
+  difficulty: beginner
+  min_ram: 4096
+  min_disk: 30
+  recommended_disk: 50
+  gpu_required: false
+  gpu_recommended: true
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies: []
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  game_genre:
+    type: string
+    default: all
+    choices: [all, arcade, strategy, rpg, puzzle, board, fps, simulation, sports, retro]
+    description: Primary game genre to install
+
+  enable_emulators:
+    type: boolean
+    default: true
+    description: Enable game console emulators
+
+  enable_3d_games:
+    type: boolean
+    default: true
+    description: Enable 3D games (requires GPU)
+
+  enable_multiplayer:
+    type: boolean
+    default: true
+    description: Enable multiplayer/network games
+
+  enable_dev_tools:
+    type: boolean
+    default: false
+    description: Enable game development tools
+
+# ============================================================================
+# CATEGORIES - Using tasksel task package
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # All Games (via task-games)
+  # --------------------------------------------------------------------------
+  games/all:
+    condition: game_genre == all
+    <<: *service_template
+    description: "All games (via task-games)"
+    install:
+      packages:
+        - *games_all
+    verify:
+      commands:
+        - extreme-tuxracer --version 2>&1 | head -1
+        - 0ad --version 2>&1 | head -1
+        - xonotic --version 2>&1 | head -1
+        - supertuxkart --version 2>&1 | head -1
+        - mednafen --version 2>&1 | head -1
+        - pychess --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Genre-specific (installed via task-games, filtered by user preference)
+  # --------------------------------------------------------------------------
+  classic/arcade:
+    condition: game_genre == arcade or game_genre == retro
+    <<: *service_template
+    description: "Arcade games (included in task-games)"
+    install:
+      packages:
+        - *games_arcade
+    verify:
+      commands:
+        - extreme-tuxracer --version 2>&1 | head -1
+        - supertuxkart --version 2>&1 | head -1
+
+  classic/roguelike:
+    condition: game_genre == retro
+    <<: *service_template
+    description: "Roguelike games (included in task-games)"
+    install:
+      packages:
+        - *games_rogue
+    verify:
+      commands:
+        - nethack --version 2>&1 | head -1
+
+  strategy/classic:
+    condition: game_genre == strategy
+    <<: *service_template
+    description: "Strategy games (included in task-games)"
+    install:
+      packages:
+        - *games_strategy
+    verify:
+      commands:
+        - 0ad --version 2>&1 | head -1
+
+  rpg/action:
+    condition: game_genre == rpg
+    <<: *service_template
+    description: "RPG games (included in task-games)"
+    install:
+      packages:
+        - *games_rpg
+    verify:
+      commands:
+        - endorquest --help 2>&1 | head -1
+
+  puzzle/collection:
+    condition: game_genre == puzzle
+    <<: *service_template
+    description: "Puzzle games (included in task-games)"
+    install:
+      packages:
+        - *games_puzzle
+    verify:
+      commands:
+        - kmines --version 2>&1 | head -1
+
+  board/collection:
+    condition: game_genre == board
+    <<: *service_template
+    description: "Board and card games (included in task-games)"
+    install:
+      packages:
+        - *games_board
+    verify:
+      commands:
+        - pychess --version 2>&1 | head -1
+
+  fps/arena:
+    condition: game_genre == fps
+    <<: *service_template
+    description: "FPS games (included in task-games)"
+    install:
+      packages:
+        - *games_fps
+    verify:
+      commands:
+        - xonotic --version 2>&1 | head -1
+
+  emulation/retro:
+    condition: enable_emulators == true or game_genre == retro
+    <<: *service_template
+    description: "Emulators (included in task-games)"
+    install:
+      packages:
+        - *games_emulator
+    verify:
+      commands:
+        - mednafen --version 2>&1 | head -1
+
+  educational/games:
+    <<: *service_template
+    description: "Educational games (included in task-games)"
+    install:
+      packages:
+        - *games_edu
+    verify:
+      commands:
+        - gcompris-qt --version 2>&1 | head -1
+
+  dev/tools:
+    condition: enable_dev_tools == true
+    <<: *service_template
+    description: "Game development tools (included in task-games)"
+    install:
+      packages:
+        - *games_programming
+    verify:
+      commands:
+        - godot --version 2>&1 | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  complete:
+    description: "Complete games collection"
+    categories:
+      - classic/arcade
+      - classic/roguelike
+      - strategy/classic
+      - rpg/action
+      - puzzle/collection
+      - board/collection
+      - fps/arena
+      - racing/games
+      - simulation/city
+      - emulation/retro
+
+  casual:
+    description: "Casual gaming setup (lightweight)"
+    categories:
+      - classic/arcade
+      - puzzle/collection
+      - board/collection
+      - educational/games
+
+  competitive:
+    description: "Competitive gaming setup"
+    categories:
+      - fps/arena
+      - strategy/classic
+      - strategy/turn-based
+      - racing/games
+      - accelerated/3d
+
+  retro:
+    description: "Retro gaming setup"
+    categories:
+      - classic/arcade
+      - classic/roguelike
+      - classic/console
+      - emulation/retro
+
+  strategy-focused:
+    description: "Strategy and board games"
+    categories:
+      - strategy/classic
+      - strategy/turn-based
+      - board/collection
+      - puzzle/collection
+
+  dev-complete:
+    description: "Game development environment"
+    categories:
+      - dev/tools
+      - accelerated/3d
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_games
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Games Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Genre: ${game_genre}"
+  - "  Emulators: ${enable_emulators}"
+  - "  3D Games: ${enable_3d_games}"
+  - "  Multiplayer: ${enable_multiplayer}"
+  - "  Dev Tools: ${enable_dev_tools}"
+  - ""
+  - "Popular Games Installed:"
+  - "  - Arcade: Extreme TuxRacer, Frozen Bubble"
+  - "  - Strategy: 0 A.D., Wesnoth"
+  - "  - FPS: Xonotic"
+  - "  - Racing: SuperTuxKart"
+  - "  - Board: PyChess, KDE Games"
+  - ""
+  - "Launchers:"
+  - "  - GNOME Games (gnome-games)"
+  - "  - Steam (install steam from contrib)"
+  - ""
+  - "Resources:"
+  - "  - Debian Games: https://blends.debian.org/games/"
+  - "  - Linux Gaming Wiki: https://www.gamingonlinux.com/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Casual Gaming
+    description: Install casual games collection
+    command: sudo debian-composer --blend=debian-games --stack=casual
+
+  - title: Retro Gaming
+    description: Install retro games with emulators
+    command: sudo debian-composer --blend=debian-games --stack=retro --var=enable_emulators=true
+
+  - title: Competitive Gaming
+    description: Install competitive games with 3D support
+    command: sudo debian-composer --blend=debian-games --stack=competitive --var=enable_3d_games=true
+
+  - title: Game Development
+    description: Install game development tools
+    command: sudo debian-composer --blend=debian-games --stack=dev-complete --var=enable_dev_tools=true

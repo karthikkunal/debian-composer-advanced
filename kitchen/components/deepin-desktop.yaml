@@ -1,0 +1,131 @@
+# ============================================================================
+# Deepin Desktop Component
+# ============================================================================
+# Deepin - Elegant, intuitive Linux desktop environment
+#
+# Reusable component for any recipe needing Deepin desktop
+#
+# Variables:
+#   deepin_version: Deepin version (default: latest)
+#   display_manager: Display manager (default: lightdm)
+#   enable_dde_extra: Install DDE extra packages (default: true)
+#
+# Usage:
+#   sudo debian-composer --recipe=my-recipe --component=deepin-desktop
+#   sudo debian-composer --recipe=my-recipe --component=deepin-desktop --var=enable_dde_extra=true
+
+name: deepin-desktop
+version: 1.0.0
+description: Deepin desktop - Elegant, intuitive, and beautiful
+author: Debian Composer Team
+license: MIT
+tags: [desktop, deepin, dde, gui, chinese]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  deepin_version:
+    type: string
+    default: "latest"
+    description: "Deepin version to install"
+  display_manager:
+    type: string
+    default: "lightdm"
+    description: "Display manager (lightdm, sddm)"
+  enable_dde_extra:
+    type: boolean
+    default: true
+    description: "Install DDE extra packages"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages: &desktop_deepin
+    - deepin-gnome-shell
+    - deepin-desktop
+    - deepin-session-ui
+    - deepin-launcher
+    - deepin-file-manager
+    - deepin-control-center
+    - deepin-calendar
+    - deepin-screensaver
+    - deepin-shortcut-viewer
+    - dde-dock
+    - dde-display
+    - dde-notification
+    - dde-polkit-agent
+    - dde-printer
+    - dde-system-tray
+    - deepin-calculator
+    - deepin-music
+    - deepin-movie
+    - deepin-image-viewer
+    - deepin-picker
+    - deepin-screen-recorder
+    - deepin-sound-theme
+    - deepin-icon-theme
+    - deepin-theme
+    - lightdm
+    - lightdm-deepin-greeter
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  display_manager:
+    service: "${display_manager}"
+    enable: true
+  hooks:
+    post_configure:
+      - type: command
+        command: "update-desktop-database 2>/dev/null || true"
+        description: "Update desktop database"
+      - type: command
+        command: "glib-compile-schemas /usr/share/glib-2.0/schemas 2>/dev/null || true"
+        description: "Compile GSettings schemas"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - deepin-editor --version
+    - dde-session --version
+  files_exist:
+    - /usr/share/xsessions/deepin.desktop
+    - /usr/bin/dde-session
+    - /usr/bin/deepin-file-manager
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 15
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Deepin Desktop: Select Deepin session at login"
+  - "Display Manager: ${display_manager} enabled"
+  - "DDE Extra: ${enable_dde_extra}"
+  - "Theme: Deepin default theme applied"
+  - "Configure: Use Control Center for customization"

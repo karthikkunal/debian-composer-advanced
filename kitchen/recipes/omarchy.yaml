@@ -1,0 +1,174 @@
+# ============================================================================
+# Omarchy Recipe
+# ============================================================================
+# Inspired by Omarchy OS (DHH's opinionated Arch-based distribution)
+# Brings tasteful developer-centric tool choices to Debian.
+#
+# This recipe composes reusable components for a complete
+# opinionated developer environment.
+#
+# Feature Parity with Omarchy 1.0 Shell Installer:
+# - 143 packages from Omarchy base
+# - Full Wayland desktop (Sway or Hyprland)
+# - Complete audio stack (PipeWire)
+# - Modern CLI tools
+# - Developer toolchain
+# - Applications (Signal, Obsidian, Spotify, etc.)
+
+name: omarchy
+version: 1.0.0
+description: Opinionated developer environment with modern CLI tools and Wayland utilities
+author: Debian Composer Team
+license: MIT
+tags: [omarchy, terminal, neovim, zellij, starship, wayland, cli]
+
+# ============================================================================
+# COMPOSABILITY - Uses reusable components
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/terminal.yaml
+  - components/audio.yaml
+  - components/editors.yaml
+  - components/cli-tools.yaml
+  - components/wayland-desktop.yaml
+  - components/hyprland-desktop.yaml
+  - components/dev-fonts.yaml
+  - components/system-utils.yaml
+  - components/dev-toolchain.yaml
+  - components/desktop-apps.yaml
+  - components/web-apps.yaml
+  - components/hardware-support.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS - Component dependencies
+# ============================================================================
+requires:
+  components:
+    - base
+    - terminal
+    - audio
+    - editors
+    - cli-tools
+    - wayland-desktop
+    - hyprland-desktop
+    - dev-fonts
+    - system-utils
+    - dev-toolchain
+    - desktop-apps
+    - web-apps
+    - hardware-support
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor references (for backward compatibility)
+# ============================================================================
+packages:
+  - *dev_packages     # git, curl, wget, build-essential, ca-certificates, gnupg
+  - *cli_modern_bundle  # eza, bat, fd-find, ripgrep, btop, fzf, zoxide, tealdeer
+  - *cli_git_enhanced   # git-delta, git-lfs, tig, gh
+  # Additional essentials
+  - unzip
+  - jq
+
+# ============================================================================
+# CATEGORIES - Using reusable components instead of inline categories
+# ============================================================================
+# Note: All categories are now reusable components in components/*.yaml
+# Install individual components with: --component=terminal, etc.
+#
+# Available components:
+#   - terminal          : Modern terminal (zsh, tmux, fzf, zoxide, etc.)
+#   - audio             : PipeWire audio stack
+#   - editors           : NeoVim + omarchy-nvim config
+#   - cli-tools         : Modern CLI utilities (jq, httpie, tree, etc.)
+#   - wayland-desktop   : Sway Wayland desktop environment
+#   - hyprland-desktop  : Hyprland Wayland compositor (Omarchy-style)
+#   - dev-fonts         : Developer monospace fonts
+#   - system-utils      : System monitoring and utilities
+#   - dev-toolchain     : Compilers and language toolchains
+#   - desktop-apps      : Desktop applications (Chromium, LibreOffice, etc.)
+#   - web-apps          : PWA shortcuts (HEY, WhatsApp, YouTube)
+#   - hardware-support  : Hardware firmware and drivers
+# ============================================================================
+categories:
+  # Categories are now delegated to reusable components
+  # This section is kept for backward compatibility
+  # Use --component=<name> for modular installs
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor reference
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 25
+  gpu: false  # Sway is software compositor, GPU optional
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Terminal: Zsh is now your default shell (restart terminal or run: chsh -s $(which zsh))"
+  - "Editors: NeoVim config cloned to ~/.config/nvim (first launch pulls LazyVim plugins)"
+  - "CLI Tools: Modern tools installed (eza, bat, fd, rg, zoxide, btop, fzf)"
+  - "Fonts: Developer fonts installed (JetBrains Mono, Fira Code, Noto)"
+  - "Wayland: Select Sway or Hyprland session at login"
+  - "Hyprland: Modern compositor with animations (Super+Space for launcher)"
+  - "Audio: PipeWire audio stack configured (restart or run: systemctl --user restart pipewire)"
+  - "Starship: Add to ~/.zshrc: eval \"$(starship init zsh)\""
+  - "Zoxide: Add to ~/.zshrc: eval \"$(zoxide init zsh)\""
+  - "Git config: Run 'git config --global user.name' and 'git config --global user.email'"
+  - "Docker: Add user to docker group: sudo usermod -aG docker $USER (then relogin)"
+  - "Web Apps: Desktop shortcuts for HEY, WhatsApp, YouTube installed"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install Terminal Component Only
+    description: Install modern terminal setup (Zsh, Tmux, fzf, etc.)
+    command: sudo debian-composer --recipe=omarchy --component=terminal
+  - title: Install Audio Component Only
+    description: Install PipeWire audio system
+    command: sudo debian-composer --recipe=omarchy --component=audio
+  - title: Install Editors Component Only
+    description: Install NeoVim and git-delta
+    command: sudo debian-composer --recipe=omarchy --component=editors
+  - title: Install CLI Tools Component Only
+    description: Install modern CLI replacements
+    command: sudo debian-composer --recipe=omarchy --component=cli-tools
+  - title: Install Wayland Desktop Component Only
+    description: Install Sway Wayland desktop environment
+    command: sudo debian-composer --recipe=omarchy --component=wayland-desktop
+  - title: Install Hyprland Desktop Component Only
+    description: Install Hyprland Wayland compositor (Omarchy-style)
+    command: sudo debian-composer --recipe=omarchy --component=hyprland-desktop
+  - title: Install GNOME Desktop Component Only
+    description: Install GNOME desktop environment
+    command: sudo debian-composer --recipe=omarchy --component=gnome-desktop
+  - title: Install KDE Desktop Component Only
+    description: Install KDE Plasma desktop environment
+    command: sudo debian-composer --recipe=omarchy --component=kde-desktop
+  - title: Install XFCE Desktop Component Only
+    description: Install XFCE desktop environment
+    command: sudo debian-composer --recipe=omarchy --component=xfce-desktop
+  - title: Install Dev Fonts Component Only
+    description: Install developer monospace fonts
+    command: sudo debian-composer --recipe=omarchy --component=dev-fonts
+  - title: Install System Utils Component Only
+    description: Install system monitoring and utilities
+    command: sudo debian-composer --recipe=omarchy --component=system-utils
+  - title: Install Dev Toolchain Component Only
+    description: Install compilers and language toolchains
+    command: sudo debian-composer --recipe=omarchy --component=dev-toolchain
+  - title: Install Desktop Apps Component Only
+    description: Install desktop applications (Chromium, LibreOffice, etc.)
+    command: sudo debian-composer --recipe=omarchy --component=desktop-apps
+  - title: Install Multiple Components
+    description: Install terminal + editors + CLI tools + Hyprland
+    command: sudo debian-composer --recipe=omarchy --component=terminal,editors,cli-tools,hyprland-desktop
+  - title: Full Omarchy Experience
+    description: Install complete opinionated developer environment
+    command: sudo debian-composer --recipe=omarchy

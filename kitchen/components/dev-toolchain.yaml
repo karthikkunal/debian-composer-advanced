@@ -1,0 +1,107 @@
+# ============================================================================
+# Development Toolchain Component
+# ============================================================================
+# Development toolchains and build tools
+#
+# Reusable component for any recipe needing development toolchain
+
+name: dev-toolchain
+version: 1.0.0
+description: Development toolchains and build tools
+author: Debian Composer Team
+license: MIT
+tags: [development, toolchain, compilers, build-tools]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Build essentials
+    - build-essential
+    - make
+    - cmake
+    - meson
+    - ninja-build
+    - pkg-config
+    # LLVM/Clang
+    - llvm
+    - clang
+    - lldb
+    - lld
+    # Rust
+    - rustc
+    - cargo
+    - rust-analyzer
+    # Ruby
+    - ruby
+    - ruby-dev
+    - bundler
+    # Python
+    - python3
+    - python3-pip
+    - python3-venv
+    - python3-dev
+    # Node.js
+    - nodejs
+    - npm
+    # .NET
+    - dotnet-sdk-8.0
+    # Lua
+    - lua5.4
+    - luarocks
+    # Version control
+    - git
+    - git-lfs
+    - subversion
+    # Database clients
+    - postgresql-client
+    - mariadb-client
+    - sqlite3
+    # Container tools
+    - docker.io
+    - docker-compose
+    - containerd
+    # Other tools
+    - tree-sitter-cli
+    - libqalculate
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - gcc --version
+    - rustc --version
+    - python3 --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Development: Toolchain installed"
+  - "Rust: Run 'rustup update' for latest toolchain"
+  - "Python: Create virtualenv with 'python3 -m venv .venv'"
+  - "Node.js: Use 'nvm' for version management (recommended)"

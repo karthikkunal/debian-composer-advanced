@@ -1,0 +1,147 @@
+# ============================================================================
+# Web Development Specialization Mixin
+# ============================================================================
+# Adds web development tools to any persona
+#
+# Usage:
+#   sudo debian-composer --persona=developer --mixin=web-dev
+#   sudo debian-composer --base=desktop --role=developer --mixin=web-dev
+
+name: mixin-web-dev
+version: 1.0.0
+description: Web development tools - Node.js, frameworks, dev servers
+author: Debian Composer Team
+license: MIT
+tags: [mixin, web, javascript, nodejs, frontend, backend]
+kind: mixin
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  node_version:
+    type: string
+    default: "20"
+    choices: ["18", "20", "22"]
+    description: "Node.js LTS version"
+  enable_docker:
+    type: boolean
+    default: true
+    description: "Include Docker for containerized development"
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - nodejs
+  - npm
+  - npx
+  - yarn
+  - pnpm
+  - nginx
+  - postgresql-client
+  - redis-tools
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  nodejs:
+    <<: *service_template
+    description: "Node.js runtime"
+    install:
+      packages:
+        - nodejs
+        - npm
+        - npx
+    verify:
+      commands:
+        - node --version
+        - npm --version
+
+  package-managers:
+    <<: *service_template
+    description: "JavaScript package managers"
+    install:
+      packages:
+        - yarn
+        - pnpm
+    verify:
+      commands:
+        - yarn --version
+        - pnpm --version
+
+  database-clients:
+    <<: *service_template
+    description: "Database clients for web dev"
+    install:
+      packages:
+        - postgresql-client
+        - redis-tools
+        - sqlite3
+    verify:
+      commands:
+        - psql --version
+
+  web-server:
+    <<: *service_template
+    description: "Local web server"
+    install:
+      packages:
+        - nginx
+    configure:
+      service:
+        name: nginx
+        enable: true
+    verify:
+      commands:
+        - nginx -v
+
+  docker:
+    condition: enable_docker == true
+    <<: *service_template
+    description: "Docker for containers"
+    install:
+      packages:
+        - docker.io
+        - docker-compose
+    configure:
+      service:
+        name: docker
+        enable: true
+    verify:
+      commands:
+        - docker --version
+        - docker compose version
+
+  dev-tools:
+    <<: *service_template
+    description: "Web development utilities"
+    install:
+      packages:
+        - curl
+        - httpie
+        - jq
+        - web-ext
+    verify:
+      commands:
+        - httpie --version
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Web Dev Mixin Applied ==="
+  - "Node.js version: ${node_version}"
+  - "Docker: ${enable_docker}"
+  - ""
+  - "Package managers: npm, yarn, pnpm"
+  - "Start nginx: sudo systemctl start nginx"
+  - "Install frameworks: npm create vite@latest"

@@ -1,0 +1,269 @@
+# ============================================================================
+# Distro: mx-composer
+# ============================================================================
+# Transform a clean Debian install into MX Linux-inspired system.
+# MX Linux is based on Debian Stable with antiX live system tools.
+#
+# Usage:
+#   sudo debian-composer --distro=mx-composer
+#   sudo debian-composer --distro=mx-composer --var=desktop=xfce
+#   sudo debian-composer --distro=mx-composer --stack=full
+
+name: mx-composer
+version: 1.0.0
+description: "Transform Debian into MX Linux-inspired system with live tools"
+author: Debian Composer Team
+license: MIT
+tags: [distro, mx-linux, debian-stable, live, systemd, sysvinit]
+kind: distro
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  debian_release:
+    type: string
+    default: bookworm
+    choices: [bookworm, bullseye]
+    description: "Debian stable release base"
+
+  desktop:
+    type: string
+    default: xfce
+    choices: [xfce, kde, fluxbox]
+    description: "Desktop environment"
+
+  enable_systemd:
+    type: boolean
+    default: true
+    description: "Keep systemd (true) or switch to sysvinit (false)"
+
+  enable_live:
+    type: boolean
+    default: true
+    description: "Install MX live system tools"
+
+  enable_snapshots:
+    type: boolean
+    default: true
+    description: "Enable snapshot/rollback support"
+
+repositories:
+  - name: mx-linux-main
+    url: "deb https://mxrepo.com/mx/repo/ ${debian_release} main non-free"
+    key: "https://mxrepo.com/mx/repo.asc"
+    keyring: /usr/share/keyrings/mx-archive-keyring.gpg
+
+packages:
+  - mx-keyring
+  - mx-packageinstaller
+  - mx-tweak
+  - mx-tools
+  - apt-notifier
+
+categories:
+  desktop/xfce:
+    condition: desktop == xfce
+    description: "MX Linux XFCE desktop (default)"
+    install:
+      packages:
+        - xfce4
+        - xfce4-goodies
+        - xfce4-terminal
+        - xfce4-power-manager
+        - xfce4-whiskermenu-plugin
+        - lightdm
+        - mx-select-free
+        - mx-desktop-icons
+    verify:
+      commands:
+        - xfce4-session --version
+
+  desktop/kde:
+    condition: desktop == kde
+    description: "MX Linux KDE Plasma desktop"
+    install:
+      packages:
+        - kde-plasma-desktop
+        - kde-standard
+        - sddm
+        - mx-select-free
+    verify:
+      commands:
+        - plasmashell --version 2>&1 | head -1 || true
+
+  desktop/fluxbox:
+    condition: desktop == fluxbox
+    description: "MX Linux Fluxbox (lightweight)"
+    install:
+      packages:
+        - fluxbox
+        - fbpanel
+        - rofi
+        - lightdm
+        - mx-select-free
+    verify:
+      commands:
+        - fluxbox -version 2>&1 | head -1 || true
+
+  live/tools:
+    condition: enable_live == true
+    description: "MX live system tools (snapshot, remaster, USB creator)"
+    install:
+      packages:
+        - live-usb-maker
+        - live-usb-maker-gui
+        - mx-live-usb-maker
+        - isomaster
+        - xorriso
+    verify:
+      commands:
+        - live-usb-maker --help 2>&1 | head -1 || true
+
+  live/snapshot:
+    condition: enable_snapshots == true
+    description: "System snapshot and rollback"
+    install:
+      packages:
+        - mx-snapshot
+        - mx-restore
+        - rsync
+        - grub-pc
+    verify:
+      commands:
+        - mx-snapshot --version 2>&1 | head -1 || true
+
+  init/sysvinit:
+    condition: enable_systemd == false
+    description: "SysVinit (systemd-free)"
+    install:
+      packages:
+        - sysvinit-core
+        - sysv-rc
+        - file-rc
+      remove:
+        - systemd
+        - systemd-sysv
+
+  tools/apt-notifier:
+    description: "APT update notifications"
+    install:
+      packages:
+        - apt-notifier
+        - xapt
+    configure:
+      service:
+        name: apt-notifier
+        enable: true
+
+  tools/codecs:
+    description: "Multimedia codecs and firmware"
+    install:
+      packages:
+        - firmware-misc-nonfree
+        - firmware-realtek
+        - firmware-atheros
+        - libavcodec-extra
+        - gstreamer1.0-plugins-bad
+        - gstreamer1.0-plugins-ugly
+
+  tools/admin:
+    description: "MX administration tools"
+    install:
+      packages:
+        - mx-viewer
+        - mx-menu-editor
+        - mx-bluetooth
+        - mx-welcome
+
+stacks:
+  default:
+    description: "MX Linux with XFCE (standard)"
+    categories:
+      - desktop/xfce
+      - live/tools
+      - live/snapshot
+      - tools/apt-notifier
+      - tools/codecs
+      - tools/admin
+
+  full:
+    description: "MX Linux full installation"
+    categories:
+      - desktop/xfce
+      - live/tools
+      - live/snapshot
+      - tools/apt-notifier
+      - tools/codecs
+      - tools/admin
+
+  kde:
+    description: "MX Linux with KDE Plasma"
+    categories:
+      - desktop/kde
+      - live/tools
+      - live/snapshot
+      - tools/apt-notifier
+      - tools/codecs
+      - tools/admin
+
+  fluxbox:
+    description: "MX Linux with Fluxbox (lightweight)"
+    categories:
+      - desktop/fluxbox
+      - live/tools
+      - tools/apt-notifier
+      - tools/codecs
+
+  minimal:
+    description: "Minimal MX base"
+    categories:
+      - desktop/xfce
+      - tools/apt-notifier
+
+  no-systemd:
+    description: "MX Linux without systemd"
+    categories:
+      - init/sysvinit
+      - desktop/xfce
+      - live/tools
+      - tools/apt-notifier
+      - tools/codecs
+
+requirements:
+  min_ram: 1024
+  min_disk: 15
+
+post_install:
+  - "=== MX Composer installed ==="
+  - ""
+  - "Your Debian system is now MX Linux-inspired."
+  - "Base: Debian ${debian_release}"
+  - "Desktop: ${desktop}"
+  - "Live tools: ${enable_live}"
+  - "Snapshots: ${enable_snapshots}"
+  - "Systemd: ${enable_systemd}"
+  - ""
+  - "MX tools available:"
+  - "  - MX Package Installer: mx-packageinstaller"
+  - "  - MX Tweak: mx-tweak"
+  - "  - Welcome: mx-welcome"
+  - ""
+  - "Live system:"
+  - "  - Create live USB: live-usb-maker"
+  - "  - Snapshot system: mx-snapshot"
+
+examples:
+  - title: "MX Linux XFCE (default)"
+    command: "sudo debian-composer --distro=mx-composer"
+  - title: "MX Linux KDE"
+    command: "sudo debian-composer --distro=mx-composer --stack=kde"
+  - title: "MX Linux without systemd"
+    command: "sudo debian-composer --distro=mx-composer --stack=no-systemd"
+  - title: "MX Linux Fluxbox"
+    command: "sudo debian-composer --distro=mx-composer --stack=fluxbox"
+  - title: "Minimal MX"
+    command: "sudo debian-composer --distro=mx-composer --stack=minimal"

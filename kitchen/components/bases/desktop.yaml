@@ -1,0 +1,162 @@
+# ============================================================================
+# Desktop Base Template
+# ============================================================================
+# Base configuration for desktop/workstation systems
+#
+# Usage:
+#   sudo debian-composer --base=desktop --role=developer
+#   sudo debian-composer --base=desktop --role=creator --tools=gimp,inkscape
+
+name: base-desktop
+version: 1.0.0
+description: Desktop workstation base configuration
+author: Debian Composer Team
+license: MIT
+tags: [base, desktop, workstation, gui]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/desktop-apps.yaml
+  - components/system-utils.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - xorg
+  - pipewire
+  - pipewire-pulse
+  - network-manager
+  - network-manager-gnome
+  - gnome-software
+  - firmware-linux-nonfree
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  display:
+    <<: *service_template
+    description: "Display server and graphics"
+    install:
+      packages:
+        - xorg
+        - xserver-xorg-video-all
+        - xserver-xorg-input-all
+    verify:
+      commands:
+        - Xorg -version 2>&1 || true
+
+  audio:
+    <<: *service_template
+    description: "Audio system (PipeWire)"
+    install:
+      packages:
+        - pipewire
+        - pipewire-pulse
+        - pipewire-alsa
+        - wireplumber
+        - pavucontrol
+    verify:
+      commands:
+        - pactl --version
+
+  network:
+    <<: *service_template
+    description: "Network management"
+    install:
+      packages:
+        - network-manager
+        - network-manager-gnome
+    configure:
+      service:
+        name: NetworkManager
+        enable: true
+    verify:
+      commands:
+        - nmcli --version
+
+  fonts:
+    <<: *service_template
+    description: "Base fonts"
+    install:
+      packages:
+        - fonts-dejavu-core
+        - fonts-liberation
+        - fonts-noto-core
+        - fonts-noto-color-emoji
+    verify:
+      commands:
+        - fc-list | head -5
+
+  firmware:
+    <<: *service_template
+    description: "Hardware firmware"
+    install:
+      packages:
+        - firmware-linux-nonfree
+        - firmware-misc-nonfree
+    verify:
+      commands:
+        - dpkg -l | grep firmware || true
+
+  app-store:
+    <<: *service_template
+    description: "Application store"
+    install:
+      packages:
+        - gnome-software
+        - gnome-software-plugin-flatpak
+        - flatpak
+    verify:
+      commands:
+        - flatpak --version
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  desktop-basic:
+    description: "Basic desktop setup"
+    categories:
+      - display
+      - audio
+      - network
+      - fonts
+
+  desktop-full:
+    description: "Full desktop with app store"
+    categories:
+      - display
+      - audio
+      - network
+      - fonts
+      - firmware
+      - app-store
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Desktop Base Installed ==="
+  - "Display: X11 with auto-detected drivers"
+  - "Audio: PipeWire with PulseAudio compatibility"
+  - "Network: NetworkManager with GUI"
+  - ""
+  - "Next steps:"
+  - "  - Add a role: --role=developer, --role=creator"
+  - "  - Add tools: --tools=firefox,code,git"
+  - "  - Reboot for firmware changes to take effect"

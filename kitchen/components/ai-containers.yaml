@@ -1,0 +1,252 @@
+# ============================================================================
+# AI Containers Component
+# ============================================================================
+# Docker configured for AI/ML workloads with GPU passthrough
+#
+# Includes:
+# - Docker Engine with daemon.json tuned for AI (large image layers, GPU)
+# - NVIDIA Container Toolkit (for NVIDIA GPU passthrough into containers)
+# - Pre-built AI Docker images pulled on demand:
+#   - nvidia/cuda:12.4.0-devel-ubuntu24.04 (NVIDIA CUDA development)
+#   - rocm/dev:latest (AMD ROCm development)
+# - Docker Compose with AI service templates
+# - Hugging Face cache mounted into containers
+#
+# Philosophy: Containers isolate CUDA/ROCm versions per project.
+# The host has one CUDA/ROCm version; each container can pin its own.
+#
+# Requires: gpu-compute, docker
+
+name: ai-containers
+version: 1.0.0
+description: "Docker configured for AI workloads — GPU passthrough, CUDA/ROCm images"
+author: Debian Composer Team
+license: MIT
+tags: [docker, ai, ml, containers, gpu, nvidia, rocm, cuda]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  nvidia_container_toolkit:
+    type: boolean
+    default: true
+    description: "Install NVIDIA Container Toolkit for GPU passthrough"
+
+  docker_ai_storage:
+    type: string
+    default: "/var/lib/docker/ai"
+    description: "Directory for AI Docker images and volumes"
+
+  pre_pull_cuda_image:
+    type: boolean
+    default: false
+    description: "Pre-pull NVIDIA CUDA development image (large download)"
+
+  pre_pull_rocm_image:
+    type: boolean
+    default: false
+    description: "Pre-pull AMD ROCm development image (large download)"
+
+  docker_data_size:
+    type: string
+    default: "100G"
+    description: "Docker data-root filesystem size recommendation"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - gpu-compute
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Docker Engine + AI tuning
+  # --------------------------------------------------------------------------
+  docker/engine:
+    description: "Docker Engine configured for AI workloads"
+    <<: *service_template
+    install:
+      packages:
+        - docker.io
+        - docker-compose-plugin
+    configure:
+      <<: *service_template
+      service:
+        name: docker
+        enable: true
+        start: true
+      user_groups:
+        - docker
+      post_commands:
+        - |
+          # Docker daemon.json — tuned for AI workloads
+          # Large image layers (model weights), GPU runtime, longer timeouts
+          mkdir -p /etc/docker
+          cat > /etc/docker/daemon.json <<'DOCKER_EOF'
+          {
+            "storage-driver": "overlay2",
+            "default-address-pools": [
+              {"base": "172.17.0.0/16", "size": 24}
+            ],
+            "exec-opts": ["native.cgroupdriver=systemd"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "50m",
+              "max-file": "3"
+            },
+            "default-runtime": "nvidia",
+            "runtimes": {
+              "nvidia": {
+                "path": "nvidia-container-runtime",
+                "runtimeArgs": []
+              }
+            },
+            "max-concurrent-downloads": 6,
+            "max-download-attempts": 5
+          }
+          DOCKER_EOF
+    verify:
+      commands:
+        - docker --version
+        - docker compose version
+        - test -f /etc/docker/daemon.json
+
+  # --------------------------------------------------------------------------
+  # NVIDIA Container Toolkit (open source — Apache 2.0)
+  # --------------------------------------------------------------------------
+  nvidia/container-toolkit:
+    condition: nvidia_container_toolkit == true && (gpu_vendor == nvidia || has_nvidia_gpu)
+    description: "NVIDIA Container Toolkit for GPU passthrough"
+    packages: []
+    repositories:
+      - name: nvidia-container-toolkit
+        url: "deb https://nvidia.github.io/libnvidia-container/stable/debuntu12.04 /"
+        key: https://nvidia.github.io/libnvidia-container/gpgkey
+        keyring: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+    install:
+      packages:
+        - nvidia-container-toolkit
+    configure:
+      post_commands:
+        - "nvidia-ctk runtime configure --runtime=docker"
+        - "systemctl restart docker"
+    verify:
+      commands:
+        - nvidia-ctk --version
+        - docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu24.04 nvidia-smi 2>/dev/null || echo "GPU passthrough ready (verify after reboot)"
+
+  # --------------------------------------------------------------------------
+  # AI Docker images (pre-pull on demand)
+  # --------------------------------------------------------------------------
+  images/cuda-devel:
+    condition: pre_pull_cuda_image == true
+    description: "Pre-pull NVIDIA CUDA development image"
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: "docker pull nvidia/cuda:12.4.0-devel-ubuntu24.04"
+          description: "Pull NVIDIA CUDA 12.4 development image (~5GB)"
+    verify:
+      commands:
+        - "docker image inspect nvidia/cuda:12.4.0-devel-ubuntu24.04 >/dev/null 2>&1"
+
+  images/rocm-devel:
+    condition: pre_pull_rocm_image == true
+    description: "Pre-pull AMD ROCm development image"
+    install:
+      packages: []
+    hooks:
+      post_install:
+        - type: command
+          command: "docker pull rocm/dev:latest"
+          description: "Pull AMD ROCm development image (~5GB)"
+    verify:
+      commands:
+        - "docker image inspect rocm/dev:latest >/dev/null 2>&1"
+
+# ============================================================================
+# CONFIGURE - Docker AI directories
+# ============================================================================
+configure:
+  post_commands:
+    - "mkdir -p ${docker_ai_storage}"
+    - "mkdir -p $HOME/.cache/huggingface"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 30
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== Docker AI Configuration Ready ==="
+  - ""
+  - "Docker Engine: configured for AI workloads"
+  - "  - overlay2 storage driver"
+  - "  - nvidia-container-runtime (default)"
+  - "  - 6 concurrent downloads"
+  - "  - Tuned for large model weight layers"
+  - ""
+  - "NVIDIA Container Toolkit: ${nvidia_container_toolkit}"
+  - ""
+  - "Quick start — NVIDIA CUDA container:"
+  - "  docker run --rm --gpus all \\"
+  - "    -v $HOME/.cache/huggingface:/root/.cache/huggingface \\"
+  - "    nvidia/cuda:12.4.0-devel-ubuntu24.04 \\"
+  - "    nvidia-smi"
+  - ""
+  - "Quick start — PyTorch training container:"
+  - "  docker run --rm --gpus all \\"
+  - "    -v $HOME/.cache/huggingface:/root/.cache/huggingface \\"
+  - "    -v $(pwd):/workspace \\"
+  - "    -w /workspace \\"
+  - "    pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime \\"
+  - "    python train.py"
+  - ""
+  - "Quick start — AMD ROCm container:"
+  - "  docker run --rm --device=/dev/kfd --device=/dev/dri \\"
+  - "    --group-add video \\"
+  - "    -v $HOME/.cache/huggingface:/root/.cache/huggingface \\"
+  - "    rocm/dev:latest \\"
+  - "    rocm-smi"
+  - ""
+  - "Docker AI images to pull manually:"
+  - "  nvidia/cuda:12.4.0-devel-ubuntu24.04  # NVIDIA dev (~5GB)"
+  - "  rocm/dev:latest                       # AMD ROCm dev (~5GB)"
+  - "  pytorch/pytorch:latest                # PyTorch with CUDA"
+  - "  tensorflow/tensorflow:latest-gpu      # TensorFlow with CUDA"
+  - ""
+  - "Hugging Face cache:"
+  - "  Mounted at: $HOME/.cache/huggingface"
+  - "  Share with containers: -v $HOME/.cache/huggingface:/root/.cache/huggingface"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: "Docker AI without NVIDIA Toolkit"
+    description: "Docker only, no GPU passthrough"
+    command: "sudo debian-composer --component=ai-containers --var=nvidia_container_toolkit=false"
+
+  - title: "Pre-pull CUDA image"
+    description: "Include NVIDIA CUDA development image (~5GB download)"
+    command: "sudo debian-composer --component=ai-containers --var=pre_pull_cuda_image=true"

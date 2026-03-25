@@ -1,0 +1,47 @@
+# AI Workstation Layer
+# Complete AI engineering workstation stack
+#
+# Order: 7 (after base, runtime, database, web, container, ai)
+# Includes: GPU compute, UV Python, AI inference, dev tools, containers
+
+name: ai-workstation
+version: 1.0.0
+description: "Complete AI engineering workstation — GPU compute, inference, Python, containers"
+order: 7
+author: Debian Composer Team
+license: MIT
+
+components:
+  - gpu-compute
+  - uv-python
+  - ai-inference
+  - dev-toolchain
+  - cli-tools
+  - terminal
+
+requires_layer:
+  - runtime
+
+packages:
+  # AI/ML Python packages (pre-installed system-wide via UV)
+  - curl
+  - git
+
+requirements:
+  min_ram: 8192
+  min_disk: 50
+
+post_install:
+  - "AI Workstation layer installed"
+  - ""
+  - "Available stacks:"
+  - "  default  — Full workstation (GNOME + GPU + inference)"
+  - "  minimal  — Terminal-only inference server"
+  - "  nvidia   — NVIDIA CUDA focused"
+  - "  amd      — AMD ROCm (open source compute)"
+  - "  headless — Production inference server"
+  - ""
+  - "Quick start:"
+  - "  ollama run llama3.2:8b"
+  - "  jupyter lab"
+  - "  uv venv .venv --python 3.12"

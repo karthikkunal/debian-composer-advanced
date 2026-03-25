@@ -1,0 +1,27 @@
+# Layered AI Development Stack
+# Uses layer composition system
+
+name: layered-ai-dev
+version: 1.0.0
+description: AI development using layered composition
+author: Debian Composer Team
+license: MIT
+
+layers:
+  - base
+  - runtime
+  - ai
+
+includes:
+  - components/ollama.yaml
+
+packages:
+  - git
+  - curl
+
+requirements:
+  min_ram: 4096
+  min_disk: 20
+
+post_install:
+  - "Layered AI environment ready"

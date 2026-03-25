@@ -1,0 +1,238 @@
+# ============================================================================
+# AI Tools Recipe
+# ============================================================================
+# Open source AI tools for local LLM, image generation, and speech-to-text
+#
+# Demonstrates YAML anchors and merge keys for DRY configuration
+
+name: ai-tools
+version: 1.0.0
+description: Open source AI tools for local LLM, image generation, and speech-to-text
+author: Debian Composer Team
+license: MIT
+tags: [ai, ml, ollama, llm, stable-diffusion, whisper]
+
+# ============================================================================
+# COMPOSABILITY - Uses components
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/ollama.yaml
+  - components/whisper.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# LOCAL ANCHORS - Recipe-specific anchors
+# ============================================================================
+.ai_packages: &ai_packages [*ai_prerequisites]
+
+.stable_diffusion_packages: &sd_packages
+  - git
+  - python3-dev
+  - libgl1-mesa-glx
+  - libglib2.0-0
+  - ffmpeg
+  - libsm6
+  - libxext6
+  - cmake
+  - build-essential
+
+.whisper_packages: &whisper_packages
+  - python3-pip
+  - ffmpeg
+  - libsndfile1
+
+.openwork_packages: &openwork_packages
+  - libgtk-3-0
+  - libwebkit2gtk-4.0
+  - libappindicator3-1
+  - librsvg2-common
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor reference
+# ============================================================================
+packages: *ai_packages
+
+# ============================================================================
+# CATEGORIES - Using merge keys to inherit from templates
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Ollama - Using pre-configured API service anchor
+  # --------------------------------------------------------------------------
+  ollama:
+    <<: *ollama_service
+
+  # --------------------------------------------------------------------------
+  # LM Studio - Using manual install template
+  # --------------------------------------------------------------------------
+  lmstudio:
+    <<: *manual_install_template
+    install:
+      packages: []
+      configuration:
+        - type: command
+          command: "echo 'LM Studio requires manual download from https://lmstudio.ai'"
+    configure:
+      validation:
+        - type: command
+          command: "which lmstudio || echo 'LM Studio not in PATH'"
+          exit_code: 0
+    verify:
+      commands:
+        - which lmstudio || echo "LM Studio not found in PATH"
+
+  # --------------------------------------------------------------------------
+  # Stable Diffusion - Using script install template
+  # --------------------------------------------------------------------------
+  stable-diffusion:
+    <<: *script_install_template
+    install:
+      packages: *sd_packages
+      install_path: /opt/stable-diffusion
+    configure:
+      - type: command
+        command: "mkdir -p /opt/stable-diffusion"
+        description: "Create installation directory"
+      - type: command
+        command: "cd /opt/stable-diffusion && git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git . || true"
+        description: "Clone Stable Diffusion WebUI"
+    verify:
+      commands:
+        - test -d /opt/stable-diffusion && echo "Stable Diffusion directory exists" || echo "Stable Diffusion directory missing"
+      files_exist:
+        - /opt/stable-diffusion
+
+  # --------------------------------------------------------------------------
+  # Whisper - Using Python package template
+  # --------------------------------------------------------------------------
+  whisper:
+    <<: *python_package_template
+    install:
+      packages: *whisper_packages
+      python_packages:
+        - openai-whisper
+    configure:
+      - type: command
+        command: "pip3 install openai-whisper"
+        description: "Install Whisper via pip"
+      - type: command
+        command: "whisper --version || echo 'Whisper installed'"
+    verify:
+      commands:
+        - which whisper-transcribe || echo "Whisper available via python"
+      exit_code: 0
+
+  # --------------------------------------------------------------------------
+  # OpenCode - Using manual install template
+  # --------------------------------------------------------------------------
+  opencode:
+    <<: *manual_install_template
+    install:
+      packages: []
+      configuration:
+        - type: command
+          command: "echo 'OpenCode: Download from https://github.com/opencode-ai/opencode'"
+    verify:
+      # No automatic verification available for manual download
+      commands:
+        - echo "OpenCode verification requires manual check"
+
+  # --------------------------------------------------------------------------
+  # OpenWork - Using manual install template with packages
+  # --------------------------------------------------------------------------
+  openwork:
+    <<: *manual_install_template
+    install:
+      packages: *openwork_packages
+      install_path: /opt/openwork
+    configure:
+      - type: command
+        command: "echo 'OpenWork: Requires OpenCode installation first'"
+    verify:
+      # No automatic verification available for manual download
+      pass
+
+# ============================================================================
+# TOOLS - Additional utilities (for documentation purposes)
+# ============================================================================
+tools:
+  ollama:
+    description: "Local LLM runner"
+    install_method: apt
+    packages:
+      - ollama
+    service_name: ollama
+
+  lmstudio:
+    description: "Local LLM with API"
+    install_method: binary
+    download_url: https://download.lmstudio.ai/linux/debian/lmstudio-server_latest_amd64.deb
+
+  stable-diffusion:
+    description: "Image generation"
+    install_method: script
+    setup_script: https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh
+
+  whisper:
+    description: "Speech-to-text"
+    install_method: pip
+    python_packages:
+      - openai-whisper
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor with override
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 8192
+  min_disk: 20
+  gpu: nvidia
+  debian_version: "12"
+
+# ============================================================================
+# VARIABLES (for customization)
+# ============================================================================
+variables:
+  install_ollama:
+    type: boolean
+    default: true
+    description: "Install Ollama local LLM runner"
+  install_lmstudio:
+    type: boolean
+    default: false
+    description: "Install LM Studio Server"
+  install_stable_diffusion:
+    type: boolean
+    default: false
+    description: "Install Stable Diffusion WebUI"
+  install_whisper:
+    type: boolean
+    default: false
+    description: "Install Whisper speech-to-text"
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Ollama: Run 'ollama run llama3.2' to start"
+  - "LM Studio: API available at http://localhost:1234"
+  - "Stable Diffusion: Access at http://localhost:7860"
+  - "Whisper: Use 'whisper-transcribe audio.mp3 --model base'"
+  - "Warning: Some tools require significant disk space (10-50 GB)"
+  - "Warning: NVIDIA GPU recommended for Stable Diffusion and LLMs"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install Ollama Only
+    description: Install only Ollama for local LLM inference
+    command: sudo ./recipe-runner.sh --recipe=ai-tools --category=ollama
+  - title: Install All AI Tools
+    description: Install complete AI development environment
+    command: sudo ./recipe-runner.sh --recipe=ai-tools
+  - title: Install Phase Only
+    description: Install packages without configuration
+    command: sudo ./recipe-runner.sh --recipe=ai-tools --phase=install

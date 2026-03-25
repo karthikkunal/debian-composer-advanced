@@ -1,0 +1,56 @@
+# ============================================================================
+# Education Chemistry Component
+# ============================================================================
+# Chemistry education software
+#
+# Reusable component for any recipe needing chemistry tools
+
+name: edu-chemistry
+version: 1.0.0
+description: Chemistry education software
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, chemistry, molecular, learning]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Chemistry education
+    - kalzium
+    - chemtool
+    # Molecular visualization
+    - avogadro
+    - jmol
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - kalzium --version
+    - avogadro --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Kalzium: Periodic table and chemistry tools"
+  - "Avogadro: Molecular editor"
+  - "ChemTool: Chemical structure drawing"

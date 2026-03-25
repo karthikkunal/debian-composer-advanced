@@ -1,0 +1,218 @@
+# Full Team Workstation Configuration
+# Example: Complete setup for development team
+#
+# Usage: sudo debian-composer --recipe=team-workstation
+#
+# Uses YAML anchors for DRY configuration
+
+name: team-workstation
+version: 1.0.0
+description: Complete developer workstation for team members
+author: Debian Composer Team
+license: MIT
+tags: [workstation, team, development, collaboration]
+
+# ============================================================================
+# COMPOSABILITY - Uses base and runtime layers
+# ============================================================================
+includes:
+  - components/base.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+layers:
+  - base
+  - runtime
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor references
+# ============================================================================
+packages:
+  - *dev_packages  # git, curl, wget, build-essential, ca-certificates, gnupg
+  - *cli_modern_bundle  # eza, bat, fd-find, ripgrep, btop, fzf, zoxide, tealdeer
+  - *cli_git_enhanced   # git-delta, git-lfs, tig, gh
+  # Additional team essentials
+  - vim
+  - htop
+  - tree
+  - jq
+  - unzip
+  - zip
+  - tmux
+  - zsh
+
+# ============================================================================
+# CATEGORIES - Using merge keys to inherit from templates
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Docker - Using container service template
+  # --------------------------------------------------------------------------
+  docker:
+    <<: *container_service_template
+    install:
+      packages:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-compose-plugin
+        - docker-buildx-plugin
+      repositories:
+        - name: docker
+          key: https://download.docker.com/linux/debian/gpg
+          keyring: /etc/apt/keyrings/docker.asc
+          url: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{VERSION_CODENAME}} stable"
+    configure:
+      service:
+        name: docker
+        enable: true
+        start: true
+      user_groups:
+        - docker
+    verify:
+      commands:
+        - docker --version
+        - docker compose version
+      services_running:
+        - docker
+
+  # --------------------------------------------------------------------------
+  # Node.js - Using service template
+  # --------------------------------------------------------------------------
+  nodejs:
+    <<: *service_template
+    install:
+      packages:
+        - nodejs
+        - npm
+      repositories:
+        - name: nodesource
+          setup_script: https://deb.nodesource.com/setup_lts.x
+    configure:
+      version: "20"  # Latest LTS
+    verify:
+      commands:
+        - node --version
+        - npm --version
+
+  # --------------------------------------------------------------------------
+  # Python - Using Python dev anchor
+  # --------------------------------------------------------------------------
+  python:
+    <<: *service_template
+    install:
+      packages: *python_dev
+    configure:
+      pip:
+        upgrade: true
+    verify:
+      commands:
+        - python3 --version
+        - pip3 --version
+
+  # --------------------------------------------------------------------------
+  # Go - Using service template
+  # --------------------------------------------------------------------------
+  go:
+    <<: *service_template
+    install:
+      packages:
+        - golang-go
+        - golang-src
+    configure:
+      version: "1.21"
+    verify:
+      commands:
+        - go version
+
+  # --------------------------------------------------------------------------
+  # Rust - Using script install template
+  # --------------------------------------------------------------------------
+  rust:
+    <<: *script_install_template
+    install:
+      packages:
+        - curl
+        - build-essential
+      script:
+        url: https://sh.rustup.rs
+    configure:
+      install_clippy: true
+      install_rustfmt: true
+    verify:
+      commands:
+        - rustc --version
+        - cargo --version
+
+# ============================================================================
+# ADDITIONAL PROFESSIONAL TOOLS
+# ============================================================================
+additional_tools:
+  ide:
+    - code              # VS Code
+    - sublime-text      # Sublime Text
+
+  communication:
+    - slack-desktop
+    - zoom
+    - teams
+
+  browser:
+    - firefox-esr
+    - google-chrome
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor reference
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 8192  # 8GB for team workstation
+  min_disk: 50   # 50GB for development tools
+
+# ============================================================================
+# GIT CONFIGURATION (team standards)
+# ============================================================================
+git:
+  config:
+    core:
+      editor: vim
+      autocrlf: input
+    init:
+      defaultBranch: main
+    pull:
+      rebase: false
+    push:
+      autoSetupRemote: true
+    diff:
+      tool: delta
+    merge:
+      tool: meld
+    delta:
+      features: decorations
+      line-numbers: true
+      side-by-side: true
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Docker: Add user to docker group: 'usermod -aG docker $USER'"
+  - "Git: Configure user.name and user.email"
+  - "SSH: Generate SSH key with 'ssh-keygen -t ed25519'"
+  - "GPG: Import or generate GPG key for commit signing"
+  - "Team: Clone team configuration repository"
+  - "IDE: Install team-standard VS Code extensions"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Full Team Setup
+    description: Install complete team workstation configuration
+    command: sudo debian-composer --recipe=team-workstation
+  - title: Docker and Python Only
+    description: Install only Docker and Python for backend developers
+    command: sudo debian-composer --recipe=team-workstation --category=docker --category=python
+  - title: Node.js Frontend Setup
+    description: Install Node.js for frontend developers
+    command: sudo debian-composer --recipe=team-workstation --category=nodejs

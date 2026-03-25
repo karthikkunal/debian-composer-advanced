@@ -1,0 +1,275 @@
+# Web Server Recipe
+# YAML Configuration for web server components
+#
+# Structure: install (what to install) is separate from configure (how to set it up)
+#
+# Demonstrates YAML anchors, aliases, and merge keys for DRY configuration
+
+name: web-server
+version: 1.0.0
+description: Install and configure common web server components
+
+# ============================================================================
+# COMPOSABILITY - Uses components
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/nginx.yaml
+  - components/apache.yaml
+  - components/php.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# LOCAL ANCHORS - Recipe-specific anchors
+# ============================================================================
+.web_packages: &web_packages [curl, wget, git, ufw, ca-certificates, gnupg]
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor reference
+# ============================================================================
+packages: *web_packages
+
+# ============================================================================
+# CATEGORIES - Using merge keys to inherit from templates
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Nginx - Using pre-configured service anchor
+  # --------------------------------------------------------------------------
+  nginx:
+    <<: *nginx_service
+    # Override or extend as needed
+    install:
+      packages:
+        - nginx
+        - nginx-extras
+
+  # --------------------------------------------------------------------------
+  # Apache - Using pre-configured service anchor
+  # --------------------------------------------------------------------------
+  apache:
+    <<: *apache_service
+    install:
+      packages:
+        - apache2
+        - apache2-utils
+        - libapache2-mod-security2
+    configure:
+      modules:
+        enable:
+          - rewrite
+          - ssl
+          - headers
+          - security2
+      security:
+        server_tokens: false
+        ssl_enabled: true
+
+  # --------------------------------------------------------------------------
+  # MySQL - Using database server template with merge key
+  # --------------------------------------------------------------------------
+  mysql:
+    <<: *mysql_service
+
+  # --------------------------------------------------------------------------
+  # MariaDB - Using database server template with overrides
+  # --------------------------------------------------------------------------
+  mariadb:
+    <<: *database_server_template
+    install:
+      packages:
+        - mariadb-server
+        - mariadb-client
+        - python3-mariadb
+    configure:
+      service:
+        name: mariadb
+      settings:
+        port: 3306
+        bind_address: 127.0.0.1
+        secure_installation: true
+    verify:
+      commands:
+        - mariadb --version
+        - mysqladmin -u root status
+      services_running:
+        - mariadb
+      ports_listening:
+        - 3306
+
+  # --------------------------------------------------------------------------
+  # PostgreSQL - Using pre-configured service anchor
+  # --------------------------------------------------------------------------
+  postgresql:
+    <<: *postgresql_service
+
+  # --------------------------------------------------------------------------
+  # MongoDB - Using service template with custom repo
+  # --------------------------------------------------------------------------
+  mongodb:
+    <<: *service_template
+    install:
+      packages: []  # Installed via MongoDB repo
+      repositories:
+        - name: mongodb
+          key: https://www.mongodb.org/static/pgp/server-7.0.asc
+          keyring: /usr/share/keyrings/mongodb-server-7.0.gpg
+          url: "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main"
+    configure:
+      service:
+        name: mongod
+        enable: true
+        start: true
+      settings:
+        port: 27017
+        bind_ip: 127.0.0.1
+        storage:
+          db_path: /var/lib/mongodb
+          journal: true
+    verify:
+      commands:
+        - mongod --version
+        - mongosh --eval "db.adminCommand('ping')"
+      services_running:
+        - mongod
+      ports_listening:
+        - 27017
+
+  # --------------------------------------------------------------------------
+  # Redis - Using pre-configured cache service anchor
+  # --------------------------------------------------------------------------
+  redis:
+    <<: *redis_service
+
+  # --------------------------------------------------------------------------
+  # PHP - Using application server template
+  # --------------------------------------------------------------------------
+  php:
+    <<: *app_server_template
+    install:
+      packages:
+        - php
+        - php-fpm
+        - php-mysql
+        - php-pgsql
+        - php-curl
+        - php-gd
+        - php-mbstring
+        - php-xml
+        - php-zip
+        - php-intl
+    configure:
+      service:
+        name: php*-fpm
+      settings:
+        memory_limit: 256M
+        max_execution_time: 30
+        upload_max_filesize: 64M
+        post_max_size: 64M
+      pools:
+        www:
+          listen: /run/php/php-fpm.sock
+          pm: dynamic
+          pm_max_children: 5
+          pm_start_servers: 2
+    verify:
+      commands:
+        - php --version
+      services_running:
+        - php*-fpm
+
+# ============================================================================
+# PRE-CONFIGURED STACKS (install multiple categories together)
+# ============================================================================
+stacks:
+  lamp:
+    categories:
+      - apache
+      - mysql
+      - php
+    description: "Linux, Apache, MySQL, PHP"
+
+  lemp:
+    categories:
+      - nginx
+      - mysql
+      - php
+    description: "Linux, Nginx, MySQL, PHP"
+
+  mern:
+    categories:
+      - mongodb
+      - nodejs
+    description: "MongoDB, Express, React, Node.js (backend part)"
+
+  joomla:
+    categories:
+      - apache
+      - mysql
+      - php
+    additional_packages:
+      - libapache2-mod-php
+      - php-imagick
+    description: "Joomla CMS ready stack"
+
+  wordpress:
+    categories:
+      - apache
+      - mysql
+      - php
+    additional_packages:
+      - libapache2-mod-php
+      - php-imagick
+    description: "WordPress ready stack"
+
+# ============================================================================
+# FIREWALL RULES (configured but not enabled by default)
+# ============================================================================
+firewall:
+  enabled: false
+  rules:
+    nginx:
+      - 80/tcp
+      - 443/tcp
+    apache:
+      - 80/tcp
+      - 443/tcp
+    mysql:
+      - 3306/tcp  # Optional: for remote access
+    postgresql:
+      - 5432/tcp
+    mongodb:
+      - 27017/tcp
+    redis:
+      - 6379/tcp
+
+# ============================================================================
+# SECURITY CONFIGURATIONS - Using anchor reference
+# ============================================================================
+security:
+  disable_server_tokens: true
+  enable_ssl: true
+  ssl_redirect: true
+  security_headers: *security_headers
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor reference
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 1024  # MB (override)
+  min_disk: 10   # GB (override)
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Nginx: Web root at /var/www/html, config at /etc/nginx/nginx.conf"
+  - "Apache: Enable modules with a2enmod <module>, config at /etc/apache2/"
+  - "MySQL: Run mysql_secure_installation for initial setup"
+  - "PostgreSQL: Switch to postgres user: sudo -u postgres psql"
+  - "MongoDB: Connect with mongosh, default bind is localhost only"
+  - "Redis: Test with redis-cli ping, should return PONG"
+  - "PHP: Configure in /etc/php/*/fpm/php.ini and /etc/php/*/fpm/pool.d/"
+  - "Remember to configure firewall rules for remote access"

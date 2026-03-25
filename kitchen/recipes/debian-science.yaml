@@ -1,0 +1,394 @@
+# ============================================================================
+# Debian Science - Unified Scientific Computing Environment
+# ============================================================================
+# Version: 2.0.0 (Meta-Recipe consolidating all Debian Pure Blends)
+#
+# This meta-recipe consolidates 6 Debian Pure Blends into a single entry point:
+# - Debian Edu (Education)
+# - Debian Med (Medical)
+# - Debian Science (Physics, Chemistry, Biology)
+# - Debian Astro (Astronomy)
+# - Debian GIS (Geography/GIS)
+#
+# Usage:
+#   # Single domain
+#   sudo debian-composer --recipe=debian-science --var=domains=education
+#   sudo debian-composer --recipe=debian-science --var=domains=medicine
+#
+#   # Multiple domains
+#   sudo debian-composer --recipe=debian-science \
+#     --var=domains=education,physics,chemistry
+#
+#   # With domain-specific variables
+#   sudo debian-composer --recipe=debian-science \
+#     --var=domains=education \
+#     --var=education_level=high-school
+#
+#   # Using stacks
+#   sudo debian-composer --recipe=debian-science --stack=bioinformatics
+#   sudo debian-composer --recipe=debian-science --stack=medical-research
+
+name: debian-science
+version: 2.0.0
+description: Unified scientific computing environment (all Debian Pure Blends)
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [meta-recipe, science, education, medicine, astronomy, gis, biology, chemistry, physics]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  # Primary domains to install (comma-separated in CLI)
+  domains:
+    type: array
+    default: []
+    choices: [education, medicine, astronomy, geography, physics, chemistry, biology]
+    description: "Scientific domains to install"
+
+  # Education variables
+  education_level:
+    type: string
+    default: general
+    choices: [preschool, primary, high-school, university, general]
+    description: Education level focus
+
+  enable_server:
+    type: boolean
+    default: false
+    description: Enable server components (LDAP, etc.)
+
+  enable_ltsp:
+    type: boolean
+    default: false
+    description: Enable LTSP thin clients
+
+  enable_music:
+    type: boolean
+    default: true
+    description: Enable music education
+
+  enable_programming:
+    type: boolean
+    default: true
+    description: Enable programming education
+
+  enable_graphics:
+    type: boolean
+    default: true
+    description: Enable graphics education
+
+  # Medical variables
+  med_focus:
+    type: string
+    default: general
+    choices: [general, practice, imaging, research, bioinformatics]
+
+  enable_practice:
+    type: boolean
+    default: true
+
+  enable_imaging:
+    type: boolean
+    default: true
+
+  enable_research:
+    type: boolean
+    default: true
+
+  enable_bioinformatics:
+    type: boolean
+    default: false
+
+  # Astronomy variables
+  astro_focus:
+    type: string
+    default: general
+    choices: [general, amateur, professional, data-reduction, visualization]
+
+  enable_telescope:
+    type: boolean
+    default: true
+
+  enable_data_reduction:
+    type: boolean
+    default: true
+
+  enable_visualization:
+    type: boolean
+    default: true
+
+  # GIS variables
+  gis_focus:
+    type: string
+    default: desktop
+    choices: [desktop, server, remote-sensing, osm, research]
+
+  enable_remote_sensing:
+    type: boolean
+    default: true
+
+  enable_osm:
+    type: boolean
+    default: true
+
+  enable_web_gis:
+    type: boolean
+    default: false
+
+  # Science variables
+  physics_focus:
+    type: string
+    default: general
+    choices: [general, computational, high-energy, fluid-dynamics]
+
+  chemistry_focus:
+    type: string
+    default: general
+    choices: [general, quantum, molecular, cheminformatics]
+
+  biology_focus:
+    type: string
+    default: general
+    choices: [general, bioinformatics, genomics, structural]
+
+  # Global GPU acceleration
+  enable_gpu:
+    type: boolean
+    default: auto
+    description: Enable GPU-accelerated packages (auto-detects hardware)
+
+# ============================================================================
+# CORE PACKAGES - Shared scientific computing stack
+# ============================================================================
+packages:
+  - *blend_essentials
+  - *blend_cli_modern
+  - *science_python
+  - python3-pip
+  - python3-dev
+  - build-essential
+  - git
+  - curl
+  - wget
+
+# ============================================================================
+# CATEGORIES - Dynamic domain loading
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # Education Domain
+  # --------------------------------------------------------------------------
+  domain/education:
+    condition: '"education" in domains'
+    <<: *service_template
+    description: "Educational tools (Debian Edu)"
+    install:
+      packages:
+        - *edu_workstation
+        - *edu_fonts
+        - debian-edu-config
+        - debian-edu-artwork
+
+
+  # --------------------------------------------------------------------------
+  # Medicine Domain
+  # --------------------------------------------------------------------------
+  domain/medicine:
+    condition: '"medicine" in domains'
+    <<: *service_template
+    description: "Medical tools (Debian Med)"
+    install:
+      packages:
+        - *med_practice
+        - *med_imaging
+
+
+  # --------------------------------------------------------------------------
+  # Astronomy Domain
+  # --------------------------------------------------------------------------
+  domain/astronomy:
+    condition: '"astronomy" in domains'
+    <<: *service_template
+    description: "Astronomy tools (Debian Astro)"
+    install:
+      packages:
+        - *astro_observation
+        - *astro_data_reduction
+
+
+  # --------------------------------------------------------------------------
+  # Geography/GIS Domain
+  # --------------------------------------------------------------------------
+  domain/geography:
+    condition: '"geography" in domains'
+    <<: *service_template
+    description: "GIS tools (Debian GIS)"
+    install:
+      packages:
+        - *gis_desktop
+        - *gis_python
+
+
+  # --------------------------------------------------------------------------
+  # Physics Domain
+  # --------------------------------------------------------------------------
+  domain/physics:
+    condition: '"physics" in domains'
+    <<: *service_template
+    description: "Physics tools"
+    install:
+      packages:
+        - *science_physics
+
+
+  # --------------------------------------------------------------------------
+  # Chemistry Domain
+  # --------------------------------------------------------------------------
+  domain/chemistry:
+    condition: '"chemistry" in domains'
+    <<: *service_template
+    description: "Chemistry tools"
+    install:
+      packages:
+        - *science_chemistry
+
+
+  # --------------------------------------------------------------------------
+  # Biology Domain
+  # --------------------------------------------------------------------------
+  domain/biology:
+    condition: '"biology" in domains'
+    <<: *service_template
+    description: "Biology tools"
+    install:
+      packages:
+        - *science_biology
+        - *bio_python_packages
+
+
+# ============================================================================
+# STACKS - Pre-configured domain combinations
+# ============================================================================
+stacks:
+  education-complete:
+    description: "Complete educational environment"
+    domains: [education]
+    categories:
+      - domain/education
+
+  medical-research:
+    description: "Medical research environment"
+    domains: [medicine, biology]
+    categories:
+      - domain/medicine
+      - domain/biology
+
+  bioinformatics:
+    description: "Bioinformatics toolkit"
+    domains: [biology, medicine]
+    categories:
+      - domain/biology
+      - domain/medicine
+
+  astronomy-complete:
+    description: "Complete astronomy setup"
+    domains: [astronomy, physics]
+    categories:
+      - domain/astronomy
+      - domain/physics
+
+  gis-complete:
+    description: "Complete GIS environment"
+    domains: [geography]
+    categories:
+      - domain/geography
+
+  chemistry-complete:
+    description: "Complete chemistry environment"
+    domains: [chemistry, biology]
+    categories:
+      - domain/chemistry
+      - domain/biology
+
+  science-all:
+    description: "All scientific domains"
+    domains: [education, medicine, astronomy, geography, physics, chemistry, biology]
+    categories:
+      - domain/education
+      - domain/medicine
+      - domain/astronomy
+      - domain/geography
+      - domain/physics
+      - domain/chemistry
+      - domain/biology
+
+# ============================================================================
+# REQUIREMENTS - Dynamic based on domains
+# ============================================================================
+requirements:
+  min_ram: 4096
+  min_disk: 30
+  gpu: false
+  # Note: Requirements are dynamically adjusted based on domains
+  # - Education: 4GB RAM, 30GB disk
+  # - Medicine: 4GB RAM, 20GB disk
+  # - Astronomy: 4GB RAM, 30GB disk
+  # - GIS: 8GB RAM, 50GB disk
+  # - Physics: 8GB RAM, 100GB disk, GPU
+  # - Chemistry: 8GB RAM, 50GB disk
+  # - Biology: 8GB RAM, 50GB disk, GPU
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Science Installation Complete ==="
+  - "Domains installed: ${domains}"
+  - ""
+  - "Domain-specific settings:"
+  - "  Education Level: ${education_level}"
+  - "  Medical Focus: ${med_focus}"
+  - "  Astronomy Focus: ${astro_focus}"
+  - "  GIS Focus: ${gis_focus}"
+  - "  Physics Focus: ${physics_focus}"
+  - "  Chemistry Focus: ${chemistry_focus}"
+  - "  Biology Focus: ${biology_focus}"
+  - ""
+  - "Resources:"
+  - "  - Debian Edu: https://blends.debian.org/edu/"
+  - "  - Debian Med: https://blends.debian.org/med/"
+  - "  - Debian Science: https://blends.debian.org/science/"
+  - "  - Debian Astro: https://blends.debian.org/astro/"
+  - "  - Debian GIS: https://blends.debian.org/gis/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install Education Domain
+    description: Install educational tools for high school
+    command: sudo debian-composer --recipe=debian-science --var=domains=education --var=education_level=high-school
+
+  - title: Install Medical Research
+    description: Install medical and biology tools for research
+    command: sudo debian-composer --recipe=debian-science --var=domains=medicine,biology --var=med_focus=research
+
+  - title: Install Bioinformatics
+    description: Install bioinformatics toolkit
+    command: sudo debian-composer --recipe=debian-science --stack=bioinformatics
+
+  - title: Install Astronomy
+    description: Install astronomy tools for amateur astronomers
+    command: sudo debian-composer --recipe=debian-science --var=domains=astronomy --var=astro_focus=amateur
+
+  - title: Complete Science Environment
+    description: Install all scientific domains
+    command: sudo debian-composer --recipe=debian-science --stack=science-all

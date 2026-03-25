@@ -1,0 +1,375 @@
+# ============================================================================
+# Debian Multimedia Pure Blend - Audio and Multimedia Production
+# ============================================================================
+# Version: 1.0.0
+#
+# Official Debian Multimedia Pure Blend configuration for audio and multimedia
+# production. Provides tools for audio editing, video production, graphics,
+# 3D modeling, and music creation.
+#
+# Usage:
+#   # Install complete multimedia setup
+#   sudo debian-composer --blend=debian-multimedia
+#
+#   # Install specific focus
+#   sudo debian-composer --blend=debian-multimedia --var=media_focus=audio
+#   sudo debian-composer --blend=debian-multimedia --var=media_focus=video
+#   sudo debian-composer --blend=debian-multimedia --var=media_focus=graphics
+#
+#   # Install with MIDI support
+#   sudo debian-composer --blend=debian-multimedia --var=enable_midi=true
+#
+#   # Audio production studio
+#   sudo debian-composer --blend=debian-multimedia --stack=audio-studio
+#
+# References:
+#   - Debian Multimedia: https://blends.debian.org/multimedia/
+#   - Debian Multimedia Wiki: https://wiki.debian.org/DebianMultimedia/
+# ============================================================================
+
+name: debian-multimedia
+version: 1.0.0
+description: Debian Multimedia Pure Blend - Audio and multimedia production
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://blends.debian.org/multimedia/
+tags: [blend, multimedia, audio, video, graphics, music, production, creative]
+
+# ============================================================================
+# METADATA
+# ============================================================================
+metadata:
+  category: multimedia
+  target_audience: [audio-engineers, video-editors, graphic-designers, musicians, content-creators]
+  difficulty: intermediate
+  min_ram: 4096
+  min_disk: 30
+  recommended_disk: 50
+  gpu_required: false
+  gpu_recommended: true
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+dependencies: []
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  media_focus:
+    type: string
+    default: all
+    choices: [all, audio, video, graphics, 3d, music, streaming]
+    description: Primary multimedia focus area
+
+  enable_audio:
+    type: boolean
+    default: true
+    description: Enable audio production tools
+
+  enable_video:
+    type: boolean
+    default: true
+    description: Enable video editing tools
+
+  enable_graphics:
+    type: boolean
+    default: true
+    description: Enable graphics and image editing
+
+  enable_3d:
+    type: boolean
+    default: false
+    description: Enable 3D modeling and animation
+
+  enable_midi:
+    type: boolean
+    default: true
+    description: Enable MIDI and music production
+
+  enable_streaming:
+    type: boolean
+    default: false
+    description: Enable streaming and capture tools
+
+  enable_photo:
+    type: boolean
+    default: true
+    description: Enable photography and RAW processing
+
+# ============================================================================
+# CATEGORIES - Using tasksel task package
+# ============================================================================
+# Note: packages installed via categories based on variable selections
+categories:
+  # --------------------------------------------------------------------------
+  # All Multimedia (via task-multimedia)
+  # --------------------------------------------------------------------------
+  multimedia/all:
+    condition: media_focus == all
+    <<: *service_template
+    description: "All multimedia (via task-multimedia)"
+    install:
+      packages:
+        - *multimedia_all
+    configure:
+      services:
+        - name: jackd
+          enable: false
+          start: false
+        - name: pulseaudio
+          enable: true
+          start: true
+    verify:
+      commands:
+        - audacity --version 2>&1 | head -1
+        - ardour --version 2>&1 | head -1
+        - kdenlive --version 2>&1 | head -1
+        - gimp --version 2>&1 | head -1
+        - blender --version 2>&1 | head -1
+        - musescore3 --version 2>&1 | head -1
+
+  # --------------------------------------------------------------------------
+  # Focus-specific (installed via task-multimedia)
+  # --------------------------------------------------------------------------
+  audio/production:
+    condition: enable_audio == true or media_focus == audio
+    <<: *service_template
+    description: "Audio production (included in task-multimedia)"
+    install:
+      packages:
+        - *multimedia_audio
+    configure:
+      services:
+        - name: jackd
+          enable: false
+          start: false
+        - name: pulseaudio
+          enable: true
+          start: true
+    verify:
+      commands:
+        - audacity --version 2>&1 | head -1
+        - ardour --version 2>&1 | head -1
+
+  video/production:
+    condition: enable_video == true or media_focus == video
+    <<: *service_template
+    description: "Video editing (included in task-multimedia)"
+    install:
+      packages:
+        - *multimedia_video
+    verify:
+      commands:
+        - kdenlive --version 2>&1 | head -1
+
+  graphics/creation:
+    condition: enable_graphics == true or media_focus == graphics
+    <<: *service_template
+    description: "Graphics creation (included in task-multimedia)"
+    install:
+      packages:
+        - *multimedia_graphics
+    verify:
+      commands:
+        - gimp --version 2>&1 | head -1
+
+  music/production:
+    condition: enable_midi == true or media_focus == music
+    <<: *service_template
+    description: "Music production (included in task-multimedia)"
+    install:
+      packages:
+        - *multimedia_midi
+    verify:
+      commands:
+        - musescore3 --version 2>&1 | head -1
+
+  streaming/capture:
+    condition: enable_streaming == true or media_focus == streaming
+    <<: *service_template
+    description: "Streaming (included in task-multimedia)"
+    install:
+      packages:
+        - *multimedia_video
+    configure:
+      services:
+        - name: obs-studio
+          enable: false
+          start: false
+    verify:
+      commands:
+        - obs --version 2>&1 | head -1
+
+  3d/modeling:
+    condition: enable_3d == true or media_focus == 3d
+    <<: *service_template
+    description: "3D modeling (included in task-multimedia)"
+    install:
+      packages:
+        - *multimedia_3d
+    verify:
+      commands:
+        - blender --version 2>&1 | head -1
+
+  photo/processing:
+    condition: enable_photo == true
+    <<: *service_template
+    description: "Photo processing (included in task-multimedia)"
+    install:
+      packages:
+        - *multimedia_graphics
+    verify:
+      commands:
+        - darktable --version 2>&1 | head -1
+
+# ============================================================================
+# STACKS - Pre-configured setups
+# ============================================================================
+stacks:
+  complete:
+    description: "Complete multimedia production setup"
+    categories:
+      - audio/daw
+      - audio/mixing
+      - audio/jack
+      - music/midi
+      - music/synthesizer
+      - video/editor
+      - video/conversion
+      - graphics/editor
+      - graphics/illustration
+      - photo/raw-processing
+      - codecs/essential
+
+  audio-studio:
+    description: "Professional audio studio"
+    categories:
+      - audio/daw
+      - audio/mixing
+      - audio/effects
+      - audio/jack
+      - music/midi
+      - music/synthesizer
+      - music/sequencer
+      - codecs/essential
+
+  video-studio:
+    description: "Video production studio"
+    categories:
+      - video/editor
+      - video/conversion
+      - video/vj
+      - graphics/editor
+      - codecs/essential
+
+  graphics-studio:
+    description: "Graphics and illustration studio"
+    categories:
+      - graphics/editor
+      - graphics/illustration
+      - graphics/publishing
+      - photo/raw-processing
+
+  music-production:
+    description: "Music production and composition"
+    categories:
+      - music/midi
+      - music/synthesizer
+      - music/sequencer
+      - audio/mixing
+      - audio/effects
+      - codecs/essential
+
+  streaming-setup:
+    description: "Live streaming setup"
+    categories:
+      - streaming/capture
+      - streaming/broadcast
+      - video/conversion
+      - codecs/essential
+
+  photography-studio:
+    description: "Photography workflow"
+    categories:
+      - photo/raw-processing
+      - photo/management
+      - graphics/editor
+
+  3d-workstation:
+    description: "3D modeling and animation workstation"
+    categories:
+      - 3d/modeling
+      - 3d/rendering
+      - graphics/editor
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_blend_multimedia
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Debian Multimedia Installation Complete ==="
+  - ""
+  - "Configuration Summary:"
+  - "  Focus: ${media_focus}"
+  - "  Audio: ${enable_audio}"
+  - "  Video: ${enable_video}"
+  - "  Graphics: ${enable_graphics}"
+  - "  3D: ${enable_3d}"
+  - "  MIDI: ${enable_midi}"
+  - "  Streaming: ${enable_streaming}"
+  - "  Photo: ${enable_photo}"
+  - ""
+  - "Audio Production:"
+  - "  - Start JACK: qjackctl"
+  - "  - Open Ardour: ardour"
+  - "  - Mix with: audacity"
+  - ""
+  - "Video Production:"
+  - "  - Edit video: kdenlive"
+  - "  - Convert: ffmpeg input.mp4 output.mp4"
+  - "  - Stream: obs-studio"
+  - ""
+  - "Graphics:"
+  - "  - Edit images: gimp"
+  - "  - Vector art: inkscape"
+  - "  - Digital painting: krita"
+  - ""
+  - "Resources:"
+  - "  - Debian Multimedia: https://blends.debian.org/multimedia/"
+  - "  - Ardour: https://ardour.org/"
+  - "  - Kdenlive: https://kdenlive.org/"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Audio Studio
+    description: Install complete audio production setup
+    command: sudo debian-composer --blend=debian-multimedia --stack=audio-studio
+
+  - title: Video Production
+    description: Install video editing and conversion tools
+    command: sudo debian-composer --blend=debian-multimedia --stack=video-studio --var=enable_video=true
+
+  - title: Graphics Studio
+    description: Install graphics and illustration tools
+    command: sudo debian-composer --blend=debian-multimedia --stack=graphics-studio --var=enable_graphics=true
+
+  - title: Streaming Setup
+    description: Install OBS and streaming tools
+    command: sudo debian-composer --blend=debian-multimedia --stack=streaming-setup --var=enable_streaming=true
+
+  - title: 3D Workstation
+    description: Install Blender and 3D tools
+    command: sudo debian-composer --blend=debian-multimedia --stack=3d-workstation --var=enable_3d=true

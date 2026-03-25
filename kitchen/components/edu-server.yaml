@@ -1,0 +1,73 @@
+# ============================================================================
+# Education Server Component
+# ============================================================================
+# School server components (LDAP, GOsa, administration)
+#
+# Reusable component for educational institution servers
+
+name: edu-server
+version: 1.0.0
+description: School server components
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, server, ldap, gosa, administration]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # LDAP server
+    - slapd
+    - ldapvi
+    # GOsa administration
+    - gosa
+    - gosa-plugins-all
+    # School administration
+    - fusiondirectory
+    - webmin
+    # Kerberos
+    - krb5-kdc
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  hooks:
+    post_install:
+      - type: command
+        command: "systemctl enable slapd"
+        description: "Enable LDAP server"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - slapd -V | head -1
+    - webmin --version 2>&1 | head -1
+  services_running:
+    - slapd
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "LDAP Server: slapd configured"
+  - "GOsa: Web-based LDAP administration at https://localhost/gosa/"
+  - "Configure with 'debian-edu-config'"

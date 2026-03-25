@@ -1,0 +1,169 @@
+# ============================================================================
+# Server Base Template
+# ============================================================================
+# Base configuration for server/headless systems
+#
+# Usage:
+#   sudo debian-composer --base=server --role=sysadmin
+#   sudo debian-composer --base=server --role=homelab --tools=docker,nginx
+
+name: base-server
+version: 1.0.0
+description: Server/headless base configuration
+author: Debian Composer Team
+license: MIT
+tags: [base, server, headless, ssh]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/cli-tools.yaml
+  - components/system-utils.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# CORE PACKAGES
+# ============================================================================
+packages:
+  - openssh-server
+  - sudo
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - needrestart
+  - htop
+  - iotop
+  - nethogs
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  ssh:
+    <<: *service_template
+    description: "SSH server"
+    install:
+      packages:
+        - openssh-server
+        - openssh-client
+    configure:
+      service:
+        name: ssh
+        enable: true
+        start: true
+    verify:
+      commands:
+        - ssh -V
+      services_running:
+        - ssh
+
+  security:
+    <<: *service_template
+    description: "Security hardening"
+    install:
+      packages:
+        - sudo
+        - ufw
+        - fail2ban
+    configure:
+      service:
+        - name: ufw
+          enable: true
+        - name: fail2ban
+          enable: true
+    verify:
+      commands:
+        - ufw status
+        - fail2ban-client status
+
+  updates:
+    <<: *service_template
+    description: "Automatic security updates"
+    install:
+      packages:
+        - unattended-upgrades
+        - needrestart
+    configure:
+      service:
+        name: unattended-upgrades
+        enable: true
+    verify:
+      commands:
+        - dpkg -l unattended-upgrades
+
+  monitoring:
+    <<: *service_template
+    description: "System monitoring tools"
+    install:
+      packages:
+        - htop
+        - iotop
+        - nethogs
+        - sysstat
+        - dstat
+    verify:
+      commands:
+        - htop --version
+
+  firewall:
+    <<: *service_template
+    description: "Firewall (UFW)"
+    install:
+      packages:
+        - ufw
+    configure:
+      commands:
+        - ufw default deny incoming
+        - ufw default allow outgoing
+        - ufw allow ssh
+        - ufw --force enable
+    verify:
+      commands:
+        - ufw status
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  server-basic:
+    description: "Basic server setup"
+    categories:
+      - ssh
+      - security
+      - updates
+
+  server-full:
+    description: "Full server with monitoring"
+    categories:
+      - ssh
+      - security
+      - updates
+      - monitoring
+      - firewall
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_minimal
+  min_ram: 512
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALLATION
+# ============================================================================
+post_install:
+  - "=== Server Base Installed ==="
+  - "SSH: Enabled and running"
+  - "Firewall: UFW configured (SSH allowed)"
+  - "Security: fail2ban active"
+  - "Updates: Automatic security updates enabled"
+  - ""
+  - "Next steps:"
+  - "  - Add a role: --role=sysadmin, --role=homelab"
+  - "  - Add tools: --tools=nginx,docker,postgresql"
+  - "  - Configure SSH keys: ssh-copy-id user@server"
+  - "  - Review firewall: ufw status verbose"

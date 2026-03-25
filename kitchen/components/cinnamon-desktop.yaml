@@ -1,0 +1,75 @@
+# ============================================================================
+# Cinnamon Desktop Component
+# ============================================================================
+# Cinnamon - Modern, elegant desktop from Linux Mint
+#
+# Reusable component for any recipe needing Cinnamon desktop
+#
+# Usage:
+#   sudo debian-composer --recipe=my-recipe --component=cinnamon-desktop
+
+name: cinnamon-desktop
+version: 1.0.0
+description: Cinnamon desktop - Modern, elegant desktop from Linux Mint
+author: Debian Composer Team
+license: MIT
+tags: [desktop, cinnamon, modern, gui]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages: *desktop_cinnamon
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  display_manager:
+    service: lightdm
+    enable: true
+  hooks:
+    post_configure:
+      - type: command
+        command: "update-desktop-database 2>/dev/null || true"
+        description: "Update desktop database"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - cinnamon --version
+  files_exist:
+    - /usr/share/xsessions/cinnamon.desktop
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_minimal
+  min_ram: 2048
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Cinnamon: Select Cinnamon session at login"
+  - "Display Manager: LightDM enabled"
+  - "Modern: Elegant desktop from Linux Mint"
+  - "Customize: Use Cinnamon Settings"

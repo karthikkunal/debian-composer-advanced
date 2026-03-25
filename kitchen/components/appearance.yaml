@@ -1,0 +1,305 @@
+# ============================================================================
+# Component: appearance
+# ============================================================================
+# Unified appearance/theme management for any Debian-based distro.
+#
+# Features:
+#   - GTK themes (Adwaita, custom)
+#   - Icon themes (Papirus, Suru, etc.)
+#   - Cursor themes
+#   - Font management
+#   - Dark mode toggle
+#   - Wallpaper management
+#
+# Comparison with distro-specific tools:
+#   - Mint: mint-themes, mint-y-icons
+#   - Pop: pop-gtk-theme, pop-icon-theme
+#   - MX: mx-themes
+#   - Ubuntu: yaru-theme
+#
+# Usage in any recipe:
+#   includes:
+#     - components/appearance.yaml
+
+name: appearance
+version: 1.0.0
+description: "Unified appearance and theme management — works on any Debian-based distro"
+author: Debian Composer Team
+license: MIT
+tags: [appearance, themes, icons, gtk, dark-mode, customization]
+
+variables:
+  theme:
+    type: string
+    default: adwaita
+    choices: [adwaita, adwaita-dark, yaru, pop, flat-remix]
+    description: "GTK theme"
+
+  icon_theme:
+    type: string
+    default: papirus
+    choices: [papirus, suru, numix, breeze, adwaita]
+    description: "Icon theme"
+
+  cursor_theme:
+    type: string
+    default: breeze
+    choices: [breeze, adwaita, capitaine, breeze-z]
+    description: "Cursor theme"
+
+  dark_mode:
+    type: boolean
+    default: false
+    description: "Enable dark mode by default"
+
+  install_fonts:
+    type: boolean
+    default: true
+    description: "Install commonly used fonts"
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+packages:
+  - gnome-themes-extra
+  - adwaita-icon-theme
+  - fonts-liberation
+  - fonts-dejavu-core
+
+categories:
+  # --------------------------------------------------------------------------
+  # Icon Themes
+  # --------------------------------------------------------------------------
+  icons/papirus:
+    condition: icon_theme == papirus
+    description: "Papirus icon theme (popular, comprehensive)"
+    install:
+      packages:
+        - papirus-icon-theme
+    verify:
+      commands:
+        - ls /usr/share/icons/Papirus 2>/dev/null && echo "Papirus installed"
+
+  icons/suru:
+    condition: icon_theme == suru
+    description: "Suru icon theme (Ubuntu-inspired)"
+    install:
+      repositories:
+        - name: suru-icons
+          url: "ppa:snwh/ppa"
+      packages:
+        - suru-icon-theme
+
+  icons/numix:
+    condition: icon_theme == numix
+    description: "Numix icon theme"
+    install:
+      packages:
+        - numix-icon-theme
+        - numix-icon-theme-circle
+
+  icons/breeze:
+    condition: icon_theme == breeze
+    description: "Breeze icon theme (KDE)"
+    install:
+      packages:
+        - breeze-icon-theme
+
+  # --------------------------------------------------------------------------
+  # Cursor Themes
+  # --------------------------------------------------------------------------
+  cursors/breeze:
+    condition: cursor_theme == breeze
+    description: "Breeze cursor theme"
+    install:
+      packages:
+        - breeze-cursor-theme
+
+  cursors/adwaita:
+    condition: cursor_theme == adwaita
+    description: "Adwaita cursor theme"
+    install:
+      packages:
+        - adwaita-icon-theme
+
+  cursors/capitaine:
+    condition: cursor_theme == capitaine
+    description: "Capitaine cursors (macOS-inspired)"
+    install:
+      packages:
+        - capitaine-cursors
+
+  # --------------------------------------------------------------------------
+  # GTK Themes
+  # --------------------------------------------------------------------------
+  themes/adwaita:
+    condition: theme == adwaita or theme == adwaita-dark
+    description: "Adwaita theme (GNOME default)"
+    install:
+      packages:
+        - gnome-themes-extra
+        - adwaita-qt
+        - adwaita-icon-theme
+    verify:
+      commands:
+        - ls /usr/share/themes/Adwaita 2>/dev/null && echo "Adwaita theme installed"
+
+  themes/yaru:
+    condition: theme == yaru
+    description: "Yaru theme (Ubuntu default)"
+    install:
+      packages:
+        - yaru-theme-gtk
+        - yaru-theme-icon
+        - yaru-theme-sound
+
+  themes/pop:
+    condition: theme == pop
+    description: "Pop theme (System76)"
+    install:
+      repositories:
+        - name: system76
+          url: "deb https://apt.system76.com/ $(lsb_release -cs) main"
+      packages:
+        - pop-gtk-theme
+        - pop-icon-theme
+
+  themes/flat-remix:
+    condition: theme == flat-remix
+    description: "Flat Remix theme"
+    install:
+      packages:
+        - flat-remix-gtk
+        - flat-remix-gnome
+        - flat-remix-desktop
+
+  # --------------------------------------------------------------------------
+  # Dark Mode
+  # --------------------------------------------------------------------------
+  darkmode/enabled:
+    condition: dark_mode == true
+    description: "Enable dark mode"
+    configuration:
+      - type: command
+        command: gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+      - type: command
+        command: gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+
+  # --------------------------------------------------------------------------
+  # Fonts
+  # --------------------------------------------------------------------------
+  fonts/essential:
+    condition: install_fonts == true
+    description: "Essential fonts"
+    install:
+      packages:
+        - fonts-liberation
+        - fonts-dejavu
+        - fonts-noto
+        - fonts-noto-color-emoji
+        - fonts-hack
+        - fonts-firacode
+        - fonts-jetbrains-mono
+
+  fonts/cjk:
+    description: "CJK fonts (Chinese, Japanese, Korean)"
+    install:
+      packages:
+        - fonts-noto-cjk
+        - fonts-noto-cjk-extra
+
+  # --------------------------------------------------------------------------
+  # Theme Management Script
+  # --------------------------------------------------------------------------
+  cli/appearance-tools:
+    description: "Appearance management scripts"
+    configuration:
+      - type: script
+        name: set-theme
+        content: |
+          #!/bin/bash
+          # Quick theme switcher
+          # Usage: set-theme [dark|light|adwaita|yaru|pop]
+          
+          case "$1" in
+            dark)
+              gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+              gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+              echo "Dark mode enabled"
+              ;;
+            light)
+              gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+              gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita'
+              echo "Light mode enabled"
+              ;;
+            adwaita)
+              gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita'
+              echo "Theme set to Adwaita"
+              ;;
+            adwaita-dark)
+              gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+              echo "Theme set to Adwaita Dark"
+              ;;
+            yaru)
+              gsettings set org.gnome.desktop.interface gtk-theme 'Yaru'
+              echo "Theme set to Yaru"
+              ;;
+            pop)
+              gsettings set org.gnome.desktop.interface gtk-theme 'Pop'
+              echo "Theme set to Pop"
+              ;;
+            status)
+              echo "Current theme:"
+              echo "  GTK: $(gsettings get org.gnome.desktop.interface gtk-theme)"
+              echo "  Icons: $(gsettings get org.gnome.desktop.interface icon-theme)"
+              echo "  Cursor: $(gsettings get org.gnome.desktop.interface cursor-theme)"
+              echo "  Color scheme: $(gsettings get org.gnome.desktop.interface color-scheme)"
+              ;;
+            *)
+              echo "Usage: set-theme [dark|light|adwaita|adwaita-dark|yaru|pop|status]"
+              ;;
+          esac
+        path: /usr/local/bin/set-theme
+        mode: "0755"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - test -x /usr/local/bin/set-theme && echo "set-theme ready"
+    - ls /usr/share/icons/Papirus 2>/dev/null || ls /usr/share/icons/Adwaita 2>/dev/null
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 256
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== Appearance Ready ==="
+  - ""
+  - "Theme: ${theme}"
+  - "Icons: ${icon_theme}"
+  - "Cursors: ${cursor_theme}"
+  - "Dark mode: ${dark_mode}"
+  - ""
+  - "Quick commands:"
+  - "  - Toggle dark/light:  set-theme dark | set-theme light"
+  - "  - Change theme:       set-theme adwaita | set-theme yaru"
+  - "  - Check status:       set-theme status"
+
+examples:
+  - title: "Default appearance"
+    description: "Adwaita theme with Papirus icons"
+    command: "sudo debian-composer --component=appearance"
+  - title: "Dark mode default"
+    description: "Enable dark mode by default"
+    command: "sudo debian-composer --component=appearance --var=dark_mode=true"
+  - title: "Pop theme"
+    description: "Pop!_OS look and feel"
+    command: "sudo debian-composer --component=appearance --var=theme=pop"

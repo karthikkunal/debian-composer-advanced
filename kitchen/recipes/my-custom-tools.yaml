@@ -1,0 +1,107 @@
+# Custom Developer Tools Configuration
+# Example: Override default packages and add custom tools
+#
+# Usage: sudo ./recipes/debian-dev-tools.sh --config=my-custom-tools.yaml
+
+name: my-custom-dev-tools
+version: 1.0.0
+description: My custom developer tools configuration
+
+# ============================================================================
+# COMPOSABILITY - Uses base component
+# ============================================================================
+includes:
+  - components/base.yaml
+
+# Override default packages
+packages:
+  - git
+  - curl
+  - wget
+  - build-essential
+  - vim
+  - htop
+  - jq
+  - tree
+
+# Customize categories
+categories:
+  docker:
+    packages:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    # Skip docker-buildx-plugin if not needed
+
+  nodejs:
+    packages:
+      - nodejs
+      - npm
+    version: "18"  # Specific version
+
+  python:
+    packages:
+      - python3
+      - python3-pip
+      - python3-venv
+    # Skip python3-dev if not needed
+
+  # Add custom category
+  web-development:
+    packages:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+
+  # Add database tools
+  database-tools:
+    packages:
+      - sqlite3
+      - postgresql-client
+      - mysql-client
+
+# Custom tools configuration
+tools:
+  docker:
+    service_name: docker
+    enable_service: true
+    add_user_to_group: docker
+    # Disable compose if not needed
+    install_compose: true
+
+  nodejs:
+    version: "18"
+    install_npm: true
+    install_yarn: false  # Skip yarn
+
+  python:
+    version: "3"
+    install_pip: true
+    install_venv: true
+    install_virtualenv: false
+
+# Add custom packages outside categories
+custom_packages:
+  - ripgrep
+  - fd-find
+  - bat
+  - zsh
+  - tmux
+
+# Packages to skip (even if in default config)
+skip_packages:
+  - rust  # Skip Rust entirely
+
+# System requirements (override defaults)
+requirements:
+  min_ram: 4096  # 4GB minimum
+  min_disk: 20   # 20GB minimum
+  gpu: false
+
+# Post-installation scripts (optional)
+post_install_script: |
+  #!/bin/bash
+  echo "Running custom post-installation..."
+  # Add your custom commands here
+  # Example: Configure git, install VS Code extensions, etc.

@@ -1,0 +1,170 @@
+# Web Server Recipe
+# Composed version using component includes
+
+name: web-server
+version: 2.0.0
+description: Install and configure web servers (composed)
+author: Debian Composer Team
+license: MIT
+tags: [web, nginx, apache, php, server]
+
+# ============================================================================
+# INCLUDES - Compose from components
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/nginx.yaml
+  - components/apache.yaml
+  - components/php.yaml
+
+# ============================================================================
+# DEFAULT PACKAGES
+# ============================================================================
+packages:
+  - curl
+  - wget
+  - git
+  - ufw
+  - ca-certificates
+  - gnupg
+
+# ============================================================================
+# CATEGORIES
+# ============================================================================
+categories:
+  nginx:
+    includes:
+      - components/nginx.yaml
+
+  apache:
+    includes:
+      - components/apache.yaml
+
+  php:
+    includes:
+      - components/php.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  nginx_www_root:
+    type: string
+    default: "/var/www/html"
+    description: "Nginx web root"
+
+  nginx_http_port:
+    type: integer
+    default: 80
+    description: "Nginx HTTP port"
+
+  nginx_https_port:
+    type: integer
+    default: 443
+    description: "Nginx HTTPS port"
+
+  php_memory_limit:
+    type: string
+    default: "256M"
+    description: "PHP memory limit"
+
+  php_max_execution_time:
+    type: integer
+    default: 30
+    description: "PHP max execution time"
+
+# ============================================================================
+# STACKS - Pre-configured combinations
+# ============================================================================
+stacks:
+  lamp:
+    description: "Linux, Apache, MySQL, PHP"
+    components:
+      - apache
+      - php
+    additional:
+      - mysql
+
+  lemp:
+    description: "Linux, Nginx, MySQL, PHP"
+    components:
+      - nginx
+      - php
+    additional:
+      - mysql
+
+  nginx-php:
+    description: "Nginx with PHP-FPM"
+    components:
+      - nginx
+      - php
+
+  apache-php:
+    description: "Apache with PHP"
+    components:
+      - apache
+      - php
+
+  full:
+    description: "Full web stack (Nginx + Apache + PHP)"
+    components:
+      - nginx
+      - apache
+      - php
+
+# ============================================================================
+# FIREWALL RULES
+# ============================================================================
+firewall:
+  enabled: false
+  rules:
+    nginx:
+      - 80/tcp
+      - 443/tcp
+    apache:
+      - 80/tcp
+      - 443/tcp
+
+# ============================================================================
+# SECURITY CONFIGURATIONS
+# ============================================================================
+security:
+  disable_server_tokens: true
+  enable_ssl: true
+  ssl_redirect: true
+  security_headers:
+    - "X-Frame-Options: SAMEORIGIN"
+    - "X-Content-Type-Options: nosniff"
+    - "X-XSS-Protection: 1; mode=block"
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 1024
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Nginx: Web root at ${nginx_www_root}, config at /etc/nginx/nginx.conf"
+  - "Apache: Enable modules with a2enmod <module>, config at /etc/apache2/"
+  - "PHP: Configure in /etc/php/*/fpm/php.ini and /etc/php/*/fpm/pool.d/"
+  - "Use stacks: lemp (nginx), lamp (apache), full (all)"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install LEMP Stack
+    description: Install Nginx, MySQL, PHP
+    command: ./debian-composer.sh --recipe=web-server --stack=lemp
+
+  - title: Install LAMP Stack
+    description: Install Apache, MySQL, PHP
+    command: ./debian-composer.sh --recipe=web-server --stack=lamp
+
+  - title: Install Only Nginx
+    description: Install only Nginx web server
+    command: ./debian-composer.sh --recipe=web-server --category=nginx

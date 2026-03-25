@@ -1,0 +1,60 @@
+# ============================================================================
+# Education Graphics Component
+# ============================================================================
+# Graphics and art education tools
+#
+# Reusable component for any recipe needing graphics/art software
+
+name: edu-graphics
+version: 1.0.0
+description: Graphics and art education tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, graphics, art, design, learning]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Vector graphics
+    - inkscape
+    # Raster graphics
+    - gimp
+    - pinta
+    # Desktop publishing
+    - scribus
+    # Animation
+    - pencil2d
+    - synfig
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - inkscape --version
+    - gimp --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Inkscape: Vector graphics editor"
+  - "GIMP: Image manipulation program"
+  - "Scribus: Desktop publishing"

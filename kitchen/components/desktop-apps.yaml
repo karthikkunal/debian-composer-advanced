@@ -1,0 +1,86 @@
+# ============================================================================
+# Desktop Apps Component
+# ============================================================================
+# Desktop applications for productivity and media
+#
+# Reusable component for any recipe needing desktop applications
+
+name: desktop-apps
+version: 1.0.0
+description: Desktop applications for productivity and media
+author: Debian Composer Team
+license: MIT
+tags: [applications, desktop, productivity, media]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Web browser
+    - chromium
+    - firefox-esr
+    # Office
+    - libreoffice
+    - libreoffice-gtk
+    - libreoffice-gnome
+    # PDF
+    - evince
+    # Note taking
+    - xournalpp
+    # Communication
+    - signal-desktop
+    - thunderbird
+    # Media
+    - mpv
+    - vlc
+    - imv
+    - audacity
+    # Graphics
+    - gimp
+    - inkscape
+    - pinta
+    - kdenlive
+    - obs-studio
+    # Utilities
+    - file-roller
+    - gnome-text-editor
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - chromium --version
+    - libreoffice --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_heavy
+  min_ram: 4096
+  min_disk: 20
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Applications: Desktop apps installed"
+  - "Browser: Chromium and Firefox ESR available"
+  - "Office: LibreOffice suite ready"
+  - "Media: MPV, VLC, Audacity installed"

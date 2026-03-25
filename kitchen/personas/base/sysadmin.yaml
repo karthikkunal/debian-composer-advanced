@@ -1,0 +1,366 @@
+# ============================================================================
+# Sysadmin Persona Template
+# ============================================================================
+# Pre-configured environment for system administrators
+# Includes monitoring, security, networking, and automation tools
+#
+# Usage:
+#   sudo debian-composer --persona=sysadmin
+#   sudo debian-composer --persona=sysadmin --var=role=server
+#   sudo debian-composer --persona=sysadmin --var=enable_monitoring=true
+
+name: persona-sysadmin
+version: 1.0.0
+description: Sysadmin persona - monitoring, security, networking, automation
+author: Debian Composer Team
+license: MIT
+tags: [persona, sysadmin, server, monitoring, security, networking]
+persona_type: sysadmin
+
+includes:
+  - components/base.yaml
+
+variables:
+  role:
+    type: string
+    default: server
+    choices: [server, network, security, devops, all]
+    description: "Primary sysadmin role"
+
+  enable_monitoring:
+    type: boolean
+    default: true
+    description: "Install monitoring tools"
+
+  enable_backup:
+    type: boolean
+    default: true
+    description: "Install backup solutions"
+
+  enable_vpn:
+    type: boolean
+    default: false
+    description: "Install VPN tools"
+
+packages:
+  - git
+  - curl
+  - wget
+  - build-essential
+  - make
+  - eza
+  - bat
+  - ripgrep
+  - fd-find
+  - fzf
+  - zoxide
+  - sudo
+  - cron
+  - logrotate
+  - rsyslog
+  - unattended-upgrades
+  - ufw
+  - fail2ban
+
+categories:
+  base-admin:
+    description: "Base system administration tools"
+    install:
+      packages:
+        - sudo
+        - cron
+        - logrotate
+        - rsyslog
+        - htop
+        - btop
+        - iotop
+        - ncdu
+        - tree
+        - rsync
+        - curl
+        - wget
+        - jq
+        - tree
+        - lsof
+        - netstat-nat
+        - strace
+        - ltrace
+        - sysstat
+        - iostat
+        - dstat
+        - iftop
+        - nethogs
+        - tmux
+        - screen
+        - vim
+        - nano
+        - man-db
+        - manpages
+        - manpages-dev
+    verify:
+      commands:
+        - htop --version
+        - tmux -V
+
+  security:
+    description: "Security and hardening tools"
+    install:
+      packages:
+        - ufw
+        - fail2ban
+        - chkrootkit
+        - rkhunter
+        - lynis
+        - auditd
+        - aide
+        - libpam-tmpdir
+        - libpam-modules
+        - libpam-runtime
+        - unattended-upgrades
+        - needrestart
+        - needrestart
+        - debsums
+    configure:
+      service:
+        - ufw
+        - fail2ban
+    verify:
+      commands:
+        - ufw status
+        - fail2ban-client status
+
+  networking:
+    description: "Networking tools"
+    install:
+      packages:
+        - iproute2
+        - iputils-ping
+        - iputils-arping
+        - dnsutils
+        - net-tools
+        - nmap
+        - tcpdump
+        - traceroute
+        - mtr
+        - whois
+        - bind9-host
+        - telnet
+        - netcat
+        - socat
+        - iperf3
+        - wireshark-common
+        - tshark
+    verify:
+      commands:
+        - nmap --version
+        - tcpdump --version
+
+  web-server:
+    description: "Web server stack"
+    install:
+      packages:
+        - nginx
+        - apache2
+        - certbot
+        - python3-certbot-nginx
+        - python3-certbot-apache
+    configure:
+      service:
+        - nginx
+        - apache2
+    verify:
+      commands:
+        - nginx -v
+        - apache2 -v
+
+  databases:
+    description: "Database servers"
+    install:
+      packages:
+        - postgresql
+        - postgresql-client
+        - mariadb-server
+        - mariadb-client
+        - redis-server
+        - redis-tools
+    configure:
+      service:
+        - postgresql
+        - mariadb
+        - redis-server
+    verify:
+      commands:
+        - psql --version
+        - mariadb --version
+
+  monitoring:
+    condition: enable_monitoring == true
+    description: "System monitoring"
+    install:
+      packages:
+        - prometheus
+        - node-exporter
+        - grafana
+        - alertmanager
+        - promtail
+        - loki
+        - netdata
+    configure:
+      service:
+        - netdata
+    verify:
+      commands:
+        - prometheus --version
+        - netdata -v
+
+  backup:
+    condition: enable_backup == true
+    description: "Backup solutions"
+    install:
+      packages:
+        - borgbackup
+        - restic
+        - rsnapshot
+        - duplicity
+        - bacula-client
+        - tar
+        - gzip
+        - bzip2
+        - xz-utils
+        - zstd
+    verify:
+      commands:
+        - borg --version
+        - restic version
+
+  vpn:
+    condition: enable_vpn == true
+    description: "VPN tools"
+    install:
+      packages:
+        - wireguard
+        - openvpn
+        - strongswan
+        - strongswan-pki
+        - tinc
+    configure:
+      service:
+        - strongswan-starter
+    verify:
+      commands:
+        - wg --version
+        - openvpn --version
+
+  automation:
+    description: "Infrastructure as Code and automation"
+    install:
+      packages:
+        - ansible
+        - terraform
+        - packer
+        - kubectl
+        - helm
+        - git
+        - jq
+        - yq
+        - python3-pip
+    verify:
+      commands:
+        - ansible --version
+        - terraform --version
+
+  virtualization:
+    description: "Virtualization tools"
+    install:
+      packages:
+        - qemu-kvm
+        - libvirt-daemon-system
+        - virt-manager
+        - bridge-utils
+        - ovmf
+        - qemu-utils
+        - cloud-init
+        - vagrant
+    configure:
+      service:
+        - libvirtd
+    verify:
+      commands:
+        - virsh --version
+        - qemu-img --version
+
+  mail:
+    description: "Mail server tools"
+    install:
+      packages:
+        - postfix
+        - mailutils
+        - msmtp
+        - dovecot-imapd
+        - dovecot-pop3d
+        - spamassassin
+        - clamav
+        - roundcube
+    configure:
+      service:
+        - postfix
+        - dovecot
+    verify:
+      commands:
+        - postconf -d mail_version
+
+stacks:
+  default:
+    description: "Default server admin setup"
+    categories:
+      - base-admin
+      - security
+      - networking
+      - web-server
+      - databases
+
+  monitoring:
+    description: "Monitoring-focused setup"
+    categories:
+      - base-admin
+      - security
+      - networking
+      - monitoring
+      - backup
+
+  network-admin:
+    description: "Network administrator setup"
+    categories:
+      - base-admin
+      - networking
+      - security
+      - vpn
+
+  full-stack:
+    description: "Full system administrator"
+    categories:
+      - base-admin
+      - security
+      - networking
+      - web-server
+      - databases
+      - monitoring
+      - backup
+      - automation
+      - virtualization
+
+requirements:
+  min_ram: 1024
+  min_disk: 20
+  gpu: false
+
+post_install:
+  - "=== Sysadmin Persona Installed ==="
+  - "Role: ${role}"
+  - "Monitoring: ${enable_monitoring}"
+  - "Backup: ${enable_backup}"
+  - ""
+  - "UFW: Run 'ufw enable' to activate firewall"
+  - "Fail2ban: Auto-configured for SSH protection"
+  - "Unattended upgrades: Security updates enabled"
+  - "Run 'usermod -aG sudo $USER' for non-root admin"

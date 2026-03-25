@@ -1,0 +1,104 @@
+# PostgreSQL Component
+# Reusable PostgreSQL database configuration with variables
+#
+# Template variables: ${postgres_port}, ${postgres_version}, ${postgres_data_dir}
+# Uses YAML anchors and templates for DRY configuration
+
+name: postgresql
+version: 1.0.0
+description: PostgreSQL relational database server
+author: Debian Composer Team
+license: MIT
+tags: [postgresql, database, sql, rdbms]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  postgres_port:
+    type: port
+    default: 5432
+    description: PostgreSQL server port
+
+  postgres_version:
+    type: string
+    default: "15"
+    choices: ["13", "14", "15", "16"]
+    description: PostgreSQL version
+
+  postgres_data_dir:
+    type: path
+    default: /var/lib/postgresql
+    description: PostgreSQL data directory
+
+  postgres_max_connections:
+    type: integer
+    default: 100
+    min: 10
+    max: 1000
+    description: Maximum connections
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    - postgresql-${postgres_version}
+    - postgresql-contrib-${postgres_version}
+    - postgresql-client-${postgres_version}
+    - postgresql-doc-${postgres_version}
+    - python3-psycopg2
+    - libpq-dev
+
+# ============================================================================
+# CONFIGURE - Using postgresql service template with overrides
+# ============================================================================
+configure:
+  <<: *postgresql_service
+  settings:
+    port: ${postgres_port}
+    listen_addresses: localhost
+    max_connections: ${postgres_max_connections}
+    data_directory: ${postgres_data_dir}/${postgres_version}
+  authentication:
+    method: peer
+    local: "peer"
+    host: "md5"
+
+# ============================================================================
+# VERIFY - Using postgresql verification template with overrides
+# ============================================================================
+verify:
+  <<: *verify_postgresql
+  ports_listening:
+    - ${postgres_port}
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 512
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "PostgreSQL ${postgres_version} running on port ${postgres_port}"
+  - "Connect: psql -U postgres"
+  - "Data directory: ${postgres_data_dir}/${postgres_version}"
+  - "Max connections: ${postgres_max_connections}"

@@ -1,0 +1,218 @@
+# ============================================================================
+# Distro: debian-developer
+# ============================================================================
+# An opinionated Debian developer workstation.
+# Inspired by Omarchy — makes the choice for you.
+#
+# Usage:
+#   sudo debian-composer --distro=debian-developer
+#   sudo debian-composer --distro=debian-developer --var=primary_lang=rust
+#   sudo debian-composer --distro=debian-developer --var=desktop=hyprland
+
+name: debian-developer
+version: 1.0.0
+description: "Tasteful Debian developer workstation — batteries included"
+author: Debian Composer Team
+license: MIT
+tags: [distro, developer, workstation, opinionated]
+kind: distro
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - components/editors.yaml
+  - components/dev-toolchain.yaml
+  - components/cli-tools.yaml
+  - components/terminal.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  primary_lang:
+    type: string
+    default: python
+    choices: [python, rust, go, javascript, java]
+    description: "Primary programming language"
+
+  desktop:
+    type: string
+    default: gnome
+    choices: [gnome, kde, hyprland]
+    description: "Desktop environment"
+
+packages:
+  - git
+  - git-lfs
+  - gh
+  - build-essential
+  - make
+  - curl
+  - wget
+  - jq
+  - zsh
+  - tmux
+  - fzf
+  - ripgrep
+  - bat
+  - eza
+  - btop
+
+categories:
+  desktop/gnome:
+    condition: desktop == gnome
+    description: "GNOME desktop environment"
+    install:
+      packages:
+        - gnome-core
+        - gnome-tweaks
+        - gnome-shell-extensions
+
+  desktop/kde:
+    condition: desktop == kde
+    description: "KDE Plasma desktop"
+    install:
+      packages:
+        - kde-plasma-desktop
+        - plasma-workspace
+
+  desktop/hyprland:
+    condition: desktop == hyprland
+    description: "Hyprland Wayland compositor"
+    install:
+      packages:
+        - hyprland
+        - waybar
+        - wofi
+
+  lang/python:
+    condition: primary_lang == python
+    description: "Python development stack"
+    install:
+      packages:
+        - python3
+        - python3-pip
+        - python3-venv
+        - python3-dev
+        - pipx
+        - black
+        - ruff
+    verify:
+      commands:
+        - python3 --version
+
+  lang/rust:
+    condition: primary_lang == rust
+    description: "Rust development stack"
+    install:
+      packages:
+        - rustc
+        - cargo
+        - rust-src
+        - rustfmt
+    verify:
+      commands:
+        - rustc --version
+        - cargo --version
+
+  lang/go:
+    condition: primary_lang == go
+    description: "Go development stack"
+    install:
+      packages:
+        - golang-go
+    verify:
+      commands:
+        - go version
+
+  lang/javascript:
+    condition: primary_lang == javascript
+    description: "Node.js/JavaScript stack"
+    install:
+      packages:
+        - nodejs
+        - npm
+    verify:
+      commands:
+        - node --version
+        - npm --version
+
+  lang/java:
+    condition: primary_lang == java
+    description: "Java development stack"
+    install:
+      packages:
+        - default-jdk
+        - maven
+    verify:
+      commands:
+        - java --version
+        - mvn --version
+
+  tools/containers:
+    description: "Docker and container tools"
+    install:
+      packages:
+        - docker.io
+        - docker-compose
+    configure:
+      user_groups:
+        - docker
+    verify:
+      commands:
+        - docker --version
+
+  tools/vscode:
+    description: "Visual Studio Code"
+    install:
+      packages:
+        - code
+    verify:
+      commands:
+        - code --version
+
+stacks:
+  default:
+    description: "Standard developer setup (GNOME + Python + Docker + VSCode)"
+    categories:
+      - desktop/gnome
+      - lang/python
+      - tools/containers
+      - tools/vscode
+
+  minimal:
+    description: "Minimal terminal-only developer setup"
+    categories:
+      - lang/python
+      - tools/containers
+
+  fullstack:
+    description: "Full-stack developer (Python + JavaScript + Docker + VSCode)"
+    categories:
+      - desktop/gnome
+      - lang/python
+      - lang/javascript
+      - tools/containers
+      - tools/vscode
+
+requirements:
+  min_ram: 4096
+  min_disk: 30
+
+post_install:
+  - "=== debian-developer installed ==="
+  - ""
+  - "Your tasteful Debian developer workstation is ready."
+  - "Primary language: ${primary_lang}"
+  - "Desktop: ${desktop}"
+  - ""
+  - "Next steps:"
+  - "  - Log out and back in for Docker group membership"
+  - "  - Run 'chsh -s $(which zsh)' to switch to zsh"
+
+examples:
+  - title: "Default setup (Python + GNOME)"
+    command: "sudo debian-composer --distro=debian-developer"
+  - title: "Rust developer with Hyprland"
+    command: "sudo debian-composer --distro=debian-developer --var=primary_lang=rust --var=desktop=hyprland"
+  - title: "Minimal terminal developer"
+    command: "sudo debian-composer --distro=debian-developer --stack=minimal"

@@ -1,0 +1,74 @@
+# Apache Component
+# Reusable Apache web server configuration
+# Template variables: ${www_root}, ${http_port}, ${https_port}
+# Uses YAML anchors and templates for DRY configuration
+
+name: apache
+version: 1.0.0
+description: Apache web server
+author: Debian Composer Team
+license: MIT
+tags: [web, apache, server]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# Template variables
+variables:
+  www_root:
+    type: string
+    default: "/var/www/html"
+    description: "Web root directory"
+  http_port:
+    type: integer
+    default: 80
+    description: "HTTP port"
+  https_port:
+    type: integer
+    default: 443
+    description: "HTTPS port"
+
+install:
+  packages:
+    - apache2
+    - apache2-utils
+    - libapache2-mod-security2
+
+# ============================================================================
+# CONFIGURE - Using apache service template with overrides
+# ============================================================================
+configure:
+  <<: *apache_service
+  directories:
+    www: ${www_root}
+  modules:
+    enable:
+      - rewrite
+      - ssl
+      - headers
+      - security2
+  security:
+    server_tokens: false
+    ssl_enabled: true
+
+# ============================================================================
+# VERIFY - Using apache verification template with overrides
+# ============================================================================
+verify:
+  <<: *verify_apache
+  ports_listening:
+    - ${http_port}
+    - ${https_port}
+
+requirements:
+  min_ram: 256
+  min_disk: 1
+
+post_install:
+  - "Web root at ${www_root}"
+  - "Enable modules with a2enmod <module>"
+  - "Config at /etc/apache2/"

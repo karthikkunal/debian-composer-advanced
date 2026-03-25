@@ -1,0 +1,92 @@
+# ML/AI Research Platform
+# Complete machine learning environment with GPU support, experiment tracking, and MLOps tools
+
+name: ml-research
+version: 1.0.0
+description: Machine learning research platform with PyTorch, TensorFlow, Weights & Biases, and MLflow
+author: Debian Composer Team
+license: MIT
+tags: [ml, ai, pytorch, tensorflow, mlops]
+
+layers:
+  - base
+  - runtime
+
+includes:
+  - components/ollama.yaml
+  - components/whisper.yaml
+  - mixins/security-hardening.yaml
+
+packages:
+  - nvidia-cuda-toolkit
+  - nvidia-cudnn
+  - nvidia-driver
+  - cuda
+  - libcuda1
+  - nvidia-utils
+  - tensorboard
+  - mlflow
+  - wandb
+  - jupyter
+  - jupyter-notebook
+  - ipython
+  - scikit-learn
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - plotly
+  - opencv
+  - libopencv-dev
+
+python_packages:
+  - torch
+  - torchvision
+  - torchaudio
+  - tensorflow
+  - keras
+  - transformers
+  - diffusers
+  - accelerate
+  - xgboost
+  - lightgbm
+  - optuna
+  - wandb
+  - mlflow
+  - ipywidgets
+  - tensorboard
+
+stacks:
+  llm:
+    description: "Large language model research"
+    components:
+      - ollama
+
+  speech:
+    description: "Speech processing research"
+    components:
+      - whisper
+
+  vision:
+    description: "Computer vision research"
+    components: []
+
+  full:
+    description: "Full ML research platform"
+    components:
+      - ollama
+      - whisper
+
+requirements:
+  min_ram: 16384
+  min_disk: 50
+  gpu: nvidia
+
+post_install:
+  - "PyTorch: CUDA available - check with 'python3 -c \"import torch; print(torch.cuda.is_available())\"'"
+  - "TensorFlow: Check GPU with 'python3 -c \"import tensorflow as tf; print(tf.config.list_physical_devices())\"'"
+  - "Jupyter: Start with 'jupyter notebook --ip=0.0.0.0'"
+  - "Weights & Biases: Login with 'wandb login'"
+  - "MLflow: Start tracking server 'mlflow ui'"
+  - "Ollama: Run 'ollama run llama3.2' for local LLM"
+  - "⚠️ NVIDIA GPU with CUDA support required"

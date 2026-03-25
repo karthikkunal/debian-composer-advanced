@@ -1,0 +1,230 @@
+# Database Server Recipe
+# YAML Configuration for database servers
+#
+# Structure: install (what to install) is separate from configure (how to set it up)
+#
+# Uses YAML anchors and merge keys for DRY configuration
+
+name: database
+version: 1.0.0
+description: Install and configure database servers
+author: Debian Composer Team
+license: MIT
+tags: [database, mysql, postgresql, mongodb, redis, elasticsearch]
+
+# ============================================================================
+# COMPOSABILITY - Uses components and anchor fragments
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/mysql.yaml
+  - components/postgresql.yaml
+  - components/redis.yaml
+  - components/mongodb.yaml
+  - components/elasticsearch.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# DEFAULT PACKAGES - Using anchor reference
+# ============================================================================
+packages: *db_client
+
+# ============================================================================
+# CATEGORIES - Using merge keys to inherit from templates
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # MySQL - Using pre-configured service anchor
+  # --------------------------------------------------------------------------
+  mysql:
+    <<: *mysql_service
+    install:
+      packages:
+        - mysql-server
+        - mysql-client
+        - mysql-common
+        - python3-mysql.connector
+        - libmysqlclient-dev
+
+  # --------------------------------------------------------------------------
+  # MariaDB - Using database server template with merge key
+  # --------------------------------------------------------------------------
+  mariadb:
+    <<: *database_server_template
+    install:
+      packages:
+        - mariadb-server
+        - mariadb-client
+        - mariadb-common
+        - python3-mariadb
+        - libmariadb-dev
+    configure:
+      service:
+        name: mariadb
+      settings:
+        port: 3306
+        bind_address: 127.0.0.1
+        secure_installation: true
+    verify:
+      commands:
+        - mariadb --version
+        - mysqladmin -u root status
+      services_running:
+        - mariadb
+      ports_listening:
+        - 3306
+
+  # --------------------------------------------------------------------------
+  # PostgreSQL - Using pre-configured service anchor
+  # --------------------------------------------------------------------------
+  postgresql:
+    <<: *postgresql_service
+    install:
+      packages:
+        - postgresql
+        - postgresql-contrib
+        - postgresql-client
+        - postgresql-doc
+        - python3-psycopg2
+        - libpq-dev
+
+  # --------------------------------------------------------------------------
+  # MongoDB - Using service template with custom repo
+  # --------------------------------------------------------------------------
+  mongodb:
+    <<: *service_template
+    install:
+      packages: []  # Installed via MongoDB repo
+      repositories:
+        - name: mongodb
+          key: https://www.mongodb.org/static/pgp/server-7.0.asc
+          keyring: /usr/share/keyrings/mongodb-server-7.0.gpg
+          url: "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main"
+    configure:
+      service:
+        name: mongod
+        enable: true
+        start: true
+      settings:
+        port: 27017
+        bind_ip: 127.0.0.1
+        storage:
+          db_path: /var/lib/mongodb
+          journal: true
+    verify:
+      commands:
+        - mongod --version
+        - mongosh --eval "db.adminCommand('ping')"
+      services_running:
+        - mongod
+      ports_listening:
+        - 27017
+
+  # --------------------------------------------------------------------------
+  # Redis - Using pre-configured cache service anchor
+  # --------------------------------------------------------------------------
+  redis:
+    <<: *redis_service
+    install:
+      packages:
+        - redis-server
+        - redis-tools
+        - redis-doc
+
+  # --------------------------------------------------------------------------
+  # Elasticsearch - Using service template
+  # --------------------------------------------------------------------------
+  elasticsearch:
+    <<: *service_template
+    install:
+      packages: []  # Installed via Elasticsearch repo
+      repositories:
+        - name: elasticsearch
+          key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+          keyring: /usr/share/keyrings/elasticsearch.gpg
+          url: "deb [arch=amd64 signed-by=/usr/share/keyrings/elasticsearch.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main"
+    configure:
+      service:
+        name: elasticsearch
+        enable: true
+        start: true
+      settings:
+        port: 9200
+        bind_address: 127.0.0.1
+        cluster_name: elasticsearch
+        discovery_type: single-node
+      security:
+        xpack_security_enabled: true
+        ssl_enabled: true
+    verify:
+      commands:
+        - curl -k -u elastic https://localhost:9200
+      services_running:
+        - elasticsearch
+      ports_listening:
+        - 9200
+        - 9300
+
+# ============================================================================
+# FIREWALL RULES (configured but not enabled by default)
+# ============================================================================
+firewall:
+  enabled: false
+  rules:
+    mysql:
+      - 3306/tcp
+    mariadb:
+      - 3306/tcp
+    postgresql:
+      - 5432/tcp
+    mongodb:
+      - 27017/tcp
+    redis:
+      - 6379/tcp
+    elasticsearch:
+      - 9200/tcp
+      - 9300/tcp
+
+# ============================================================================
+# SECURITY CONFIGURATIONS
+# ============================================================================
+security:
+  run_secure_installation: true
+  enable_ssl: true
+  bind_local_only: true
+
+# ============================================================================
+# SYSTEM REQUIREMENTS - Using anchor with override
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096  # MB (override - databases need more RAM)
+  min_disk: 20   # GB (override)
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "MySQL: Run 'mysql_secure_installation' for initial setup"
+  - "MySQL: Connect with 'mysql -u root -p'"
+  - "MariaDB: Run 'mysql_secure_installation' for initial setup"
+  - "PostgreSQL: Switch to postgres user: 'sudo -u postgres psql'"
+  - "MongoDB: Connect with 'mongosh', default bind is localhost only"
+  - "Redis: Test with 'redis-cli ping', should return PONG"
+  - "Elasticsearch: Access at https://localhost:9200 (security enabled by default)"
+  - "Remember to configure firewall rules for remote access"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install MySQL Only
+    description: Install only MySQL database server
+    command: sudo debian-composer --recipe=database --category=mysql
+  - title: Install PostgreSQL Only
+    description: Install only PostgreSQL database server
+    command: sudo debian-composer --recipe=database --category=postgresql
+  - title: Install All Databases
+    description: Install complete database server setup
+    command: sudo debian-composer --recipe=database

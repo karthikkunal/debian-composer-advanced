@@ -1,0 +1,59 @@
+# ============================================================================
+# Education Language Component
+# ============================================================================
+# Language learning tools
+#
+# Reusable component for any recipe needing language education
+
+name: edu-language
+version: 1.0.0
+description: Language learning tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, language, learning, typing]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Typing tutors
+    - klavaro
+    - ktouch
+    # Language learning
+    - klettres
+    - kwordquiz
+    - parley
+    # Dictionaries
+    - goldendict
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - klavaro --version
+    - goldendict --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 1024
+  min_disk: 3
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Klavaro: Touch typing tutor"
+  - "GoldenDict: Dictionary application"
+  - "Parley: Vocabulary trainer"

@@ -1,0 +1,254 @@
+# ============================================================================
+# GPU Compute Component
+# ============================================================================
+# Dual-GPU compute stack: NVIDIA CUDA + AMD ROCm
+#
+# Philosophy: Open source first, proprietary only where no alternative exists.
+# - NVIDIA path: nvidia-open kernel + CUDA toolkit + cuDNN (3 proprietary components)
+# - AMD path: amdgpu kernel + ROCm (fully open source)
+#
+# Auto-detects GPU vendor at runtime; installs appropriate stack.
+# TensorRT is opt-in (tier 2 optimization, not required).
+#
+# Requires: hardware-support component for firmware
+
+name: gpu-compute
+version: 1.0.0
+description: "Dual-GPU compute stack — NVIDIA CUDA and AMD ROCm with auto-detection"
+author: Debian Composer Team
+license: MIT
+tags: [gpu, nvidia, amd, cuda, rocm, compute, ai, ml]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  gpu_vendor:
+    type: string
+    default: auto
+    choices: [auto, nvidia, amd, intel, none]
+    description: "GPU vendor to install compute stack for ('auto' detects hardware)"
+
+  cuda_version:
+    type: string
+    default: "13-0"
+    description: "CUDA toolkit version to install (e.g., 13-0, 12-6)"
+
+  rocm_version:
+    type: string
+    default: "7.2"
+    description: "ROCm major.minor version"
+
+  install_tensorrt:
+    type: boolean
+    default: false
+    description: "Install NVIDIA TensorRT (opt-in, proprietary inference optimizer)"
+
+  install_oneapi:
+    type: boolean
+    default: false
+    description: "Install Intel oneAPI for Arc GPU support"
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - hardware-support
+
+# ============================================================================
+# INSTALL - NVIDIA PATH (minimal proprietary: CUDA, cuDNN, TensorRT optional)
+# ============================================================================
+categories:
+  # --------------------------------------------------------------------------
+  # NVIDIA Compute Stack
+  # --------------------------------------------------------------------------
+  nvidia/kernel:
+    condition: gpu_vendor == nvidia || (gpu_vendor == auto && has_nvidia_gpu)
+    description: "NVIDIA open kernel modules and driver"
+    packages: []
+    repositories:
+      - name: nvidia-cuda
+        url: "deb https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/ /"
+        key: https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/cuda-keyring_1.1-1_all.deb
+        keyring: /usr/share/keyrings/cuda-keyring.gpg
+    install:
+      packages:
+        - nvidia-open
+        - nvidia-driver
+        - nvidia-utils
+        - libnvidia-extra
+        - vulkan-tools
+        - libvulkan1
+        - vulkan-validationlayers
+    configure:
+      service:
+        name: nvidia-persistenced
+        enable: true
+        start: false  # Only needed for headless compute, not desktop
+    verify:
+      commands:
+        - nvidia-smi --query-gpu=name,driver_version --format=csv,noheader
+      files_exist:
+        - /usr/lib/x86_64-linux-gnu/libcuda.so
+
+  nvidia/cuda:
+    condition: gpu_vendor == nvidia || (gpu_vendor == auto && has_nvidia_gpu)
+    description: "CUDA toolkit and cuDNN (proprietary — no open alternative)"
+    packages: []
+    install:
+      packages:
+        - cuda-toolkit-${cuda_version}
+        - libcudnn9-cuda-12
+    configure:
+      environment:
+        CUDA_HOME: "/usr/local/cuda"
+        PATH: "${PATH}:/usr/local/cuda/bin"
+        LD_LIBRARY_PATH: "/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
+      post_commands:
+        - "update-alternatives --install /usr/local/cuda cuda /usr/local/cuda-12 10"
+    verify:
+      commands:
+        - nvcc --version
+        - test -f /usr/lib/x86_64-linux-gnu/libcudnn.so
+
+  nvidia/tensorrt:
+    condition: install_tensorrt == true && (gpu_vendor == nvidia || has_nvidia_gpu)
+    description: "TensorRT inference optimizer (opt-in proprietary)"
+    install:
+      packages:
+        - tensorrt
+        - tensorrt-libs
+    verify:
+      commands:
+        - python3 -c "import tensorrt; print(tensorrt.__version__)" 2>/dev/null || echo "TensorRT Python bindings not in system path"
+
+  # --------------------------------------------------------------------------
+  # AMD Compute Stack (fully open source)
+  # --------------------------------------------------------------------------
+  amd/kernel:
+    condition: gpu_vendor == amd || (gpu_vendor == auto && has_amd_gpu)
+    description: "AMD amdgpu kernel driver (in-tree, open source)"
+    install:
+      packages:
+        - firmware-amd-graphics
+    verify:
+      commands:
+        - lsmod | grep -q amdgpu || echo "amdgpu module will load on next boot"
+
+  amd/rocm:
+    condition: gpu_vendor == amd || (gpu_vendor == auto && has_amd_gpu)
+    description: "ROCm open compute platform — fully open source stack"
+    packages: []
+    repositories:
+      - name: rocm
+        url: "deb https://repo.radeon.com/rocm/apt/7.2 bookworm main"
+        key: https://repo.radeon.com/rocm/rocm.gpg.key
+        keyring: /usr/share/keyrings/rocm-keyring.gpg
+    install:
+      packages:
+        - rocm-dev
+        - hip-runtime-amd
+        - rocminfo
+        - rocm-smi
+    configure:
+      environment:
+        HIP_PATH: "/opt/rocm"
+        PATH: "${PATH}:/opt/rocm/bin:/opt/rocm/hip/bin"
+        LD_LIBRARY_PATH: "/opt/rocm/lib:${LD_LIBRARY_PATH:-}"
+    verify:
+      commands:
+        - rocminfo 2>/dev/null | head -5 || echo "ROCm installed (reboot required for full detection)"
+        - test -f /opt/rocm/bin/rocminfo
+
+  # --------------------------------------------------------------------------
+  # Intel GPU Compute (optional)
+  # --------------------------------------------------------------------------
+  intel/oneapi:
+    condition: install_oneapi == true
+    description: "Intel oneAPI for Arc GPU support (mostly open source)"
+    packages: []
+    repositories:
+      - name: intel-oneapi
+        url: "deb https://repositories.intel.com/gpu/intel-graphics bookwormInRelease"
+        key: https://repositories.intel.com/gpu/intel-graphics.key
+    install:
+      packages:
+        - intel-level-zero-gpu
+        - level-zero
+        - intel-compute-runtime
+        - intel-media-va-driver-non-free
+    verify:
+      commands:
+        - test -f /usr/lib/x86_64-linux-gnu/libze_loader.so
+
+# ============================================================================
+# HARDWARE DETECTION HOOKS
+# ============================================================================
+hooks:
+  pre_install:
+    - type: script
+      description: "Auto-detect GPU vendor"
+      script: |
+        #!/bin/bash
+        # GPU auto-detection for gpu-compute component
+        # Sets gpu_vendor variable if set to 'auto'
+
+        if [[ "${gpu_vendor:-auto}" != "auto" ]]; then
+          echo "GPU vendor explicitly set to: $gpu_vendor"
+          return 0
+        fi
+
+        if lspci 2>/dev/null | grep -qi "nvidia"; then
+          gpu_vendor="nvidia"
+          echo "Detected NVIDIA GPU(s)"
+        elif lspci 2>/dev/null | grep -qi "amd\|radeon"; then
+          gpu_vendor="amd"
+          echo "Detected AMD GPU(s)"
+        elif lspci 2>/dev/null | grep -qi "intel.*graphics\|intel.*arc"; then
+          gpu_vendor="intel"
+          echo "Detected Intel GPU(s)"
+        else
+          gpu_vendor="none"
+          echo "No discrete GPU detected"
+        fi
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 4096
+  min_disk: 15
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "=== GPU Compute Stack Installed ==="
+  - ""
+  - "NVIDIA path (proprietary components):"
+  - "  - nvidia-open kernel modules (open source)"
+  - "  - CUDA toolkit ${cuda_version} (proprietary)"
+  - "  - cuDNN (proprietary)"
+  - "  - TensorRT: ${install_tensorrt} (opt-in)"
+  - ""
+  - "AMD path (fully open source):"
+  - "  - amdgpu kernel driver (in-tree, open source)"
+  - "  - ROCm ${rocm_version} (fully open source)"
+  - ""
+  - "Intel path (mostly open source):"
+  - "  - oneAPI: ${install_oneapi}"
+  - ""
+  - "Total proprietary components: 2-3 (CUDA, cuDNN, optional TensorRT)"
+  - "Total stack: ~95% open source"
+  - ""
+  - "Verify GPU: nvidia-smi (NVIDIA) or rocminfo (AMD)"
+  - "Reboot may be required for kernel module changes"

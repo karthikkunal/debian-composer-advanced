@@ -1,0 +1,102 @@
+# Redis Component
+# Reusable Redis cache/server configuration with variables
+#
+# Template variables: ${redis_port}, ${redis_bind}, ${redis_password}, ${enable_persistence}
+# Uses YAML anchors and templates for DRY configuration
+
+name: redis
+version: 1.0.0
+description: Redis in-memory cache and database
+author: Debian Composer Team
+license: MIT
+tags: [redis, cache, database, nosql]
+
+# ============================================================================
+# COMPOSABILITY - Uses fragments and templates
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# VARIABLES
+# ============================================================================
+variables:
+  redis_port:
+    type: port
+    default: 6379
+    description: Redis server port
+
+  redis_bind:
+    type: string
+    default: "127.0.0.1"
+    description: Redis bind address
+
+  redis_password:
+    type: string
+    default: ""
+    description: Redis password (empty = no auth)
+
+  enable_persistence:
+    type: boolean
+    default: true
+    description: Enable RDB persistence
+
+  redis_maxmemory:
+    type: string
+    default: "256mb"
+    description: Maximum memory limit
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    - redis-server
+    - redis-tools
+    - redis-doc
+
+# ============================================================================
+# CONFIGURE - Using cache service template with overrides
+# ============================================================================
+configure:
+  <<: *redis_service
+  settings:
+    port: ${redis_port}
+    bind: ${redis_bind}
+    maxmemory: ${redis_maxmemory}
+    maxmemory-policy: allkeys-lru
+    requirepass: ${redis_password}
+    appendonly: ${enable_persistence}
+    save: "900 1 300 10 60 10000"
+
+# ============================================================================
+# VERIFY - Using redis verification template with overrides
+# ============================================================================
+verify:
+  <<: *verify_redis
+  ports_listening:
+    - ${redis_port}
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 512
+  min_disk: 1
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "Redis server running on ${redis_bind}:${redis_port}"
+  - "Test connection: redis-cli -h ${redis_bind} -p ${redis_port}"
+  - "Persistence: ${enable_persistence}"
+  - "Max Memory: ${redis_maxmemory}"

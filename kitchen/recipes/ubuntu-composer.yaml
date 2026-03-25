@@ -1,0 +1,260 @@
+# ============================================================================
+# Distro: ubuntu-composer
+# ============================================================================
+# Transform a clean Debian install into an Ubuntu-compatible system.
+# Uses Ubuntu archives and provides Ubuntu userland experience.
+#
+# Usage:
+#   sudo debian-composer --distro=ubuntu-composer
+#   sudo debian-composer --distro=ubuntu-composer --var=ubuntu_release=noble
+#   sudo debian-composer --distro=ubuntu-composer --stack=server
+
+name: ubuntu-composer
+version: 1.0.0
+description: "Transform Debian into Ubuntu-compatible system with official repos"
+author: Debian Composer Team
+license: MIT
+tags: [distro, ubuntu, derivative, apt, canonical]
+kind: distro
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  ubuntu_release:
+    type: string
+    default: noble
+    choices: [noble, jammy, focal]
+    description: "Ubuntu release codename (noble=24.04, jammy=22.04, focal=20.04)"
+
+  enable_universe:
+    type: boolean
+    default: true
+    description: "Enable Universe repository (community-maintained)"
+
+  enable_multiverse:
+    type: boolean
+    default: true
+    description: "Enable Multiverse repository (proprietary)"
+
+  enable_ppa:
+    type: boolean
+    default: false
+    description: "Enable PPA support via software-properties-common"
+
+  desktop:
+    type: string
+    default: gnome
+    choices: [gnome, kde, xfce, mate, cinnamon]
+    description: "Desktop environment"
+
+  variant:
+    type: string
+    default: standard
+    choices: [standard, minimal, server]
+    description: "Installation variant"
+
+repositories:
+  - name: ubuntu-main
+    url: "deb http://archive.ubuntu.com/ubuntu ${ubuntu_release} main restricted"
+    key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C"
+    keyring: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+  - name: ubuntu-updates
+    url: "deb http://archive.ubuntu.com/ubuntu ${ubuntu_release}-updates main restricted"
+    key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C"
+
+  - name: ubuntu-security
+    url: "deb http://security.ubuntu.com/ubuntu ${ubuntu_release}-security main restricted"
+    key: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920D1991BC93C"
+
+packages:
+  - ubuntu-keyring
+  - ubuntu-standard
+  - snapd
+  - lsb-release
+  - apt-transport-https
+  - ca-certificates
+
+categories:
+  repo/universe:
+    condition: enable_universe == true
+    description: "Ubuntu Universe repository (community software)"
+    install:
+      repositories:
+        - name: ubuntu-universe
+          url: "deb http://archive.ubuntu.com/ubuntu ${ubuntu_release} universe"
+        - name: ubuntu-universe-updates
+          url: "deb http://archive.ubuntu.com/ubuntu ${ubuntu_release}-updates universe"
+
+  repo/multiverse:
+    condition: enable_multiverse == true
+    description: "Ubuntu Multiverse repository (proprietary software)"
+    install:
+      repositories:
+        - name: ubuntu-multiverse
+          url: "deb http://archive.ubuntu.com/ubuntu ${ubuntu_release} multiverse"
+        - name: ubuntu-multiverse-updates
+          url: "deb http://archive.ubuntu.com/ubuntu ${ubuntu_release}-updates multiverse"
+
+  repo/ppa:
+    condition: enable_ppa == true
+    description: "PPA support for third-party software"
+    install:
+      packages:
+        - software-properties-common
+        - gpg-agent
+
+  desktop/gnome:
+    condition: desktop == gnome
+    description: "Ubuntu GNOME desktop (vanilla GNOME)"
+    install:
+      packages:
+        - ubuntu-desktop
+        - gnome-shell
+        - gnome-control-center
+        - ubuntu-gnome-desktop
+
+  desktop/kde:
+    condition: desktop == kde
+    description: "Kubuntu KDE Plasma desktop"
+    install:
+      packages:
+        - kubuntu-desktop
+        - kde-plasma-desktop
+        - sddm
+
+  desktop/xfce:
+    condition: desktop == xfce
+    description: "Xubuntu XFCE desktop"
+    install:
+      packages:
+        - xubuntu-desktop
+        - xfce4
+        - xfce4-goodies
+
+  desktop/mate:
+    condition: desktop == mate
+    description: "Ubuntu MATE desktop"
+    install:
+      packages:
+        - ubuntu-mate-desktop
+        - mate-desktop-environment
+        - mate-tweak
+
+  desktop/cinnamon:
+    condition: desktop == cinnamon
+    description: "Ubuntu Cinnamon Remix desktop"
+    install:
+      packages:
+        - ubuntu-cinnamon-desktop
+        - cinnamon
+
+  tools/snap:
+    description: "Snap package management"
+    install:
+      packages:
+        - snapd
+    configure:
+      service:
+        name: snapd
+        enable: true
+        start: true
+    verify:
+      commands:
+        - snap --version
+
+  server/minimal:
+    condition: variant == server
+    description: "Ubuntu Server minimal packages"
+    install:
+      packages:
+        - openssh-server
+        - ufw
+        - cloud-init
+        - netplan.io
+
+stacks:
+  default:
+    description: "Ubuntu desktop with GNOME"
+    categories:
+      - repo/universe
+      - repo/multiverse
+      - desktop/gnome
+      - tools/snap
+
+  minimal:
+    description: "Minimal Ubuntu-compatible base"
+    categories:
+      - repo/universe
+
+  server:
+    description: "Ubuntu Server configuration"
+    categories:
+      - server/minimal
+      - tools/snap
+
+  kubuntu:
+    description: "Kubuntu KDE desktop"
+    categories:
+      - repo/universe
+      - repo/multiverse
+      - desktop/kde
+      - tools/snap
+
+  xubuntu:
+    description: "Xubuntu XFCE desktop"
+    categories:
+      - repo/universe
+      - repo/multiverse
+      - desktop/xfce
+      - tools/snap
+
+  mate:
+    description: "Ubuntu MATE desktop"
+    categories:
+      - repo/universe
+      - repo/multiverse
+      - desktop/mate
+      - tools/snap
+
+requirements:
+  min_ram: 2048
+  min_disk: 20
+
+conflicts:
+  packages:
+    - debian-archive-keyring
+
+post_install:
+  - "=== Ubuntu Composer installed ==="
+  - ""
+  - "Your Debian system is now Ubuntu-compatible."
+  - "Release: ${ubuntu_release}"
+  - "Desktop: ${desktop}"
+  - ""
+  - "Repositories configured:"
+  - "  - Main & Restricted"
+  - "  - Universe: ${enable_universe}"
+  - "  - Multiverse: ${enable_multiverse}"
+  - "  - PPA support: ${enable_ppa}"
+  - ""
+  - "Next steps:"
+  - "  - Update package lists: sudo {{preferred_package_manager}} update"
+  - "  - Install software via Snap: sudo snap install <package>"
+  - "  - Check Ubuntu version: lsb_release -a"
+
+examples:
+  - title: "Ubuntu 24.04 with GNOME"
+    command: "sudo debian-composer --distro=ubuntu-composer"
+  - title: "Ubuntu 22.04 minimal"
+    command: "sudo debian-composer --distro=ubuntu-composer --var=ubuntu_release=jammy --stack=minimal"
+  - title: "Kubuntu desktop"
+    command: "sudo debian-composer --distro=ubuntu-composer --stack=kubuntu"
+  - title: "Ubuntu Server"
+    command: "sudo debian-composer --distro=ubuntu-composer --stack=server"
+  - title: "Ubuntu with PPA support"
+    command: "sudo debian-composer --distro=ubuntu-composer --var=enable_ppa=true"

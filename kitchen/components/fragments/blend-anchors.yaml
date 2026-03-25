@@ -1,0 +1,53 @@
+# ============================================================================
+# Debian Pure Blend Anchors - DEPRECATED
+# ============================================================================
+#
+# This file is DEPRECATED. All blend anchors have been consolidated into
+# fragments/base-anchors.yaml for a single source of truth.
+#
+# Please update your includes to use base-anchors.yaml directly:
+#   includes:
+#     - fragments/base-anchors.yaml
+#     - fragments/service-templates.yaml
+#
+# All anchors previously in this file are now in base-anchors.yaml:
+#   - Education:       *edu_workstation, *edu_programming, *edu_fonts, etc.
+#   - Science:         *science_python, *science_math, *science_physics, etc.
+#   - GIS:             *gis_desktop, *gis_python, *gis_server, etc.
+#   - Medical:         *med_practice, *med_imaging, *med_research, etc.
+#   - Astronomy:       *astro_observation, *astro_data_reduction, etc.
+#   - Bioinformatics:  *bio_seq_analysis, *bio_python_packages, etc.
+#   - Accessibility:   *accessibility_braille, *accessibility_speech, etc.
+#   - Games:           *games_adventure, *games_arcade, *games_strategy, etc.
+#   - Junior:          *junior_art, *junior_education, *junior_games_*, etc.
+#   - Multimedia:      *multimedia_audio, *multimedia_video, *multimedia_graphics, etc.
+#   - FreedomBox:      *freedombox_base, *freedombox_network, *freedombox_communication, etc.
+#   - Hamradio:        *hamradio_antenna, *hamradio_datamodes, *hamradio_sdr, etc.
+#
+# Composite anchors for complete setups:
+#   - *edu_complete, *edu_primary, *edu_highschool
+#   - *science_complete, *science_physics_complete, *science_chemistry_complete
+#   - *gis_complete, *gis_server_complete, *gis_desktop_complete
+#   - *med_complete, *med_practice_complete, *med_imaging_complete
+#   - *astro_complete, *astro_amateur, *astro_professional
+#   - *bio_complete, *bio_seq_complete, *bio_structural
+#   - *accessibility_complete, *accessibility_desktop, *accessibility_workstation
+#   - *games_complete, *games_classic, *games_action, *games_dev
+#   - *junior_complete, *junior_preschool, *junior_elementary, *junior_middle_school
+#   - *multimedia_complete, *multimedia_production, *multimedia_creator, *multimedia_studio
+#   - *freedombox_complete, *freedombox_home_server, *freedombox_privacy
+#   - *hamradio_complete, *hamradio_hf, *hamradio_sdr_setup, *hamradio_explorer
+#
+# Requirements templates:
+#   - *req_blend_edu, *req_blend_science, *req_blend_med
+#   - *req_blend_gis, *req_blend_astro, *req_blend_bio
+#   - *req_blend_accessibility, *req_blend_games, *req_blend_junior
+#   - *req_blend_multimedia, *req_blend_freedombox, *req_blend_hamradio
+# ============================================================================
+
+# This file is kept for backward compatibility only.
+# It now simply references base-anchors.yaml.
+# New recipes should include base-anchors.yaml directly.
+
+# For backward compatibility, legacy anchor names are aliased:
+# (No changes needed - anchors are the same name in base-anchors.yaml)

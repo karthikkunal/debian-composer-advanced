@@ -1,0 +1,24 @@
+# Web Layer
+# Web servers and frameworks
+
+name: web
+version: 1.0.0
+description: Web servers and application frameworks
+order: 4
+author: Debian Composer Team
+license: MIT
+
+components:
+  - nginx
+  - apache
+
+requires_layer:
+  - runtime
+
+requirements:
+  min_ram: 512
+  min_disk: 2
+
+post_install:
+  - "Web layer installed"
+  - "Nginx: ports 80/443, Apache: ports 80/443"

@@ -1,0 +1,166 @@
+# Database Server Recipe
+# Composed version using component includes
+#
+# Uses components from components/ directory for reusability
+
+name: database
+version: 2.0.0
+description: Install and configure database servers (composed)
+author: Debian Composer Team
+license: MIT
+tags: [database, mysql, postgresql, mongodb, redis, elasticsearch]
+
+# ============================================================================
+# INCLUDES - Compose from components
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/mysql.yaml
+  - components/postgresql.yaml
+  - components/redis.yaml
+  - components/mongodb.yaml
+  - components/elasticsearch.yaml
+
+# ============================================================================
+# DEFAULT PACKAGES
+# ============================================================================
+packages:
+  - curl
+  - wget
+  - apt-transport-https
+  - gnupg
+  - ca-certificates
+
+# ============================================================================
+# CATEGORIES - Select which databases to install
+# ============================================================================
+categories:
+  mysql:
+    includes:
+      - components/mysql.yaml
+
+  postgresql:
+    includes:
+      - components/postgresql.yaml
+
+  redis:
+    includes:
+      - components/redis.yaml
+
+  mongodb:
+    includes:
+      - components/mongodb.yaml
+
+  elasticsearch:
+    includes:
+      - components/elasticsearch.yaml
+
+# ============================================================================
+# VARIABLES (for customization)
+# ============================================================================
+variables:
+  mysql_port:
+    type: integer
+    default: 3306
+    description: "MySQL port"
+
+  postgresql_port:
+    type: integer
+    default: 5432
+    description: "PostgreSQL port"
+
+  redis_port:
+    type: integer
+    default: 6379
+    description: "Redis port"
+
+  mongodb_port:
+    type: integer
+    default: 27017
+    description: "MongoDB port"
+
+  elasticsearch_port:
+    type: integer
+    default: 9200
+    description: "Elasticsearch port"
+
+# ============================================================================
+# STACKS - Pre-configured combinations
+# ============================================================================
+stacks:
+  mysql-only:
+    description: "MySQL database server"
+    components:
+      - mysql
+
+  postgresql-only:
+    description: "PostgreSQL database server"
+    components:
+      - postgresql
+
+  postgres-redis:
+    description: "PostgreSQL with Redis cache"
+    components:
+      - postgresql
+      - redis
+
+  full-stack:
+    description: "All database servers"
+    components:
+      - mysql
+      - postgresql
+      - redis
+      - mongodb
+
+  production:
+    description: "Production stack (PostgreSQL + Redis)"
+    components:
+      - postgresql
+      - redis
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 2048
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "MySQL: Run 'mysql_secure_installation' for security setup"
+  - "PostgreSQL: Switch to postgres user with 'su - postgres'"
+  - "MongoDB: Default connection: mongodb://localhost:27017"
+  - "Redis: Test with 'redis-cli ping' (should return PONG)"
+  - "Elasticsearch: Check health at http://localhost:9200/_cluster/health"
+
+# ============================================================================
+# EXAMPLES
+# ============================================================================
+examples:
+  - title: Install PostgreSQL and Redis
+    description: Install PostgreSQL database and Redis cache
+    command: ./debian-composer.sh --recipe=database --stack=postgres-redis
+
+  - title: Install MySQL Only
+    description: Install only MySQL database server
+    command: ./debian-composer.sh --recipe=database --stack=mysql-only
+
+  - title: Install All Databases
+    description: Install all database servers
+    command: ./debian-composer.sh --recipe=database --stack=full-stack
+
+# ============================================================================
+# MIGRATION NOTES
+# ============================================================================
+# This recipe is composed from individual component files.
+# To modify individual database configurations, edit:
+#   components/mysql.yaml
+#   components/postgresql.yaml
+#   components/redis.yaml
+#   components/mongodb.yaml
+#   components/elasticsearch.yaml
+#
+# Template variables can be overridden at runtime:
+#   ./debian-composer.sh --recipe=database --var=mysql_port=3307

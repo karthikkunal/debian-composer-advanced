@@ -1,0 +1,79 @@
+# ============================================================================
+# i3 Tiling Window Manager Component
+# ============================================================================
+# i3 - Tiling window manager for keyboard-driven workflows
+#
+# Reusable component for any recipe needing i3 WM
+#
+# Usage:
+#   sudo debian-composer --recipe=my-recipe --component=i3-wm
+
+name: i3-wm
+version: 1.0.0
+description: i3 tiling window manager - Keyboard-driven workflow
+author: Debian Composer Team
+license: MIT
+tags: [desktop, i3, tiling-wm, x11, keyboard-driven]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages: *desktop_i3
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  display_manager:
+    service: lightdm
+    enable: true
+  hooks:
+    post_configure:
+      - type: command
+        command: "update-desktop-database 2>/dev/null || true"
+        description: "Update desktop database"
+      - type: command
+        command: "mkdir -p ~/.config/i3 2>/dev/null || true"
+        description: "Create i3 config directory"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - i3 --version
+  files_exist:
+    - /usr/share/xsessions/i3.desktop
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_minimal
+  min_ram: 512
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "i3: Select i3 session at login"
+  - "Display Manager: LightDM enabled"
+  - "Config: ~/.config/i3/config"
+  - "Keyboard-driven: Super+Return (terminal), Super+D (launcher), Super+Q (close)"
+  - "Lightweight: Minimal resource usage"

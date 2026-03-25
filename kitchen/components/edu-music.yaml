@@ -1,0 +1,60 @@
+# ============================================================================
+# Education Music Component
+# ============================================================================
+# Music education tools for schools
+#
+# Reusable component for any recipe needing music education tools
+
+name: edu-music
+version: 1.0.0
+description: Music education tools
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [education, music, audio, learning]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Music composition
+    - musescore3
+    - denemo
+    - rosegarden
+    # Music production
+    - lmms
+    - audacity
+    # Music education
+    - solfege
+    - abcmidi
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - musescore3 --version 2>&1 | head -1
+    - audacity --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 5
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "MuseScore: Music notation software"
+  - "Audacity: Audio editing and recording"
+  - "LMMS: Music production studio"

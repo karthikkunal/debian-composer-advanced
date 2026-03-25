@@ -1,0 +1,366 @@
+# ============================================================================
+# Distro: antix-composer
+# ============================================================================
+# Transform a clean Debian install into AntiX-inspired system.
+# AntiX is a lightweight, systemd-free distribution based on Debian Stable.
+#
+# Usage:
+#   sudo debian-composer --distro=antix-composer
+#   sudo debian-composer --distro=antix-composer --var=desktop=icewm
+#   sudo debian-composer --distro=antix-composer --stack=netbook
+
+name: antix-composer
+version: 1.0.0
+description: "Transform Debian into AntiX-inspired lightweight, systemd-free system"
+author: Debian Composer Team
+license: MIT
+tags: [distro, antix, lightweight, legacy, old-hardware, sysvinit, icevm]
+kind: distro
+distro_type: workstation
+
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  debian_release:
+    type: string
+    default: bookworm
+    choices: [bookworm, bullseye]
+    description: "Debian stable release base"
+
+  desktop:
+    type: string
+    default: icewm
+    choices: [icewm, fluxbox, jwm, rox, herbstluftwm]
+    description: "Desktop/window manager"
+
+  init_system:
+    type: string
+    default: sysvinit
+    choices: [sysvinit, runit]
+    description: "Init system (no systemd)"
+
+  enable_live:
+    type: boolean
+    default: true
+    description: "Install live system tools"
+
+  enable_legacy_hardware:
+    type: boolean
+    default: true
+    description: "Enable support for old/legacy hardware"
+
+repositories:
+  - name: antix-main
+    url: "deb https://antixlinux.com/repos/ ${debian_release} main nonfree"
+    key: "https://antixlinux.com/repos/antix-archive-keyring.gpg"
+    keyring: /usr/share/keyrings/antix-archive-keyring.gpg
+
+packages:
+  - antix-archive-keyring
+  - antix-get-iso
+  - sysvinit-core
+  - sysv-rc
+  - file-rc
+
+categories:
+  init/sysvinit:
+    condition: init_system == sysvinit
+    description: "SysVinit (systemd-free)"
+    install:
+      packages:
+        - sysvinit
+        - sysvinit-utils
+        - insserv
+        - startpar
+    configure:
+      service:
+        name: cron
+        enable: true
+    verify:
+      commands:
+        - pidof systemd || echo "systemd-free"
+
+  init/runit:
+    condition: init_system == runit
+    description: "Runit init system"
+    install:
+      packages:
+        - runit
+        - runit-init
+    verify:
+      commands:
+        - sv version 2>/dev/null || true
+
+  desktop/icewm:
+    condition: desktop == icewm
+    description: "IceWM window manager (AntiX default)"
+    install:
+      packages:
+        - icewm
+        - icewm-lite
+        - rox-filer
+        - galculator
+        - lxterminal
+        - leafpad
+        - gmrun
+    verify:
+      commands:
+        - icewm --version
+
+  desktop/fluxbox:
+    condition: desktop == fluxbox
+    description: "Fluxbox window manager"
+    install:
+      packages:
+        - fluxbox
+        - fluxbox-utf8
+        - rox-filer
+        - lxterminal
+        - gmrun
+    verify:
+      commands:
+        - fluxbox -version 2>&1 | head -1 || true
+
+  desktop/jwm:
+    condition: desktop == jwm
+    description: "Joe's Window Manager (ultra lightweight)"
+    install:
+      packages:
+        - jwm
+        - rox-filer
+        - lxterminal
+        - gmrun
+    verify:
+      commands:
+        - jwm -v 2>&1 | head -1 || true
+
+  desktop/rox:
+    condition: desktop == rox
+    description: "ROX desktop (lightweight)"
+    install:
+      packages:
+        - rox-filer
+        - rox-term
+        - rox-wrap
+        - gmrun
+    verify:
+      commands:
+        - rox --version 2>&1 | head -1 || true
+
+  desktop/herbstluftwm:
+    condition: desktop == herbstluftwm
+    description: "herbstluftwm tiling window manager"
+    install:
+      packages:
+        - herbstluftwm
+        - rox-filer
+        - lxterminal
+        - dmenu
+        - gmrun
+    verify:
+      commands:
+        - herbstclient --version 2>&1 | head -1 || true
+
+  desktop/display-manager:
+    description: "Display manager"
+    install:
+      packages:
+        - slim
+    configure:
+      service:
+        name: slim
+        enable: true
+    verify:
+      commands:
+        - slim -v 2>&1 | head -1 || true
+
+  live/tools:
+    condition: enable_live == true
+    description: "Live system tools"
+    install:
+      packages:
+        - live-initramfs
+        - live-config
+        - live-config-doc
+        - memtest86+
+    verify:
+      commands:
+        - live-initramfs --version 2>&1 | head -1 || true
+
+  legacy/hardware:
+    condition: enable_legacy_hardware == true
+    description: "Legacy hardware support"
+    install:
+      packages:
+        - firmware-linux-nonfree
+        - firmware-misc-nonfree
+        - firmware-realtek
+        - firmware-atheros
+        - firmware-brcm80211
+        - xserver-xorg-video-all
+        - xserver-xorg-legacy
+    verify:
+      commands:
+        - ls /lib/firmware
+
+  legacy/wireless:
+    condition: enable_legacy_hardware == true
+    description: "Wireless tools for legacy hardware"
+    install:
+      packages:
+        - wicd
+        - wireless-tools
+        - wpasupplicant
+    configure:
+      service:
+        name: wicd
+        enable: true
+    verify:
+      commands:
+        - iwconfig 2>&1 | head -1 || true
+
+  tools/antix:
+    description: "AntiX system tools"
+    install:
+      packages:
+        - antix-automount
+        - antix-cc
+        - antix-libs
+        - conky
+        - conky-manager
+    verify:
+      commands:
+        - antix-cc --version 2>&1 | head -1 || true
+
+  tools/conky:
+    description: "Conky system monitor"
+    install:
+      packages:
+        - conky
+        - conky-all
+    verify:
+      commands:
+        - conky --version 2>&1 | head -1 || true
+
+  tools/filemanager:
+    description: "File manager"
+    install:
+      packages:
+        - rox-filer
+        - spacefm
+    verify:
+      commands:
+        - rox --version 2>&1 | head -1 || true
+
+stacks:
+  default:
+    description: "AntiX with IceWM (standard)"
+    categories:
+      - init/sysvinit
+      - desktop/icewm
+      - desktop/display-manager
+      - tools/antix
+      - tools/conky
+      - tools/filemanager
+      - legacy/hardware
+
+  netbook:
+    description: "AntiX netbook (ultra lightweight)"
+    categories:
+      - init/sysvinit
+      - desktop/jwm
+      - desktop/display-manager
+      - tools/antix
+      - legacy/hardware
+
+  fluxbox:
+    description: "AntiX Fluxbox"
+    categories:
+      - init/sysvinit
+      - desktop/fluxbox
+      - desktop/display-manager
+      - tools/antix
+      - tools/conky
+      - legacy/hardware
+
+  minimal:
+    description: "AntiX minimal (no desktop)"
+    categories:
+      - init/sysvinit
+      - tools/antix
+
+  legacy:
+    description: "AntiX for legacy hardware"
+    categories:
+      - init/sysvinit
+      - desktop/icewm
+      - desktop/display-manager
+      - tools/antix
+      - tools/conky
+      - legacy/hardware
+      - legacy/wireless
+
+  runit:
+    description: "AntiX with runit init"
+    categories:
+      - init/runit
+      - desktop/icewm
+      - desktop/display-manager
+      - tools/antix
+      - legacy/hardware
+
+  live:
+    description: "AntiX live system"
+    categories:
+      - init/sysvinit
+      - desktop/icewm
+      - desktop/display-manager
+      - tools/antix
+      - live/tools
+      - legacy/hardware
+
+requirements:
+  min_ram: 256
+  min_disk: 5
+
+conflicts:
+  packages:
+    - systemd
+    - systemd-sysv
+    - libsystemd0
+
+post_install:
+  - "=== AntiX Composer installed ==="
+  - ""
+  - "Your Debian system is now AntiX-inspired."
+  - "Release: ${debian_release}"
+  - "Desktop: ${desktop}"
+  - "Init system: ${init_system}"
+  - "Legacy hardware support: ${enable_legacy_hardware}"
+  - ""
+  - "AntiX features:"
+  - "  - Extremely lightweight (~128MB RAM)"
+  - "  - No systemd"
+  - "  - Perfect for old computers"
+  - ""
+  - "Tips:"
+  - "  - Right-click desktop for menu"
+  - "  - Menu: Alt+F1 or Win key"
+  - "  - Configure: antix-cc"
+  - "  - Mount drives: antix-automount"
+
+examples:
+  - title: "AntiX IceWM (default)"
+    command: "sudo debian-composer --distro=antix-composer"
+  - title: "AntiX netbook"
+    command: "sudo debian-composer --distro=antix-composer --stack=netbook"
+  - title: "AntiX Fluxbox"
+    command: "sudo debian-composer --distro=antix-composer --stack=fluxbox"
+  - title: "AntiX for legacy hardware"
+    command: "sudo debian-composer --distro=antix-composer --stack=legacy"
+  - title: "AntiX live system"
+    command: "sudo debian-composer --distro=antix-composer --stack=live"
+  - title: "AntiX minimal"
+    command: "sudo debian-composer --distro=antix-composer --stack=minimal"

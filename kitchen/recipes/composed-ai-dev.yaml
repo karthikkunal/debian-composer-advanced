@@ -1,0 +1,61 @@
+# Composed AI Development Environment
+# Demonstrates composable recipe system using AI components
+
+name: composed-ai-dev
+version: 1.0.0
+description: Composed AI development environment
+author: Debian Composer Team
+license: MIT
+tags: [ai, composed, development]
+
+# ============================================================================
+# INCLUDES
+# ============================================================================
+includes:
+  - components/base.yaml
+  - components/ollama.yaml
+  - components/whisper.yaml
+
+# ============================================================================
+# DEFAULT PACKAGES
+# ============================================================================
+packages:
+  - git
+  - curl
+  - wget
+
+# ============================================================================
+# STACKS
+# ============================================================================
+stacks:
+  llm:
+    description: "Local LLM environment with Ollama"
+    components:
+      - ollama
+
+  speech:
+    description: "Speech-to-text with Whisper"
+    components:
+      - whisper
+
+  full:
+    description: "Full AI development environment"
+    components:
+      - ollama
+      - whisper
+
+# ============================================================================
+# SYSTEM REQUIREMENTS
+# ============================================================================
+requirements:
+  min_ram: 8192
+  min_disk: 20
+  gpu: nvidia
+
+# ============================================================================
+# POST-INSTALLATION NOTES
+# ============================================================================
+post_install:
+  - "Run 'ollama run llama3.2' to start local LLM"
+  - "Use 'whisper-transcribe audio.mp3 --model base' for speech"
+  - "8GB+ RAM recommended, NVIDIA GPU preferred"

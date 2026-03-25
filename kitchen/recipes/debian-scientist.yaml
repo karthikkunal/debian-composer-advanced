@@ -1,0 +1,204 @@
+# ============================================================================
+# Distro: debian-scientist
+# ============================================================================
+# Opinionated scientific workstation — research, data analysis, modelling.
+# Inspired by Omarchy — makes the choice for you.
+#
+# Usage:
+#   sudo debian-composer --distro=debian-scientist
+#   sudo debian-composer --distro=debian-scientist --var=field=astronomy
+
+name: debian-scientist
+version: 1.0.0
+description: "Scientific Debian workstation — for researchers and data scientists"
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [distro, science, research, data, opinionated]
+kind: distro
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  field:
+    type: string
+    default: general
+    choices: [general, astronomy, biology, chemistry, physics, gis, ml]
+    description: "Scientific field (general installs core Python stack)"
+
+  enable_gpu:
+    type: boolean
+    default: false
+    description: "Enable CUDA/GPU tools (requires NVIDIA GPU)"
+
+packages:
+  - python3
+  - python3-pip
+  - python3-venv
+  - python3-dev
+  - jupyter-notebook
+  - python3-numpy
+  - python3-pandas
+  - python3-matplotlib
+  - r-base
+  - texlive-base
+
+categories:
+  desktop:
+    description: "GNOME desktop environment"
+    install:
+      packages:
+        - gnome-core
+
+  base/python:
+    description: "Core scientific Python stack"
+    install:
+      packages:
+        - python3-scipy
+        - python3-sklearn
+        - python3-statsmodels
+        - python3-sympy
+        - python3-seaborn
+    verify:
+      commands:
+        - python3 -c "import numpy; print('numpy:', numpy.__version__)"
+
+  field/astronomy:
+    condition: field == astronomy
+    description: "Astronomy tools (Debian Astro Blend)"
+    install:
+      packages:
+        - debian-astro-tools
+        - stellarium
+        - kstars
+        - python3-astropy
+    verify:
+      commands:
+        - python3 -c "import astropy; print('astropy:', astropy.__version__)"
+
+  field/biology:
+    condition: field == biology
+    description: "Biology and bioinformatics"
+    install:
+      packages:
+        - python3-biopython
+        - ncbi-entrez-direct
+        - muscle
+        - clustalw
+        - emboss
+    verify:
+      commands:
+        - python3 -c "import Bio; print('biopython loaded')"
+
+  field/chemistry:
+    condition: field == chemistry
+    description: "Chemistry and molecular modelling"
+    install:
+      packages:
+        - avogadro
+        - pymol
+        - openbabel
+    verify:
+      commands:
+        - obabel --version 2>&1 | head -1 || true
+
+  field/physics:
+    condition: field == physics
+    description: "Physics simulation tools"
+    install:
+      packages:
+        - python3-scipy
+        - gmsh
+    verify:
+      commands:
+        - python3 -c "import scipy; print('scipy:', scipy.__version__)"
+
+  field/gis:
+    condition: field == gis
+    description: "GIS and geospatial tools"
+    install:
+      packages:
+        - qgis
+        - grass-gis
+        - gdal-bin
+        - python3-gdal
+    verify:
+      commands:
+        - gdalinfo --version
+
+  field/ml:
+    condition: field == ml
+    description: "Machine learning and deep learning"
+    install:
+      packages:
+        - python3-sklearn
+        - python3-tensorflow
+    verify:
+      commands:
+        - python3 -c "import sklearn; print('sklearn:', sklearn.__version__)"
+
+  gpu/cuda:
+    condition: enable_gpu == true
+    description: "CUDA support for GPU accelerated computing"
+    install:
+      packages:
+        - nvidia-cuda-toolkit
+    verify:
+      commands:
+        - nvcc --version 2>&1 | head -1 || true
+
+stacks:
+  default:
+    description: "General scientific workstation (core Python + Jupyter)"
+    categories:
+      - desktop
+      - base/python
+
+  astronomy:
+    description: "Astronomy research workstation"
+    categories:
+      - desktop
+      - base/python
+      - field/astronomy
+
+  bioinformatics:
+    description: "Bioinformatics workstation"
+    categories:
+      - desktop
+      - base/python
+      - field/biology
+
+  ml-workstation:
+    description: "Machine learning workstation"
+    categories:
+      - desktop
+      - base/python
+      - field/ml
+
+requirements:
+  min_ram: 8192
+  min_disk: 50
+
+post_install:
+  - "=== debian-scientist installed ==="
+  - ""
+  - "Your scientific Debian workstation is ready."
+  - "Field: ${field}"
+  - "GPU enabled: ${enable_gpu}"
+  - ""
+  - "Getting started:"
+  - "  - Launch Jupyter: 'jupyter notebook'"
+  - "  - R console: 'R'"
+
+examples:
+  - title: "General science workstation"
+    command: "sudo debian-composer --distro=debian-scientist"
+  - title: "Astronomy workstation"
+    command: "sudo debian-composer --distro=debian-scientist --var=field=astronomy"
+  - title: "ML workstation with GPU"
+    command: "sudo debian-composer --distro=debian-scientist --var=field=ml --var=enable_gpu=true"
+  - title: "Bioinformatics workstation"
+    command: "sudo debian-composer --distro=debian-scientist --stack=bioinformatics"

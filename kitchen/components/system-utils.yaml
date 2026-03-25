@@ -1,0 +1,135 @@
+# ============================================================================
+# System Utils Component
+# ============================================================================
+# System utilities and monitoring tools
+#
+# Reusable component for any recipe needing system utilities
+
+name: system-utils
+version: 1.0.0
+description: System utilities and monitoring tools
+author: Debian Composer Team
+license: MIT
+tags: [system, monitoring, network, security, utilities]
+
+# ============================================================================
+# COMPOSABILITY
+# ============================================================================
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requires:
+  components:
+    - base
+
+# ============================================================================
+# INSTALL
+# ============================================================================
+install:
+  packages:
+    # Monitoring
+    - htop
+    - btop
+    - iotop
+    - iftop
+    - nethogs
+    - powertop
+    # System info
+    - fastfetch
+    - inxi
+    - neofetch
+    # Network
+    - network-manager
+    - network-manager-gnome
+    - avahi-daemon
+    - avahi-utils
+    - nss-mdns
+    - wireless-regdb
+    - iwd
+    # Security
+    - ufw
+    - polkit
+    - polkit-gnome
+    - gnome-keyring
+    - libsecret-1-0
+    - libyaml
+    # Power management
+    - power-profiles-daemon
+    - upower
+    - brightnessctl
+    # File system
+    - plocate
+    - gvfs-backends
+    - gvfs-fuse
+    - gvfs-mtp
+    - gvfs-nfs
+    - gvfs-smb
+    - exfatprogs
+    - bolt
+    # Printing
+    - cups
+    - cups-browsed
+    - cups-filters
+    - cups-pdf
+    - system-config-printer
+    # Bluetooth
+    - bluez
+    - bluez-tools
+    - blueman
+    # USB
+    - usbutils
+    - udisks2
+    # Other utilities
+    - nautilus
+    - nautilus-extension-gnome-terminal
+    - gnome-disk-utility
+    - gnome-calculator
+    - gnome-system-monitor
+    - ffmpegthumbnailer
+    - sushi
+    - xdg-utils
+
+# ============================================================================
+# CONFIGURE
+# ============================================================================
+configure:
+  hooks:
+    post_configure:
+      - type: command
+        command: "systemctl enable --now power-profiles-daemon"
+        description: "Enable power profiles daemon"
+      - type: command
+        command: "systemctl enable --now avahi-daemon"
+        description: "Enable Avahi mDNS"
+      - type: command
+        command: "echo 'fs.inotify.max_user_watches=524288' >> /etc/sysctl.d/99-omarchy.conf"
+        description: "Increase file watchers"
+
+# ============================================================================
+# VERIFY
+# ============================================================================
+verify:
+  commands:
+    - htop --version
+    - btop --version
+    - fastfetch --version
+
+# ============================================================================
+# REQUIREMENTS
+# ============================================================================
+requirements:
+  <<: *req_standard
+  min_ram: 2048
+  min_disk: 10
+
+# ============================================================================
+# POST-INSTALL
+# ============================================================================
+post_install:
+  - "System: Power profiles daemon enabled"
+  - "Network: Avahi mDNS enabled"
+  - "File watchers: Increased to 524288"
