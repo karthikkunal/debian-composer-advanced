@@ -8,6 +8,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	sprig "github.com/Masterminds/sprig/v3"
 )
 
 // Config manages dotfile configuration
@@ -48,7 +50,7 @@ func (c *Config) SetBackup(backup bool) {
 
 // AddTemplate adds a template with a name for use in dotfiles
 func (c *Config) AddTemplate(name, content string) error {
-	tmpl, err := template.New(name).Parse(content)
+	tmpl, err := template.New(name).Funcs(sprig.TxtFuncMap()).Parse(content)
 	if err != nil {
 		return fmt.Errorf("failed to parse template %s: %w", name, err)
 	}
@@ -271,7 +273,7 @@ func (c *Config) copyFile(src, dst string) error {
 }
 
 func (c *Config) applyTemplate(src, dst string, data interface{}) error {
-	tmpl, err := template.ParseFiles(src)
+	tmpl, err := template.New(filepath.Base(src)).Funcs(sprig.TxtFuncMap()).ParseFiles(src)
 	if err != nil {
 		return fmt.Errorf("failed to parse template %s: %w", src, err)
 	}

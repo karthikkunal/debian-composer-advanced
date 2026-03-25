@@ -102,8 +102,8 @@ func TestNewSpinner(t *testing.T) {
 	if s == nil {
 		t.Fatal("NewSpinner() returned nil")
 	}
-	if len(s.frames) == 0 {
-		t.Fatal("NewSpinner() frames is empty")
+	if s.program == nil {
+		t.Fatal("NewSpinner() program is nil")
 	}
 }
 

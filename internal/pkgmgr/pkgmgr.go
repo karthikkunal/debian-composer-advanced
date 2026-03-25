@@ -4,18 +4,28 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/bluet/syspkg"
+	syspkgmgr "github.com/bluet/syspkg/manager"
 )
 
 // Manager handles multi-package-manager operations
 type Manager struct {
 	dryRun  bool
 	useNala bool
+	aptPM   syspkg.PackageManager // nil if syspkg unavailable
 }
 
 // New creates a new package manager
 func New(dryRun bool) *Manager {
 	useNala := commandExists("nala")
-	return &Manager{dryRun: dryRun, useNala: useNala}
+	m := &Manager{dryRun: dryRun, useNala: useNala}
+	if sp, err := syspkg.New(syspkg.IncludeOptions{Apt: true}); err == nil {
+		if pm, err := sp.GetPackageManager("apt"); err == nil {
+			m.aptPM = pm
+		}
+	}
+	return m
 }
 
 // SetUseNala overrides the default nala detection
@@ -43,14 +53,6 @@ type Package struct {
 	Type    PackageType `yaml:"type" json:"type"` // apt, flatpak, snap, etc.
 	Version string      `yaml:"version" json:"version"`
 	Source  string      `yaml:"source" json:"source"` // flatpak remote, npm scope, etc.
-}
-
-// aptCommand returns the apt frontend command (nala if available, else apt-get)
-func (m *Manager) aptCommand() string {
-	if m.useNala {
-		return "nala"
-	}
-	return "apt-get"
 }
 
 // ParsePackage parses a package string into a Package
@@ -236,13 +238,24 @@ func (m *Manager) GetAvailableManagers() []PackageType {
 // === APT implementations ===
 
 func (m *Manager) installApt(pkg Package) error {
-	args := []string{"install", "-y"}
+	name := pkg.Name
 	if pkg.Version != "" {
-		pkg.Name = fmt.Sprintf("%s=%s", pkg.Name, pkg.Version)
+		name = fmt.Sprintf("%s=%s", pkg.Name, pkg.Version)
 	}
-	args = append(args, pkg.Name)
-
-	cmd := exec.Command("sudo", append([]string{m.aptCommand()}, args...)...)
+	if m.useNala {
+		cmd := exec.Command("sudo", "nala", "install", "-y", name)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("nala install failed: %w\nOutput: %s", err, out)
+		}
+		return nil
+	}
+	if m.aptPM != nil {
+		opts := &syspkgmgr.Options{AssumeYes: true, DryRun: m.dryRun}
+		_, err := m.aptPM.Install([]string{name}, opts)
+		return err
+	}
+	cmd := exec.Command("sudo", "apt-get", "install", "-y", name)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("apt install failed: %w\nOutput: %s", err, out)
@@ -251,16 +264,28 @@ func (m *Manager) installApt(pkg Package) error {
 }
 
 func (m *Manager) installAptBatch(packages []Package) error {
-	args := []string{"install", "-y"}
+	names := make([]string, 0, len(packages))
 	for _, pkg := range packages {
 		name := pkg.Name
 		if pkg.Version != "" {
 			name = fmt.Sprintf("%s=%s", pkg.Name, pkg.Version)
 		}
-		args = append(args, name)
+		names = append(names, name)
 	}
-
-	cmd := exec.Command("sudo", append([]string{m.aptCommand()}, args...)...)
+	if m.useNala {
+		cmd := exec.Command("sudo", append([]string{"nala", "install", "-y"}, names...)...)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("nala batch install failed: %w\nOutput: %s", err, out)
+		}
+		return nil
+	}
+	if m.aptPM != nil {
+		opts := &syspkgmgr.Options{AssumeYes: true, DryRun: m.dryRun}
+		_, err := m.aptPM.Install(names, opts)
+		return err
+	}
+	cmd := exec.Command("sudo", append([]string{"apt-get", "install", "-y"}, names...)...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("apt batch install failed: %w\nOutput: %s", err, out)
@@ -269,7 +294,20 @@ func (m *Manager) installAptBatch(packages []Package) error {
 }
 
 func (m *Manager) removeApt(pkg Package) error {
-	cmd := exec.Command("sudo", m.aptCommand(), "remove", "-y", pkg.Name)
+	if m.useNala {
+		cmd := exec.Command("sudo", "nala", "remove", "-y", pkg.Name)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("nala remove failed: %w\nOutput: %s", err, out)
+		}
+		return nil
+	}
+	if m.aptPM != nil {
+		opts := &syspkgmgr.Options{AssumeYes: true, DryRun: m.dryRun}
+		_, err := m.aptPM.Delete([]string{pkg.Name}, opts)
+		return err
+	}
+	cmd := exec.Command("sudo", "apt-get", "remove", "-y", pkg.Name)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("apt remove failed: %w\nOutput: %s", err, out)
@@ -278,6 +316,18 @@ func (m *Manager) removeApt(pkg Package) error {
 }
 
 func (m *Manager) isAptInstalled(name string) bool {
+	if m.aptPM != nil {
+		results, err := m.aptPM.Find([]string{name}, &syspkgmgr.Options{})
+		if err != nil {
+			return false
+		}
+		for _, r := range results {
+			if r.Name == name && r.Status == syspkgmgr.PackageStatusInstalled {
+				return true
+			}
+		}
+		return false
+	}
 	cmd := exec.Command("dpkg", "-s", name)
 	return cmd.Run() == nil
 }

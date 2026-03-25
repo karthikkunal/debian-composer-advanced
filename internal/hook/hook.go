@@ -10,6 +10,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	sprig "github.com/Masterminds/sprig/v3"
 )
 
 // Phase represents a recipe execution phase
@@ -504,7 +506,7 @@ func (e *Executor) executeTemplateHook(hook Hook, variables map[string]interface
 
 // renderTemplate renders a Go template string with the provided variables
 func (e *Executor) renderTemplate(tmplStr string, variables map[string]interface{}) (string, error) {
-	tmpl, err := template.New("hook").Parse(tmplStr)
+	tmpl, err := template.New("hook").Funcs(sprig.TxtFuncMap()).Parse(tmplStr)
 	if err != nil {
 		return "", err
 	}
