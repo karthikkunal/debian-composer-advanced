@@ -1,52 +1,144 @@
 # Debian Composer
 
-> **Bring composability to the Debian ecosystem — enabling true cross-distro innovation.**
+> **Compose your ideal Debian system with modular, reusable recipes.**
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/debian-composer/debian-composer-go)](https://golang.org/)
 [![License](https://img.shields.io/github/license/debian-composer/debian-composer-go)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/debian-composer/debian-composer-go)](https://github.com/debian-composer/debian-composer-go/releases)
 
-## Overview
+## 🚀 Overview
 
-Debian Composer is a tool for composing, sharing, and reusing system configurations across the Debian ecosystem. It allows distro teams and users to create modular, composable recipes that can be mixed and matched to build custom systems.
+**Debian Composer** is a powerful post-install configuration and recipe manager for Debian-based systems. Create modular, composable recipes that define your perfect system setup — from development environments to production servers — and share them across the entire Debian ecosystem.
 
-## Why Debian Composer?
+Whether you're managing a fleet of servers, standardizing team workstations, or building custom distro spins, Debian Composer gives you the tools to automate, version, and reproduce system configurations with ease.
 
-The Debian ecosystem spans dozens of derivatives — Ubuntu, Linux Mint, elementary OS, Kali Linux, and many more. Each distro team builds incredible tools, configurations, and content. But traditionally, these innovations are locked within their respective ecosystems.
+## 💡 Why Debian Composer?
 
-**Debian Composer changes this.** A tool built by one distro team can be used by others. A desktop configuration from one derivative can enhance another. A development environment setup from a specialized distro can be shared with the broader community.
+### The Problem
+The Debian ecosystem spans dozens of derivatives — Ubuntu, Linux Mint, elementary OS, Kali Linux, Pop!_OS, and many more. Each distro team builds incredible tools, configurations, and content. But traditionally, these innovations are **locked within their respective ecosystems**.
 
-## Features
+System administrators and power users face:
+- ❌ Repetitive manual setup across machines
+- ❌ No standard way to share configurations
+- ❌ Fragmented knowledge across distro communities
+- ❌ Difficult to reproduce exact system states
 
+### The Solution
+**Debian Composer changes this.** It enables:
+
+✅ **Cross-distro collaboration** — A tool built by one distro team can be used by others  
+✅ **Modular configurations** — Desktop configurations from one derivative can enhance another  
+✅ **Shared knowledge** — Development environment setups from specialized distros benefit the broader community  
+✅ **Reproducible systems** — Define, version, and recreate exact system states  
+
+## ✨ Key Features
+
+### 📦 Recipe Management
 - **YAML-based Recipes** — Declarative, human-readable system definitions
-- **Recipe Composition** — Powerful multi-level composition (Include, Extend, and Layer)
+- **Recipe Composition** — Powerful multi-level composition with `include`, `extend`, and `layer` directives
 - **Deep Merging** — Stackable layers that can override and augment any configuration
-- **Recipe Management** — Easy import and export of recipes with standalone bundling
-- **Schema Validation** — Built-in JSON Schema validation for all recipes and components
-- **Conditional Installation** — Install packages based on system state or user choices
-- **Pre-configured Stacks** — Ready-to-use combinations for common use cases
-- **Verification Hooks** — Ensure your system is configured correctly
-- **Cross-distro Compatible** — Works on any Debian-based distribution
-- **SQLite State Management** — Tracks installed recipes and their states
-- **Nala Integration** — Modern apt frontend (default) with parallel downloads, colored output, history, and rollback
+- **Import/Export** — Easy sharing with standalone bundling that includes all dependencies
+- **Dependency Resolution** — Automatic handling of recipe dependencies in correct order
 
-## Installation
+### 🔒 Reliability & Safety
+- **Schema Validation** — Built-in JSON Schema validation catches errors before deployment
+- **SQLite State Management** — Tracks installed recipes, versions, and installation timestamps
+- **Snapper Integration** — Create system snapshots before installations for easy rollback
+- **Dry-run Mode** — Preview changes without applying them
+- **Conflict Detection** — Automatically detect and prevent conflicting recipe installations
 
-### From Source
+### 🎯 Advanced Capabilities
+- **Conditional Installation** — Install packages based on system state, hardware, or user choices
+- **Pre-configured Stacks** — Ready-to-use combinations for common use cases (dev, server, desktop)
+- **Phase-based Execution** — Separate install, configure, and verify phases for granular control
+- **Verification Hooks** — Post-install validation to ensure correct configuration
+- **User & Group Management** — Automated user and group creation during configuration
 
+### 🛠 Package Manager Integration
+- **Nala Support** — Modern apt frontend with parallel downloads, colored output, and history tracking
+- **Multi-backend** — Support for apt, nala, Flatpak, and Snap packages
+- **Batch Operations** — Efficient package installation with dependency resolution
+
+### 🌐 Cross-distro Compatibility
+Works seamlessly on any Debian-based distribution:
+- Debian
+- Ubuntu and all official flavors
+- Linux Mint
+- elementary OS
+- Kali Linux
+- Pop!_OS
+- MX Linux
+- And many more...
+
+## 🎯 Use Cases
+
+### For System Administrators
+- **Standardize workstation setups** across your organization
+- **Automate server provisioning** with version-controlled recipes
+- **Maintain consistency** between development, staging, and production
+
+### For Distro Teams
+- **Share innovations** with the broader Debian ecosystem
+- **Provide official recipes** for common use cases (gaming, development, multimedia)
+- **Enable community contributions** without fragmenting your base system
+
+### For Developers
+- **Reproducible dev environments** — onboard new team members in minutes
+- **Project-specific tooling** — define exact tools needed per project
+- **Easy switching** — switch between different development configurations
+
+### For Power Users
+- **Document your setup** — turn your perfect configuration into shareable recipes
+- **Experiment safely** — try new configurations with snapshot support
+- **Mix and match** — combine recipes from different sources
+
+## 🚀 Quick Start
+
+### Installation
+
+#### From Source
 ```bash
 git clone https://github.com/debian-composer/debian-composer-go.git
 cd debian-composer-go
 make build
+sudo cp bin/debian-composer /usr/local/bin/
 ```
 
-### Quick Start
+#### Using Make
+```bash
+make build
+make install  # Installs to /usr/local/bin
+```
+
+### Basic Commands
 
 ```bash
 # Show help
 debian-composer --help
 
+# List available recipes
+debian-composer available
+
 # Install a recipe
 debian-composer install my-recipe
+
+# Install with variables
+debian-composer install my-recipe --var "editor=code" --var "theme=dark"
+
+# Install using a pre-configured stack
+debian-composer install dev-workstation --stack developer
+
+# Install specific categories only
+debian-composer install my-recipe --category editors,terminals
+
+# Apply security hardening
+debian-composer install server --apply-security
+
+# Create snapshot before installation (requires Snapper)
+debian-composer install my-recipe --with-snapshot
+
+# Preview without applying changes
+debian-composer install my-recipe --dry-run
 
 # Import an external recipe
 debian-composer import path/to/recipe.yaml
@@ -54,51 +146,159 @@ debian-composer import path/to/recipe.yaml
 # Export a recipe as a standalone bundle
 debian-composer export my-recipe ./standalone.yaml --standalone
 
-# Validate a recipe
+# Validate a recipe against schema
 debian-composer validate my-recipe
+
+# Validate all recipes in kitchen
+debian-composer validate --all
+
+# List installed recipes
+debian-composer list
+
+# Show recipe details
+debian-composer info my-recipe
+
+# Remove a recipe
+debian-composer remove my-recipe
+
+# Switch between recipes
+debian-composer switch different-recipe
 ```
 
-## Documentation
+## 📖 Recipe Example
 
-- [Architecture Guide](docs/ARCHITECTURE.md) — Detailed guide on Kitchen, Recipes, and Layers
-- [Documentation](docs/README.md) — Project documentation
-- [Scripts](scripts/README.md) — Build and utility scripts
-- [Tests](tests/README.md) — Test cases and examples
+```yaml
+name: dev-workstation
+version: 1.0.0
+description: Complete development workstation setup
 
-## Project Structure
+variables:
+  editor:
+    default: "code"
+    description: "Preferred code editor (code, vim, neovim)"
+  theme:
+    default: "dark"
+    description: "UI theme preference"
+
+packages:
+  - git
+  - curl
+  - wget
+  - build-essential
+  - "{{ .editor }}"
+
+categories:
+  - name: editors
+    packages:
+      - code
+      - vim
+      - neovim
+
+  - name: terminals
+    packages:
+      - alacritty
+      - tmux
+
+install:
+  pre:
+    - echo "Setting up development environment..."
+  post:
+    - systemctl enable docker
+
+configure:
+  commands:
+    - echo "Configuring user preferences..."
+  userGroups:
+    - developers
+
+verify:
+  commands:
+    - git --version
+    - docker --version
+
+conflicts:
+  - minimal-workstation
+```
+
+## 📚 Documentation
+
+- **[Architecture Guide](docs/ARCHITECTURE.md)** — Deep dive into Kitchen, Recipes, and Layers
+- **[Full Documentation](docs/README.md)** — Complete user and developer documentation
+- **[Scripts](scripts/README.md)** — Build and utility scripts reference
+- **[Tests](tests/README.md)** — Test cases and examples
+
+## 🏗 Project Structure
 
 ```
 debian-composer-go/
 ├── cmd/debian-composer/    # CLI entry point
 ├── internal/
-│   ├── apt/                 # Package manager integration (apt, nala, flatpak, snap, etc.)
-│   ├── cli/                 # CLI commands
-│   ├── recipe/              # Recipe parsing, resolution, merging
+│   ├── apt/                 # Package manager integration (apt, nala, flatpak, snap)
+│   ├── cli/                 # CLI commands (install, remove, import, export, etc.)
+│   ├── recipe/              # Recipe parsing, resolution, merging, dependency handling
 │   ├── state/               # SQLite state management
+│   ├── hook/                # Hook execution engine
+│   ├── snapper/             # System snapshot integration
 │   └── types/               # Type definitions
+├── kitchen/                 # Recipe storage (default location)
 ├── docs/                    # Documentation
-├── scripts/                 # Build scripts
-└── tests/                   # Test files
+├── scripts/                 # Build and utility scripts
+└── tests/                   # Test files and examples
 ```
 
-## Requirements
+## 📋 Requirements
 
-- Go 1.26+
-- Debian-based Linux distribution
-- APT package manager (or Nala as an optional frontend)
+- **Go** 1.26+ (for building from source)
+- **Operating System**: Debian-based Linux distribution
+- **Package Manager**: APT (Nala optional but recommended)
+- **Optional**: Snapper for system snapshots
 
-## License
+## 🤝 Contributing
 
-MIT License — see LICENSE file for details.
+We welcome contributions from the community! Whether it's bug reports, feature requests, documentation improvements, or code contributions — every contribution helps make Debian Composer better.
 
-## Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute.
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+### Ways to Contribute
+- 🐛 Report bugs and suggest features
+- 📝 Improve documentation
+- 🍴 Submit recipe examples
+- 💻 Contribute code improvements
+- 🌍 Help with translations (future feature)
 
-## Roadmap
+## 🗺 Roadmap
 
 See [ROADMAP.md](ROADMAP.md) for planned features and development direction.
 
-## Changelog
+**Upcoming Features:**
+- Remote recipe repositories
+- Recipe gallery and discovery
+- Enhanced conditional logic
+- Multi-distro testing framework
+- Plugin system for custom package managers
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+## 📜 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and recent changes.
+
+**Recent Improvements:**
+- Native YQ resolver (no external binary needed)
+- Go-based git hooks (replaced shell scripts)
+- Enhanced dependency resolution
+- Improved UX with Charm libraries
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+Built with amazing open-source libraries:
+- [Cobra](https://github.com/spf13/cobra) — CLI framework
+- [Charm](https://github.com/charmbracelet) — Beautiful TUI components
+- [SQLx](https://github.com/jmoiron/sqlx) — Database utilities
+- [JSONSchema](https://github.com/kaptinlin/jsonschema) — Schema validation
+
+---
+
+**Ready to compose your perfect system?** Get started with `debian-composer --help` or explore example recipes in the documentation.
