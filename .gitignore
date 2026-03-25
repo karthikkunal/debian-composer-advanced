@@ -1,0 +1,5 @@
+bin/
+dist/
+debian-composer-go
+main
+cmd/debian-composer/debian-composer-go
