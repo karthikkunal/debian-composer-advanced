@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/debian-composer/debian-composer-go/internal/initsys"
 )
 
 // SSHConfig holds SSH server configuration options
@@ -630,28 +632,19 @@ func copyFile(src, dst string) error {
 }
 
 func restartService(name string) error {
-	cmd := exec.Command("systemctl", "restart", name)
-	return cmd.Run()
+	return initsys.RestartService(name)
 }
 
 func enableService(name string) error {
-	cmd := exec.Command("systemctl", "enable", name)
-	return cmd.Run()
+	return initsys.EnableService(name)
 }
 
 // IsSSHDaemonRunning checks if SSH daemon is running
 func IsSSHDaemonRunning() (bool, error) {
-	cmd := exec.Command("systemctl", "is-active", "ssh")
-	output, err := cmd.Output()
-	if err != nil {
-		// Try sshd service name
-		cmd = exec.Command("systemctl", "is-active", "sshd")
-		output, err = cmd.Output()
-		if err != nil {
-			return false, nil
-		}
+	if initsys.IsActive("ssh") {
+		return true, nil
 	}
-	return strings.TrimSpace(string(output)) == "active", nil
+	return initsys.IsActive("sshd"), nil
 }
 
 // ConfigureSSHWithPrompt configures SSH with user confirmation

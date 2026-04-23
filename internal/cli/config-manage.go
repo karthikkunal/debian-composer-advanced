@@ -11,6 +11,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ANSI color codes used for terminal output in this file.
+const (
+	green  = "\033[32m"
+	yellow = "\033[33m"
+	red    = "\033[31m"
+	blue   = "\033[34m"
+	nc     = "\033[0m" // reset / no color
+)
+
 // Config represents a configuration file structure
 type Config struct {
 	Name        string                 `yaml:"name"`

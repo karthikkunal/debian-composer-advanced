@@ -4,7 +4,7 @@
 
 ## Why Debian Composer?
 
-The Debian ecosystem spans dozens of derivatives — from Ubuntu and Linux Mint to elementary OS, Kali Linux, and many more. Each distro team builds incredible tools, configurations, enhancements, and content. But traditionally, these innovations are locked within their respective ecosystems.
+The Debian ecosystem spans dozens of derivatives — from Ubuntu and Linux Mint to elementary OS, Kali Linux, Devuan, and many more. Each distro team builds incredible tools, configurations, enhancements, and content. But traditionally, these innovations are locked within their respective ecosystems.
 
 **Debian Composer changes this.**
 
@@ -27,6 +27,7 @@ With Debian Composer:
 
 - A tool built by the Kali team can be used by security researchers on Ubuntu
 - A desktop configuration perfected by the elementary OS team can enhance a Debian system
+- A Devuan recipe running sysvinit or runit can be applied on any compatible systemd-free setup
 - A development environment setup from a specialized distro can be shared with the broader community
 
 This isn't about cloning another distro — it's about **borrowing the best ideas** and **composing** your ideal system from proven components.
@@ -38,14 +39,15 @@ This isn't about cloning another distro — it's about **borrowing the best idea
 - **Conditional Installation** — Install packages based on system state or user choices
 - **Pre-configured Stacks** — Ready-to-use combinations for common use cases
 - **Verification Hooks** — Ensure your system is configured correctly
-- **Cross-distro Compatible** — Works on any Debian-based distribution
+- **Cross-distro Compatible** — Works on any Debian-based distribution, including Devuan
+- **Init System Abstraction** — Transparent support for systemd, sysvinit, runit, and OpenRC
 - **Hardware Detection** — Automatic hardware detection for optimal driver selection
 - **Snapper Integration** — System snapshots before changes with rollback support
 - **Debian Pure Blends** — Full support for official Debian Pure Blends
 - **Opinionated Distros** — Pre-configured setups for common use cases
 - **Persona-based Installation** — User type-based package selection
 - **Recipe Validation** — Schema validation for recipe files
-- **Service Management** — Systemd service control
+- **Service Management** — Unified service control across all supported init systems
 - **Progress Indicators** — Beautiful progress bars and spinners
 
 ## Getting Started
@@ -178,7 +180,7 @@ The project uses a modular architecture focused on composability. For a detailed
 - **State Manager** — SQLite-based state persistence
 - **Hardware Detection** — Parallel hardware detection using system tools
 - **Snapper Manager** — System snapshot management with timeline and compare
-- **Service Manager** — Systemd service control via taigrr/systemctl
+- **Service Manager** — Unified service control across systemd, sysvinit, runit, and OpenRC
 - **CLI** — Cobra-based command-line interface
 
 ## Internal Packages
@@ -189,7 +191,7 @@ The project uses a modular architecture focused on composability. For a detailed
 | `internal/cli` | CLI command definitions (Cobra) |
 | `internal/hardware` | Hardware detection (lshw, lspci, dmidecode) |
 | `internal/recipe` | Recipe parsing and resolution |
-| `internal/service` | Systemd service management |
+| `internal/service` | Service management (systemd, sysvinit, runit, OpenRC) |
 | `internal/state` | SQLite state persistence |
 | `internal/snapper` | Snapper snapshot management |
 | `internal/types` | Data type definitions |

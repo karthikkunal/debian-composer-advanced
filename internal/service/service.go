@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/debian-composer/debian-composer-go/internal/initsys"
 	"github.com/taigrr/systemctl"
 )
 
@@ -42,6 +43,11 @@ func New(dryRun bool) *Manager {
 
 // GetStatus returns the current status of a service
 func (m *Manager) GetStatus(name string) (*Service, error) {
+	if initsys.Detect() != initsys.Systemd {
+		active := initsys.IsActive(name)
+		return &Service{Name: name, Active: active}, nil
+	}
+
 	ctx := context.Background()
 
 	active, err := systemctl.IsActive(ctx, name, m.opts)
@@ -65,7 +71,13 @@ func (m *Manager) Start(name string) error {
 	if m.dryRun {
 		return nil
 	}
-
+	if initsys.Detect() != initsys.Systemd {
+		out, err := exec.Command("service", name, "start").CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("failed to start %s: %w\nOutput: %s", name, err, out)
+		}
+		return nil
+	}
 	ctx := context.Background()
 	if err := systemctl.Start(ctx, name, m.opts); err != nil {
 		return fmt.Errorf("failed to start %s: %w", name, err)
@@ -78,7 +90,13 @@ func (m *Manager) Stop(name string) error {
 	if m.dryRun {
 		return nil
 	}
-
+	if initsys.Detect() != initsys.Systemd {
+		out, err := exec.Command("service", name, "stop").CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("failed to stop %s: %w\nOutput: %s", name, err, out)
+		}
+		return nil
+	}
 	ctx := context.Background()
 	if err := systemctl.Stop(ctx, name, m.opts); err != nil {
 		return fmt.Errorf("failed to stop %s: %w", name, err)
@@ -91,7 +109,9 @@ func (m *Manager) Enable(name string) error {
 	if m.dryRun {
 		return nil
 	}
-
+	if initsys.Detect() != initsys.Systemd {
+		return initsys.EnableService(name)
+	}
 	ctx := context.Background()
 	if err := systemctl.Enable(ctx, name, m.opts); err != nil {
 		return fmt.Errorf("failed to enable %s: %w", name, err)
@@ -104,7 +124,9 @@ func (m *Manager) Disable(name string) error {
 	if m.dryRun {
 		return nil
 	}
-
+	if initsys.Detect() != initsys.Systemd {
+		return initsys.DisableService(name)
+	}
 	ctx := context.Background()
 	if err := systemctl.Disable(ctx, name, m.opts); err != nil {
 		return fmt.Errorf("failed to disable %s: %w", name, err)
@@ -117,7 +139,9 @@ func (m *Manager) Restart(name string) error {
 	if m.dryRun {
 		return nil
 	}
-
+	if initsys.Detect() != initsys.Systemd {
+		return initsys.RestartService(name)
+	}
 	ctx := context.Background()
 	if err := systemctl.Restart(ctx, name, m.opts); err != nil {
 		return fmt.Errorf("failed to restart %s: %w", name, err)
@@ -125,12 +149,15 @@ func (m *Manager) Restart(name string) error {
 	return nil
 }
 
-// Reload reloads systemd daemon
+// Reload reloads the init daemon (no-op on non-systemd systems).
 func (m *Manager) Reload() error {
 	if m.dryRun {
 		return nil
 	}
-
+	if initsys.Detect() != initsys.Systemd {
+		// sysvinit/openrc have no equivalent global reload; silently skip
+		return nil
+	}
 	ctx := context.Background()
 	if err := systemctl.DaemonReload(ctx, m.opts); err != nil {
 		return fmt.Errorf("failed to reload systemd: %w", err)
@@ -163,8 +190,12 @@ func (m *Manager) ExecuteActions(actions []ServiceAction) error {
 	return nil
 }
 
-// ListServices returns all services matching a pattern
+// ListServices returns all services matching a pattern.
+// On non-systemd systems an empty list is returned (enumeration is init-specific).
 func ListServices(pattern string) ([]Service, error) {
+	if initsys.Detect() != initsys.Systemd {
+		return nil, nil
+	}
 	ctx := context.Background()
 	opts := systemctl.Options{UserMode: false}
 
@@ -192,12 +223,15 @@ func ListServices(pattern string) ([]Service, error) {
 
 // CheckService checks if a service exists and returns its status
 func CheckService(name string) (exists bool, active bool, err error) {
+	if initsys.Detect() != initsys.Systemd {
+		active = initsys.IsActive(name)
+		return active, active, nil
+	}
 	ctx := context.Background()
 	opts := systemctl.Options{UserMode: false}
 
 	active, err = systemctl.IsActive(ctx, name, opts)
 	if err != nil {
-		// Service might not exist
 		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "No such") {
 			return false, false, nil
 		}

@@ -62,6 +62,7 @@ System administrators and power users face:
 ### 🌐 Cross-distro Compatibility
 Works seamlessly on any Debian-based distribution:
 - Debian
+- Devuan (full support — sysvinit, runit, and OpenRC init systems)
 - Ubuntu and all official flavors
 - Linux Mint
 - elementary OS

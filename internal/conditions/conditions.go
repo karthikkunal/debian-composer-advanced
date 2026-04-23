@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/debian-composer/debian-composer-go/internal/initsys"
+	"github.com/debian-composer/debian-composer-go/internal/osinfo"
 	"github.com/expr-lang/expr"
 )
 
@@ -44,6 +46,10 @@ type Environment struct {
 	DesktopEnv  string `expr:"desktop_env"`  // gnome, kde, xfce, etc.
 	Hostname    string `expr:"hostname"`
 	HomeDir     string `expr:"home_dir"`
+	// OS identity
+	OSID       string `expr:"os_id"`       // e.g. "debian", "devuan", "ubuntu"
+	OSIDLike   string `expr:"os_id_like"`  // e.g. "debian"
+	InitSystem string `expr:"init_system"` // e.g. "systemd", "sysvinit", "openrc"
 }
 
 // StateChecker interface for checking installation state
@@ -69,8 +75,7 @@ func (d *DefaultStateChecker) IsPackageInstalled(name string) bool {
 }
 
 func (d *DefaultStateChecker) IsServiceRunning(name string) bool {
-	out, err := exec.Command("systemctl", "is-active", name).Output()
-	return err == nil && strings.TrimSpace(string(out)) == "active"
+	return initsys.IsActive(name)
 }
 
 func (d *DefaultStateChecker) FileExists(path string) bool {
@@ -197,6 +202,9 @@ func (e *Evaluator) buildEnv() map[string]interface{} {
 		"desktop_env":  e.ctx.Environment.DesktopEnv,
 		"hostname":     e.ctx.Environment.Hostname,
 		"home_dir":     e.ctx.Environment.HomeDir,
+		"os_id":        e.ctx.Environment.OSID,
+		"os_id_like":   e.ctx.Environment.OSIDLike,
+		"init_system":  e.ctx.Environment.InitSystem,
 
 		// Variables
 		"vars": e.ctx.Variables,
@@ -300,6 +308,12 @@ func DetectEnvironment() (*Environment, error) {
 		env.DesktopEnv = os.Getenv("DESKTOP_SESSION")
 	}
 
+	// OS identity and init system
+	osi := osinfo.Get()
+	env.OSID = osi.ID
+	env.OSIDLike = osi.IDLike
+	env.InitSystem = initsys.Detect().String()
+
 	return env, nil
 }
 
@@ -325,6 +339,9 @@ func ValidateExpression(condition string) error {
 		"desktop_env":        "",
 		"hostname":           "",
 		"home_dir":           "",
+		"os_id":              "",
+		"os_id_like":         "",
+		"init_system":        "",
 		"vars":               map[string]interface{}{},
 	}), expr.AsBool())
 	return err
@@ -412,6 +429,7 @@ func isBuiltinVariable(name string) bool {
 		"has_virtualization": true,
 		"user":               true, "is_root": true, "has_display": true, "display_type": true,
 		"desktop_env": true, "hostname": true, "home_dir": true,
+		"os_id": true, "os_id_like": true, "init_system": true,
 		"vars": true,
 	}
 	return builtins[name]
