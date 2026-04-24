@@ -4,19 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.1] - 2026-04-24
+
+### Added
+- Init system abstraction (`internal/initsys`): service management across systemd, sysvinit, runit, and OpenRC
+- OS identity module (`internal/osinfo`): parses `/etc/os-release` (ID, IDLike, Version, etc.)
+- Condition variables `os_id`, `os_id_like`, and `init_system` for conditional recipe evaluation
+- CLI commands and core internal packages for recipe and component management
+- Kitchen component system with YAML definitions for desktops, services, and profiles
+- Test suite, scripts, and hooks; optimized hardware detection with caching and parallelism
+- GitLab CI/CD pipeline, Makefile, and nFPM Debian packaging support
+- Nala as default package manager with apt fallback
+
 ### Changed
-- **Init System Abstraction**: Service management now works across systemd, sysvinit, runit, and OpenRC instead of only systemd
-- **Conditions**: Added `os_id`, `os_id_like`, and `init_system` variables for conditional recipe evaluation
-- **Documentation**: Added Devuan support documentation for systemd-free systems
+- Replaced custom implementations with FOSS libraries (mergo, ghw, gopsutil, expr, jsonschema)
+- Replaced timeshift with snapper for system snapshots
+- Switched to GPL-3.0 license
 
-### Added
-- `internal/initsys`: Init system detection and cross-init service management (start/stop/enable/restart/disable)
-- `internal/osinfo`: OS identity parsing from `/etc/os-release` (ID, IDLike, Version, etc.)
-
-## [0.1.0] - 2025-01-XX
-
-### Added
-- Initial release
-- Basic recipe parsing
-- CLI entry point
-- Package installation foundation
+### Docs
+- Added Devuan support documentation for systemd-free systems
+- Updated README with adoption-focused features, usage examples, and project description
