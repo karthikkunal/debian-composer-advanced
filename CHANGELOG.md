@@ -19,8 +19,15 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **`debian-devuan` as first-class target**: Supported alongside systemd-based Debian derivatives
 - **`internal/initsys.Detect()`**: Exposed `os_id`, `os_id_like`, and `init_system` variables for recipe conditionals
+- **`internal/initsys`**: Canonical single package for all init system operations — detection, service management (start/stop/restart/enable/disable/status), daemon reload, and service listing across systemd, sysvinit, OpenRC, and runit
 - **Service management**: Gracefully falls back to sysvinit/openrc/runit equivalents when systemd is unavailable
+- **`internal/initsys.DetectSystemdFeatures()`**: Probes systemd features (journald, networkd, resolved, logind, timedated) for graceful degradation
 - **kitchen/README.md**: Added Devuan documentation section, config file templating examples, cross-blend composition guide
+
+### Docs
+- **`docs/SCHEMA-CHEATSHEET.md`**: One-page YAML recipe reference — all fields, hook types, condition expressions, template examples, common errors → fixes
+- **`docs/SCOPE.md`**: Scope positioning — Debian Composer vs Ansible comparison, when to use each, cross-over workflow (Ansible provisions → Debian Composer configures)
+- **`docs/PRODUCTION-CHECKLIST.md`**: Pre-flight checks, backup, dry-run, snapper, schema validation, init system checks, rollback procedures, and periodic health checks
 
 ## [0.1.0-alpha.1] - 2026-04-24
 
