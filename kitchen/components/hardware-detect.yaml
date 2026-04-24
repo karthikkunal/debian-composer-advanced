@@ -207,11 +207,11 @@ categories:
           #!/bin/bash
           # Universal Hardware Detection Report
           # Usage: hw-detect [--format=text|json|html] [--save]
-          
+
           REPORT_FILE="/etc/hardware-report.txt"
           FORMAT="text"
           SAVE=false
-          
+
           while [[ $# -gt 0 ]]; do
             case $1 in
               --format) FORMAT="$2"; shift 2 ;;
@@ -219,14 +219,14 @@ categories:
               *) shift ;;
             esac
           done
-          
+
           generate_report() {
             echo "╔══════════════════════════════════════════════════════════════╗"
             echo "║              HARDWARE DETECTION REPORT                      ║"
             echo "║              $(date '+%Y-%m-%d %H:%M:%S')                        ║"
             echo "╚══════════════════════════════════════════════════════════════╝"
             echo ""
-            
+
             # Run all detection scripts
             for script in /etc/hw-detect.d/*.sh; do
               if [ -x "$script" ]; then
@@ -234,7 +234,7 @@ categories:
                 echo ""
               fi
             done
-            
+
             # System info
             echo "=== System Information ==="
             echo "Hostname: $(hostname)"
@@ -242,7 +242,7 @@ categories:
             echo "Architecture: $(uname -m)"
             echo "Uptime: $(uptime -p 2>/dev/null || uptime)"
           }
-          
+
           case "$FORMAT" in
             json)
               echo "{"
@@ -259,7 +259,7 @@ categories:
               generate_report
               ;;
           esac
-          
+
           if [ "$SAVE" = true ]; then
             generate_report > "$REPORT_FILE"
             echo "Report saved to: $REPORT_FILE"

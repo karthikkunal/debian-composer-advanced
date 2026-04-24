@@ -220,7 +220,7 @@ categories:
           #!/bin/bash
           # Quick theme switcher
           # Usage: set-theme [dark|light|adwaita|yaru|pop]
-          
+
           case "$1" in
             dark)
               gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'

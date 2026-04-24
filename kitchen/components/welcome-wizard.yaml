@@ -69,15 +69,15 @@ categories:
         content: |
           #!/bin/bash
           # Universal Welcome Wizard for Debian-based distros
-          
+
           DISTRO_NAME="${distro_name:-Debian}"
           WELCOME_MSG="${welcome_message:-Welcome to your new system!}"
           CONFIG_DIR="$HOME/.config/welcome-wizard"
           MARKER_FILE="$CONFIG_DIR/.firstrun-done"
-          
+
           # Create config dir
           mkdir -p "$CONFIG_DIR"
-          
+
           # Show welcome dialog
           show_welcome() {
             zenity --info \
@@ -97,7 +97,7 @@ categories:
               --width=500 \
               --height=400
           }
-          
+
           # Show tips
           show_tip() {
             local tips=(
@@ -115,7 +115,7 @@ categories:
             local tip="${tips[$RANDOM % ${#tips[@]}]}"
             notify-send "💡 $DISTRO_NAME Tip" "$tip"
           }
-          
+
           # Main
           case "$1" in
             tip) show_tip ;;
@@ -136,7 +136,7 @@ categories:
         content: |
           #!/bin/bash
           # Show random system tips
-          
+
           TIPS=(
             "Use 'Ctrl+R' for reverse search in bash history"
             "Run 'sudo {{preferred_package_manager}} autoremove' to clean unused packages"
@@ -159,7 +159,7 @@ categories:
             "'tmux' keeps sessions alive after disconnect"
             "'zsh' with 'oh-my-zsh' enhances shell experience"
           )
-          
+
           tip="${TIPS[$RANDOM % ${#TIPS[@]}]}"
           echo "💡 Tip: $tip"
         path: /usr/local/bin/system-tips

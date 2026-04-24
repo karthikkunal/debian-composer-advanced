@@ -99,20 +99,20 @@ categories:
           # Setup Snapper configuration for BTRFS
           CONFIG="${1:-root}"
           SUBVOLUME="${2:-/}"
-          
+
           if [ ! -d "/etc/snapper/configs/$CONFIG" ]; then
             echo "Creating Snapper config: $CONFIG for $SUBVOLUME"
             snapper -c "$CONFIG" create-config -f btrfs "$SUBVOLUME"
           else
             echo "Config $CONFIG already exists"
           fi
-          
+
           # Enable timeline snapshots
           snapper -c "$CONFIG" set-config TIMELINE_CREATE=yes
           snapper -c "$CONFIG" set-config TIMELINE_LIMIT_DAILY=7
           snapper -c "$CONFIG" set-config TIMELINE_LIMIT_WEEKLY=4
           snapper -c "$CONFIG" set-config TIMELINE_LIMIT_MONTHLY=6
-          
+
           # Enable automatic cleanup
           snapper -c "$CONFIG" set-config TIMELINE_CLEANUP=yes
           snapper -c "$CONFIG" set-config NUMBER_CLEANUP=yes
@@ -139,10 +139,10 @@ categories:
           #!/bin/bash
           # Unified Borg Backup Script
           # Usage: borg-backup [init|create|list|restore|prune]
-          
+
           BORG_REPO="${BORG_REPO:-/var/backups/borg}"
           BORG_PASSPHRASE="${BORG_PASSPHRASE:-}"
-          
+
           case "$1" in
             init)
               echo "Initializing Borg repository at $BORG_REPO..."
@@ -257,9 +257,9 @@ categories:
           #!/bin/bash
           # Unified Snapshot Management CLI
           # Usage: snapshot [create|list|restore|delete|schedule]
-          
+
           CONFIG="${SNAPPER_CONFIG:-root}"
-          
+
           case "$1" in
             create)
               shift
@@ -323,31 +323,31 @@ categories:
           #!/bin/bash
           # Quick system rollback — restore to last known good state
           # Usage: rollback [--list|--yes]
-          
+
           CONFIG="${SNAPPER_CONFIG:-root}"
-          
+
           if [ "$1" = "--list" ]; then
             snapper -c "$CONFIG" list
             exit 0
           fi
-          
+
           # Get latest snapshot ID (skip pre/post pairs)
           LATEST=$(snapper -c "$CONFIG" list | grep "single" | tail -1 | awk '{print $1}')
-          
+
           if [ -z "$LATEST" ]; then
             echo "No snapshots available!"
             exit 1
           fi
-          
+
           echo "Latest snapshot: $LATEST"
-          
+
           if [ "$1" != "--yes" ]; then
             echo "This will restore your system to the latest snapshot."
             echo "Continue? (y/N)"
             read -r confirm
             [ "$confirm" != "y" ] && exit 0
           fi
-          
+
           echo "Restoring to snapshot $LATEST..."
           snapper -c "$CONFIG" rollback "$LATEST"
         path: /usr/local/bin/rollback

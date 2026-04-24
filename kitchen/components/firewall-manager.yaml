@@ -174,12 +174,12 @@ categories:
         content: |
           #!/bin/bash
           # Firewall status report
-          
+
           echo "╔══════════════════════════════════════════════════════════════╗"
           echo "║                   FIREWALL STATUS                           ║"
           echo "╚══════════════════════════════════════════════════════════════╝"
           echo ""
-          
+
           status=$(ufw status verbose | head -1)
           if echo "$status" | grep -q "inactive"; then
             echo "🔴 Firewall: INACTIVE"
@@ -200,7 +200,7 @@ categories:
           #!/bin/bash
           # Quick allow rule
           # Usage: firewall-allow <port/protocol> [comment]
-          
+
           if [ -z "$1" ]; then
             echo "Usage: firewall-allow <port/protocol> [comment]"
             echo ""
@@ -210,10 +210,10 @@ categories:
             echo "  firewall-allow 5353/udp 'mDNS'"
             exit 1
           fi
-          
+
           PORT="$1"
           COMMENT="${2:-Added manually}"
-          
+
           sudo ufw allow "$PORT" comment "$COMMENT"
           echo "Rule added: $PORT ($COMMENT)"
         path: /usr/local/bin/firewall-allow
@@ -225,15 +225,15 @@ categories:
           #!/bin/bash
           # Quick deny rule
           # Usage: firewall-deny <port/protocol> [comment]
-          
+
           if [ -z "$1" ]; then
             echo "Usage: firewall-deny <port/protocol> [comment]"
             exit 1
           fi
-          
+
           PORT="$1"
           COMMENT="${2:-Blocked manually}"
-          
+
           sudo ufw deny "$PORT" comment "$COMMENT"
           echo "Rule added: deny $PORT ($COMMENT)"
         path: /usr/local/bin/firewall-deny
