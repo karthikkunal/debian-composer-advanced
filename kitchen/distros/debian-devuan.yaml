@@ -1,0 +1,477 @@
+# ============================================================================
+# Distro: debian-devuan
+# ============================================================================
+# Full Devuan workstation — sysvinit, runit, or OpenRC based.
+# Devuan is a fork of Debian that uses sysvinit as default init.
+#
+# Supports:
+#   - SysVinit (Devuan default, antiX, MX Linux)
+#   - OpenRC (Artix, Alpine)
+#   - Runit (GoboLinux, some Void configurations)
+#
+# Usage:
+#   sudo debian-composer --distro=debian-devuan
+#   sudo debian-composer --distro=debian-devuan --var=init_system=runit
+#   sudo debian-composer --distro=debian-devuan --stack=minimal-server
+#   sudo debian-composer --distro=debian-devuan --var=desktop=xfce
+#
+# References:
+#   - Devuan: https://devuan.org/
+#   - Devuan Wiki: https://gitlab.com/devuan/djig
+#   - antiX: https://antixlinux.com/
+#   - MX Linux: https://mxlinux.org/
+# ============================================================================
+
+name: debian-devuan
+version: 1.0.0
+description: "Devuan / systemd-free Debian workstation"
+author: Debian Composer Team
+license: GPL-2.0+
+homepage: https://devuan.org/
+tags: [distro, devuan, sysvinit, runit, openrc, systemd-free, antiX, MX]
+distro_type: workstation
+
+includes:
+  - components/bases/desktop.yaml
+  - components/editors.yaml
+  - components/devuan-backend.yaml
+  - components/dev-toolchain.yaml
+  - components/cli-tools.yaml
+  - fragments/devuan-init.yaml
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+# Detected automatically by internal/initsys.Detect()
+variables:
+  init_system:
+    type: string
+    default: sysvinit
+    choices: [sysvinit, openrc, runit]
+    description: "Init system to use (auto-detected)"
+
+  desktop:
+    type: string
+    default: xfce
+    choices: [xfce, mate, gnome, kde, i3, sway]
+    description: "Desktop environment"
+
+  enable_nala:
+    type: boolean
+    default: auto
+    description: "Enable nala APT frontend (auto=detect if available)"
+
+packages:
+  - git
+  - curl
+  - wget
+  - ca-certificates
+  - gnupg
+  - build-essential
+  - make
+  - zsh
+  - tmux
+  - fzf
+  - ripgrep
+  - eza
+  - btop
+  - sudo
+  - vim
+  - htop
+  - neofetch
+  - acpid
+  - cron
+  - rsyslog
+  - dbus
+  - man-db
+  - apt-listchanges
+  - debian-archive-keyring
+  - firmware-linux-free
+
+categories:
+  # --------------------------------------------------------------------------
+  # Init System Core
+  # --------------------------------------------------------------------------
+  init/sysvinit-core:
+    condition: init_system == sysvinit
+    description: "SysVinit core (Devuan, MX, antiX)"
+    install:
+      packages:
+        - sysvinit-core
+        - sysvinit
+        - init
+        - openrc
+        - openrc-systemd
+    verify:
+      commands:
+        - "/proc/1/comm | grep -E '^systemd|openrc-init|runit'"
+
+  init/openrc-core:
+    condition: init_system == openrc
+    description: "OpenRC core (Artix, Alpine)"
+    install:
+      packages:
+        - openrc
+        - openrc-runlevel
+        - rc-conf
+    verify:
+      commands:
+        - "rc-status --version 2>/dev/null || echo 'OpenRC not installed'"
+
+  init/runit-core:
+    condition: init_system == runit
+    description: "Runit core"
+    install:
+      packages:
+        - runit
+        - runit-init
+        - runit-sv
+    verify:
+      commands:
+        - "sv --version 2>/dev/null || echo 'Runit not installed'"
+
+  # --------------------------------------------------------------------------
+  # APT Frontend Selection
+  # --------------------------------------------------------------------------
+  apt/nala:
+    condition: enable_nala == true or enable_nala == auto
+    description: "Nala APT frontend (Devuan 5+ supported)"
+    install:
+      packages:
+        - nala
+    verify:
+      commands:
+        - "nala --version 2>/dev/null || echo 'Nala not available'"
+      files_exist:
+        - /usr/bin/nala
+
+  apt/apt-get:
+    condition: enable_nala == false or enable_nala == ""
+    description: "Standard apt-get (always available)"
+    install:
+      packages:
+        - apt
+    verify:
+      commands:
+        - "apt-get --version | head -1"
+
+  # --------------------------------------------------------------------------
+  # Desktop Environments
+  # --------------------------------------------------------------------------
+  desktop/xfce:
+    condition: desktop == xfce
+    description: "XFCE desktop (lightweight, sysvinit compatible)"
+    install:
+      packages:
+        - xfce4
+        - xfce4-goodies
+        - lightdm
+        - xfwm4
+        - xfce4-terminal
+        - muglia-tweak-tool
+    configure:
+      service:
+        name: lightdm
+        enable: true
+    verify:
+      commands:
+        - "xfce4-session --version 2>/dev/null || echo 'XFCE not installed'"
+      files_exist:
+        - /usr/share/xsessions/xfce.desktop
+
+  desktop/mate:
+    condition: desktop == mate
+    description: "MATE desktop (traditional, sysvinit compatible)"
+    install:
+      packages:
+        - mate-desktop-environment
+        - mate-desktop-environment-extras
+        - lightdm
+    configure:
+      service:
+        name: lightdm
+        enable: true
+    verify:
+      commands:
+        - "mate-session --version 2>/dev/null || echo 'MATE not installed'"
+      files_exist:
+        - /usr/share/xsessions/mate.desktop
+
+  desktop/i3:
+    condition: desktop == i3
+    description: "i3 window manager (minimal, sysvinit compatible)"
+    install:
+      packages:
+        - i3
+        - i3status
+        - i3lock
+        - dmenu
+        - dunst
+        - lightdm
+    verify:
+      commands:
+        - "i3 --version"
+      files_exist:
+        - /usr/share/xsessions/i3.desktop
+
+  desktop/sway:
+    condition: desktop == sway
+    description: "Sway Wayland compositor (minimal, sysvinit compatible)"
+    install:
+      packages:
+        - sway
+        - swaybg
+        - swaylock
+        - swayidle
+        - waybar
+        - wofi
+        - mako
+        - grim
+        - slurp
+        - swappy
+        - wl-clipboard
+        - lightdm
+    verify:
+      commands:
+        - "sway --version"
+      files_exist:
+        - /usr/share/wayland-sessions/sway.desktop
+
+  desktop/gnome:
+    condition: desktop == gnome
+    description: "GNOME desktop (full, sysvinit compatible)"
+    install:
+      packages:
+        - gnome
+        - gnome-tweaks
+        - gdm3
+    configure:
+      service:
+        name: gdm3
+        enable: true
+    verify:
+      commands:
+        - "gnome-shell --version 2>/dev/null || echo 'GNOME not installed'"
+      files_exist:
+        - /usr/share/xsessions/gnome.desktop
+
+  desktop/kde:
+    condition: desktop == kde
+    description: "KDE Plasma desktop"
+    install:
+      packages:
+        - kde-plasma-desktop
+        - sddm
+    configure:
+      service:
+        name: sddm
+        enable: true
+    verify:
+      commands:
+        - "plasmashell --version 2>/dev/null || echo 'KDE not installed'"
+      files_exist:
+        - /usr/share/xsessions/plasma.desktop
+
+  # --------------------------------------------------------------------------
+  # Devuan-Specific Utilities
+  # --------------------------------------------------------------------------
+  devuan/tools:
+    description: "Devuan-specific administration tools"
+    install:
+      packages:
+        - localepurge
+        - deborphan
+        - prelink
+        - aptic
+        - apt-show-versions
+        - debdelta
+        - wajig
+    verify:
+      commands:
+        - "wajig --version 2>/dev/null || echo 'Wajig not installed'"
+
+  devuan/keyring:
+    description: "Devuan archive keyring"
+    install:
+      packages:
+        - devuan-archive-keyring
+    verify:
+      commands:
+        - "apt-key list 2>/dev/null | grep -q Devuan || echo 'Devuan keyring not installed'"
+
+  # --------------------------------------------------------------------------
+  # Common Services (sysvinit compatible)
+  # --------------------------------------------------------------------------
+  service/networking:
+    description: "Networking (sysvinit compatible)"
+    install:
+      packages:
+        - ifupdown
+        - iproute2
+        - iputils-ping
+        - dnsutils
+        - net-tools
+        - wireless-tools
+    verify:
+      commands:
+        - "ip addr show | grep -q 'inet ' || echo 'No IP address'"
+
+  service/ssh:
+    description: "OpenSSH server (sysvinit compatible)"
+    install:
+      packages:
+        - openssh-server
+    configure:
+      hooks:
+        post_install:
+          - type: command
+            command: "update-rc.d ssh enable 2>/dev/null || true"
+    verify:
+      commands:
+        - "ssh -V 2>&1 | head -1"
+      files_exist:
+        - /etc/ssh/sshd_config
+
+  service/cron:
+    description: "Cron scheduler (sysvinit compatible)"
+    install:
+      packages:
+        - cron
+    verify:
+      commands:
+        - "crontab -l 2>/dev/null || echo 'No crontab'"
+
+  service/logging:
+    description: "System logging (rsyslog)"
+    install:
+      packages:
+        - rsyslog
+        - logrotate
+    verify:
+      commands:
+        - "rsyslogd -v 2>&1 | head -1"
+      files_exist:
+        - /var/log/syslog
+
+  service/acpi:
+    description: "ACPI power management"
+    install:
+      packages:
+        - acpid
+        - acpi-support-base
+    verify:
+      commands:
+        - "acpi_listen 2>&1 | head -1 || echo 'acpid not running'"
+
+  # --------------------------------------------------------------------------
+  # Printing (no systemd logind needed)
+  # --------------------------------------------------------------------------
+  printing/cups:
+    description: "CUPS printing (sysvinit compatible)"
+    install:
+      packages:
+        - cups
+        - cups-client
+        - printer-driver-gutenprint
+    verify:
+      commands:
+        - "lpstat -t 2>/dev/null || echo 'CUPS not running'"
+      files_exist:
+        - /etc/cups/printers.conf
+
+# ============================================================================
+# Pre-configured Stacks
+# ============================================================================
+stacks:
+  minimal-workstation:
+    description: "Minimal workstation (CLI + X11 + XFCE)"
+    categories:
+      - init/sysvinit-core
+      - apt/apt-get
+      - desktop/xfce
+      - service/networking
+
+  devuan-desktop:
+    description: "Full Devuan desktop (XFCE + Devuan tools)"
+    categories:
+      - init/sysvinit-core
+      - apt/apt-get
+      - desktop/xfce
+      - devuan/tools
+      - devuan/keyring
+      - service/ssh
+      - service/cron
+      - service/logging
+
+  devuan-nala:
+    description: "Devuan desktop with nala APT frontend"
+    categories:
+      - init/sysvinit-core
+      - apt/nala
+      - desktop/xfce
+      - devuan/tools
+      - devuan/keyring
+
+  sway-wayland:
+    description: "Devuan with Sway Wayland compositor"
+    categories:
+      - init/sysvinit-core
+      - apt/apt-get
+      - desktop/sway
+      - devuan/tools
+      - devuan/keyring
+
+  minimal-server:
+    description: "Minimal server (no desktop)"
+    categories:
+      - init/sysvinit-core
+      - apt/apt-get
+      - service/networking
+      - service/ssh
+      - service/cron
+      - service/logging
+
+  i3-tiling:
+    description: "i3 tiling window manager (minimal)"
+    categories:
+      - init/sysvinit-core
+      - apt/apt-get
+      - desktop/i3
+      - devuan/keyring
+
+# ============================================================================
+# Requirements
+# ============================================================================
+requirements:
+  min_ram: 1024
+  min_disk: 15
+  gpu: false
+
+# ============================================================================
+# Post-Installation
+# ============================================================================
+post_install:
+  - "=== Devuan Workstation Setup Complete ==="
+  - ""
+  - "Init system: ${init_system}"
+  - "Desktop: ${desktop}"
+  - "APT frontend: ${enable_nala}"
+  - ""
+  - "Post-install steps:"
+  - "  1. Reboot to activate new init system"
+  - "  2. Run: localepurge (optional, reclaim disk space)"
+  - "  3. For nala: sudo apt update && sudo nala upgrade"
+  - ""
+  - "Devuan-specific:"
+  - "  - Config: /etc/apt/apt.conf.d/99devuan-composer"
+  - "  - Sources: /etc/apt/sources.list.d/devuan.list"
+  - "  - Logs: /var/log/rsyslog/"
+  - ""
+  - "Service management:"
+  - "  SysVinit: update-rc.d NAME defaults && service NAME start"
+  - "  OpenRC:   rc-update add NAME default && rc-service NAME start"
+  - "  Runit:    ln -s /etc/sv/NAME /etc/runit/runsvdir/default/"
+  - ""
+  - "Resources:"
+  - "  - Devuan: https://devuan.org/"
+  - "  - antiX: https://antixlinux.com/"
+  - "  - MX Linux: https://mxlinux.org/"

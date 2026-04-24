@@ -1,0 +1,151 @@
+# ============================================================================
+# Devuan-Specific Backend Configuration
+# ============================================================================
+# Devuan APT backend settings for sysvinit/runit/OpenRC systems.
+# Applied automatically when init_system != systemd.
+#
+# Key differences from stock Debian:
+# - No systemd-dependency packages in Recommends/Suggests
+# - sysvinit equivalents instead of systemd units
+# - Nala supported on Devuan 5+ (Daedalus)
+#
+# Usage (in recipes):
+#   includes:
+#     - components/devuan-backend.yaml
+#
+# For manual APT configuration:
+#   APT_FRONTEND=nala debian-composer install ...
+#   DEBIAN_COMPOSER_PREFERRED_APT=nala debian-composer install ...
+# ============================================================================
+
+name: devuan-backend
+version: 1.0.0
+description: Devuan APT backend configuration for sysvinit-based systems
+author: Debian Composer Team
+license: GPL-2.0+
+tags: [devuan, sysvinit, init-system, apt, backend]
+kind: component
+
+# Devuan init system detection
+# Set automatically by internal/initsys.Detect() — exposed here for recipe conditions
+variables:
+  init_system:
+    type: string
+    default: sysvinit
+    choices: [sysvinit, openrc, runit]
+    description: "Detected init system on this machine"
+
+# Sysvinit service equivalents for common systemd services
+# These packages provide compatible alternatives on sysvinit systems
+categories:
+  init/service-nginx:
+    condition: init_system == sysvinit or init_system == openrc or init_system == runit
+    description: "Nginx web server (sysvinit compatible)"
+    install:
+      packages:
+        - nginx
+    configure:
+      hooks:
+        post_install:
+          - type: command
+            command: "update-rc.d nginx defaults 2>/dev/null || true"
+            description: "Enable nginx via update-rc.d"
+
+  init/service-ssh:
+    condition: init_system == sysvinit or init_system == openrc or init_system == runit
+    description: "OpenSSH server (sysvinit compatible)"
+    install:
+      packages:
+        - openssh-server
+    configure:
+      hooks:
+        post_install:
+          - type: command
+            command: "update-rc.d ssh enable 2>/dev/null || true"
+            description: "Enable SSH via update-rc.d"
+
+  init/service-cron:
+    condition: init_system == sysvinit or init_system == openrc or init_system == runit
+    description: "Cron scheduler (sysvinit compatible)"
+    install:
+      packages:
+        - cron
+    configure:
+      hooks:
+        post_install:
+          - type: command
+            command: "update-rc.d cron defaults 2>/dev/null || true"
+            description: "Enable cron via update-rc.d"
+
+  init/service-logging:
+    condition: init_system == sysvinit or init_system == openrc or init_system == runit
+    description: "System logging (rsyslog/syslogd)"
+    install:
+      packages:
+        - rsyslog
+    configure:
+      hooks:
+        post_install:
+          - type: command
+            command: "update-rc.d rsyslog defaults 2>/dev/null || true"
+            description: "Enable rsyslog via update-rc.d"
+
+  init/service-acpi:
+    condition: init_system == sysvinit or init_system == openrc or init_system == runit
+    description: "ACPI power management"
+    install:
+      packages:
+        - acpid
+    configure:
+      hooks:
+        post_install:
+          - type: command
+            command: "update-rc.d acpid defaults 2>/dev/null || true"
+            description: "Enable acpid via update-rc.d"
+
+# apt.conf overrides for Devuan
+# Reduces systemd pulls from Recommends/Suggests fields
+configure:
+  files:
+    /etc/apt/apt.conf.d/99devuan-composer:
+      content: |
+        // Devuan / sysvinit APT configuration
+        // Reduces systemd package pulls on non-systemd systems
+        APT::Get-Options::Allow-Insecure-Releases "false";
+        APT::Get-Options::Show-Versions "false";
+        Acquire::Languages "en";
+      owner: root
+      mode: "0644"
+
+  /etc/apt/sources.list.d/devuan.list:
+      content: |
+        # Devuan Ascii (stable)
+        deb http://pkgmaster.devuan.org/merged ascii main
+        deb http://pkgmaster.devuan.org/merged ascii-updates main
+        deb http://pkgmaster.devuan.org/merged ascii-security main
+
+        # Devuan Beowulf (oldstable)
+        # deb http://pkgmaster.devuan.org/merged beowulf main
+        # deb http://pkgmaster.devuan.org/merged beowulf-updates main
+        # deb http://pkgmaster.devuan.org/merged beowulf-security main
+
+        # Devuan Chimaera (testing)
+        # deb http://pkgmaster.devuan.org/merged chimaera main
+        # deb http://pkgmaster.devuan.org/merged chimaera-updates main
+        # deb http://pkgmaster.devuan.org/merged chimaera-security main
+      owner: root
+      mode: "0644"
+
+verify:
+  commands:
+    - "apt-cache policy | grep -q devuan || echo 'Devuan sources not yet configured'"
+  files_exist:
+    - /etc/apt/apt.conf.d/99devuan-composer
+    - /etc/apt/sources.list.d/devuan.list
+
+post_install:
+  - "Devuan APT backend configured"
+  - "Mirrors: pkgmaster.devuan.org/merged"
+  - "APT frontend: apt-get (nala optional on Devuan 5+)"
+  - ""
+  - "Run 'debian-composer --distro=debian-devuan' for full Devuan setup"

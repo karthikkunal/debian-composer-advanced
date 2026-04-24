@@ -1,0 +1,282 @@
+# ============================================================================
+# Example: Config File Templating with `template:` Hook
+# ============================================================================
+# Version: 1.0.0
+#
+# Demonstrates Go text/template hooks for generating config files
+# with variables at installation time.
+#
+# The `template:` hook type renders Go templates using Sprig functions
+# and executes the rendered command (write file, set permissions, etc.)
+#
+# Usage:
+#   debian-composer install template-example
+#   debian-composer install template-example --var=domain=example.com
+# ============================================================================
+
+name: template-example
+version: 1.0.0
+description: Config file templating demonstration
+author: Debian Composer Team
+license: MIT
+tags: [example, templates, config]
+
+includes:
+  - fragments/base-anchors.yaml
+  - fragments/service-templates.yaml
+
+variables:
+  domain:
+    type: string
+    default: localhost
+    description: "Domain name for generated configs"
+
+  webroot:
+    type: string
+    default: /var/www/html
+    description: "Web root directory"
+
+  max_upload:
+    type: string
+    default: "10M"
+    description: "Maximum upload size"
+
+  enable_tls:
+    type: boolean
+    default: false
+    description: "Enable TLS"
+
+  allowed_ips:
+    type: array
+    default: ["127.0.0.1", "::1"]
+    description: "Allowed IP addresses"
+
+  gunicorn_port:
+    type: string
+    default: "8080"
+    description: "Gunicorn port"
+
+  gunicorn_workers:
+    type: string
+    default: "4"
+    description: "Gunicorn workers"
+
+# ============================================================================
+# HOOKS WITH TEMPLATE:
+# ============================================================================
+# The template: hook type renders Go templates with recipe variables.
+# Use {{ .varName }} for variables, {{ .env.ENV_VAR }} for environment.
+
+hooks:
+  pre_install:
+    - type: apt
+      action: update
+
+  post_install:
+    # Generate nginx site config using template variables
+    - type: template
+      command: |
+        cat > /etc/nginx/sites-available/{{ .domain }}.conf << 'EOF'
+        server {
+            listen 80;
+            server_name {{ .domain }};
+            root {{ .webroot }};
+            index index.html index.htm;
+
+            client_max_body_size {{ .max_upload }};
+
+            location / {
+                try_files $uri $uri/ =404;
+            }
+
+            {{ if .enable_tls }}
+            location /secure {
+                proxy_pass http://localhost:8443;
+            }
+            {{ end }}
+
+            access_log /var/log/nginx/{{ .domain }}.access.log;
+            error_log /var/log/nginx/{{ .domain }}.error.log;
+        }
+        EOF
+
+    # Set permissions on generated config
+    - type: command
+      command: "chmod 644 /etc/nginx/sites-available/{{ .domain }}.conf"
+
+    # Generate environment file
+    - type: template
+      command: |
+        cat > /etc/{{ .domain }}.env << 'EOF'
+        # Environment for {{ .domain }}
+        DOMAIN={{ .domain }}
+        WEBROOT={{ .webroot }}
+        MAX_UPLOAD={{ .max_upload }}
+        ENABLE_TLS={{ .enable_tls }}
+        GENERATED_AT={{ now | date "2006-01-02 15:04:05" }}
+        EOF
+
+    # Generate IP allow list
+    - type: template
+      command: |
+        cat > /etc/nginx/allow-{{ .domain }}.conf << 'EOF'
+        # Allowed IPs for {{ .domain }}
+        {{ range $index, $ip := .allowed_ips }}
+        allow {{ $ip }};{{ if ne $index (sub (len $.allowed_ips) 1) }}
+        {{ end }}{{ end }}
+        deny all;
+        EOF
+
+    # Generate gunicorn config
+    - type: template
+      command: |
+        cat > /etc/{{ .domain }}-gunicorn.conf << 'EOF'
+        # Gunicorn config for {{ .domain }}
+        bind = "127.0.0.1:{{ .gunicorn_port }}"
+        workers = {{ .gunicorn_workers }}
+        timeout = 30
+        preload_app = true
+        accesslog = /var/log/gunicorn/{{ .domain }}.access.log
+        errorlog = /var/log/gunicorn/{{ .domain }}.error.log
+        pidfile = /var/run/gunicorn/{{ .domain }}.pid
+        EOF
+
+# ============================================================================
+# CONFIGURE WITH TEMPLATE:
+# ============================================================================
+configure:
+  hooks:
+    post_install:
+      # Enable nginx site
+      - type: command
+        command: "ln -sf /etc/nginx/sites-available/{{ .domain }}.conf /etc/nginx/sites-enabled/"
+
+      # Test nginx config
+      - type: command
+        command: "nginx -t"
+
+      # Reload nginx
+      - type: command
+        command: "service nginx reload 2>/dev/null || nginx -s reload"
+
+# ============================================================================
+# VERIFY:
+# ============================================================================
+verify:
+  commands:
+    - "nginx -v"
+    - "test -f /etc/nginx/sites-available/{{ .domain }}.conf"
+    - "test -f /etc/{{ .domain }}.env"
+  files_exist:
+    - "/etc/nginx/sites-available/{{ .domain }}.conf"
+    - "/etc/{{ .domain }}.env"
+
+# ============================================================================
+# POST-INSTALL:
+# ============================================================================
+post_install:
+  - "=== Template Example Installed ==="
+  - ""
+  - "Generated files:"
+  - "  - /etc/nginx/sites-available/{{ .domain }}.conf"
+  - "  - /etc/{{ .domain }}.env"
+  - "  - /etc/nginx/allow-{{ .domain }}.conf"
+  - "  - /etc/{{ .domain }}-gunicorn.conf"
+  - ""
+  - "Variables used:"
+  - "  domain: {{ .domain }}"
+  - "  webroot: {{ .webroot }}"
+  - "  max_upload: {{ .max_upload }}"
+  - "  enable_tls: {{ .enable_tls }}"
+  - ""
+  - "Next steps:"
+  - "  1. Review generated configs"
+  - "  2. Customize as needed"
+  - "  3. Run: sudo service nginx restart"
+
+# ============================================================================
+# CATEGORIES WITH CONDITIONAL TEMPLATES:
+# ============================================================================
+categories:
+  web/tls-cert:
+    condition: enable_tls == true
+    <<: *service_template
+    description: "TLS certificate generation for nginx"
+    install:
+      packages: [openssl, certbot]
+    configure:
+      hooks:
+        post_install:
+          - type: template
+            command: |
+              cat >> /etc/nginx/sites-available/{{ .domain }}.conf << 'EOF'
+
+              server {
+                  listen 443 ssl http2;
+                  server_name {{ .domain }};
+                  root {{ .webroot }};
+
+                  ssl_certificate /etc/ssl/certs/{{ .domain }}.pem;
+                  ssl_certificate_key /etc/ssl/private/{{ .domain }}.key;
+
+                  ssl_protocols TLSv1.2 TLSv1.3;
+                  ssl_ciphers HIGH:!aNULL:!MD5;
+
+                  add_header Strict-Transport-Security "max-age=31536000" always;
+              }
+              EOF
+
+  web/basic:
+    condition: 'enable_tls == false'
+    <<: *service_template
+    description: "Basic nginx without TLS"
+
+# ============================================================================
+# TEMPLATE FUNCTIONS (Sprig library):
+# ============================================================================
+# Available in all template: hooks:
+#
+# String functions:
+#   - upper, lower, title, substr
+#   - trim, indent, quote
+#   - default, coalesce
+#
+# Math functions:
+#   - add, sub, mul, div
+#   - mod, addf, subf
+#
+# Date functions:
+#   - now, date
+#   - dateModify, dateInZone
+#
+# Collection functions:
+#   - list, collect
+#   - first, last, rest
+#   - reverse, sort
+#
+# Encoding functions:
+#   - b64enc, b64dec
+#   - sha256, md5
+#
+# Advanced functions:
+#   - toJson, toYaml
+#   - fromJson
+#
+# See: https://masterminds.github.io/sprig/
+
+# ============================================================================
+# EXAMPLE: CROSS-BLEND COMPOSITION
+# ============================================================================
+# Templates work with Pure Blend variables too
+
+stacks:
+  full-stack:
+    description: "Nginx + TLS + Gunicorn"
+    categories:
+      - web/tls-cert
+      - web/basic
+
+  basic-stack:
+    description: "Nginx only"
+    categories:
+      - web/basic

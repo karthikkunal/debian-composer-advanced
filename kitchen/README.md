@@ -11,7 +11,8 @@ kitchen/
 │   ├── debian-developer.yaml   # Developer workstation
 │   ├── debian-creator.yaml     # Creative workstation
 │   ├── debian-scientist.yaml   # Scientific/research workstation
-│   └── debian-homelab.yaml     # Self-hosted homelab server
+│   ├── debian-homelab.yaml    # Self-hosted homelab server
+│   └── debian-devuan.yaml       # Devuan/systemd-free workstation
 │
 ├── blends/          # Debian Pure Blend recipes (--blend=NAME)
 │                    # Official Debian domain-specific software collections
@@ -22,6 +23,7 @@ kitchen/
 │   └── debian-science.yaml
 │
 ├── recipes/         # Individual named recipes (--recipe=NAME)
+│   └── template-example.yaml   # Config file templating example
 │
 ├── personas/        # User archetype recipes (--persona=NAME)
 │   ├── base/        # Base persona definitions (developer, student, sysadmin)
@@ -29,6 +31,7 @@ kitchen/
 │
 ├── components/      # Reusable sub-units (referenced via includes:)
 │   ├── bases/       # System foundation recipes (desktop, server, minimal)
+│   ├── devuan-backend.yaml  # Devuan APT backend for sysvinit systems
 │   ├── nginx.yaml
 │   ├── postgresql.yaml
 │   ├── ollama.yaml
@@ -39,6 +42,7 @@ kitchen/
 ├── fragments/       # YAML anchor/template files (not standalone recipes)
 │   ├── base-anchors.yaml       # Package list anchors
 │   ├── service-templates.yaml  # Service configuration templates
+│   ├── devuan-init.yaml       # SysVinit/OpenRC/Runit service templates
 │   └── blend-anchors.yaml      # Pure Blend-specific anchors
 │
 ├── configs/         # Custom configuration overlays (--config=NAME)
@@ -145,4 +149,88 @@ requirements:
 
 post_install:
   - "Key info the user needs right now"
+```
+
+## Devuan / Systemd-Free Systems
+
+Debian Composer supports Devuan and other systemd-free Debian derivatives as first-class targets.
+
+```bash
+# Install Devuan workstation
+sudo debian-composer --distro=debian-devuan
+
+# With nala APT frontend (Devuan 5+)
+sudo debian-composer --distro=debian-devuan --stack=devuan-nala
+
+# Server (no desktop)
+sudo debian-composer --distro=debian-devuan --stack=minimal-server
+```
+
+The `debian-devuan` distro recipe includes:
+- `components/devuan-backend.yaml` — Devuan APT sources and apt.conf
+- `fragments/devuan-init.yaml` — SysVInit/OpenRC/Runit service templates
+- Automatic `init_system` detection via `internal/initsys.Detect()`
+
+Conditionals in recipes:
+
+```yaml
+variables:
+  init_system:
+    type: string
+    default: sysvinit
+
+categories:
+  nginx:
+    condition: init_system == sysvinit or init_system == openrc or init_system == runit
+    description: "Nginx (sysvinit compatible)"
+    configure:
+      hooks:
+        post_install:
+          - type: command
+            command: "update-rc.d nginx defaults 2>/dev/null || true"
+```
+
+See `docs/DEVuan.md` for full documentation.
+
+## Config File Templating
+
+Use the `template:` hook type to generate config files with Go `text/template` at installation time:
+
+```yaml
+hooks:
+  post_install:
+    - type: template
+      command: |
+        cat > /etc/nginx/sites-available/{{ .domain }}.conf << 'EOF'
+        server {
+            listen 80;
+            server_name {{ .domain }};
+            root {{ .webroot }};
+        }
+        EOF
+```
+
+Available template functions (Sprig library):
+- **String:** `upper`, `lower`, `title`, `trim`, `quote`, `default`
+- **Math:** `add`, `sub`, `mul`, `div`, `mod`
+- **Date:** `now`, `date` (e.g., `{{ now | date "2006-01-02" }}`)
+- **Collection:** `list`, `first`, `last`, `reverse`, `sort`
+- **Encoding:** `b64enc`, `sha256`, `md5`
+- **Advanced:** `toJson`, `toYaml`, `fromJson`
+
+See `recipes/template-example.yaml` for full examples including conditionals, range iteration, and nested variables.
+
+## Cross-Blend Composition
+
+Pure Blend recipes use `include/extend/layer` for composability:
+
+```yaml
+name: science-workstation
+extends: debian-science     # Inherit all science packages
+layers:
+  - components/gpu-compute  # Add GPU support
+  - components/ai          # Add AI/ML tools
+
+variables:
+  enable_gpu: true
 ```

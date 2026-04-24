@@ -1,0 +1,214 @@
+# ============================================================================
+# Devuan Init System Fragments
+# ============================================================================
+# YAML anchors and templates for sysvinit/runit/OpenRC service management.
+# Use these in categories when targeting Devuan or other systemd-free systems.
+#
+# Usage:
+#   includes:
+#     - fragments/devuan-init.yaml
+#
+# Then in categories:
+#   nginx:
+#     <<: *sysvinit_service
+#     configure:
+#       service:
+#         name: nginx
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# SysVInit Service Template
+# ----------------------------------------------------------------------------
+# Standard service management pattern for sysvinit-based systems.
+# Translates: systemctl enable -> update-rc.d defaults
+#            systemctl start  -> service NAME start
+#            systemctl restart -> service NAME restart
+#            systemctl is-active -> service NAME status
+._sysvinit_service: &sysvinit_service
+  install:
+    packages: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    hooks:
+      pre_install:
+        - type: command
+          command: "apt-get install -y {{ package }}"
+      post_install:
+        - type: command
+          command: "update-rc.d {{ name }} defaults 2>/dev/null || true"
+        - type: command
+          command: "service {{ name }} start 2>/dev/null || true"
+  verify:
+    commands:
+      - "service {{ name }} status"
+    services_running: []
+
+# ----------------------------------------------------------------------------
+# OpenRC Service Template
+# ----------------------------------------------------------------------------
+# Standard service management for OpenRC systems (Devuan, Alpine, Gentoo).
+# Translates: rc-update add -> rc-update add NAME default
+#            rc-service NAME start -> rc-service NAME start
+#            rc-service NAME status -> rc-service NAME status
+._openrc_service: &openrc_service
+  install:
+    packages: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    hooks:
+      pre_install:
+        - type: command
+          command: "emerge {{ package }} 2>/dev/null || apt-get install -y {{ package }}"
+      post_install:
+        - type: command
+          command: "rc-update add {{ name }} default 2>/dev/null || update-rc.d {{ name }} defaults 2>/dev/null || true"
+        - type: command
+          command: "rc-service {{ name }} start 2>/dev/null || service {{ name }} start 2>/dev/null || true"
+  verify:
+    commands:
+      - "rc-service {{ name }} status"
+    services_running: []
+
+# ----------------------------------------------------------------------------
+# Runit Service Template
+# ----------------------------------------------------------------------------
+# Standard service management for runit-based systems.
+# Service directories: /etc/sv/SERVICE
+# Activation: ln -s /etc/sv/SERVICE /etc/runit/runsvdir/default/
+# Control: sv SERVICE [status|start|stop|restart]
+._runit_service: &runit_service
+  install:
+    packages: []
+  configure:
+    service:
+      name: ""
+      enable: true
+      start: true
+    directories:
+      sv: /etc/sv
+      active: /etc/runit/runsvdir/default
+    hooks:
+      pre_install:
+        - type: command
+          command: "apt-get install -y {{ package }}"
+      post_install:
+        - type: command
+          command: "ln -sf /etc/sv/{{ name }} /etc/runit/runsvdir/default/{{ name }}"
+        - type: command
+          command: "sv {{ name }} start 2>/dev/null || true"
+  verify:
+    commands:
+      - "sv {{ name }} status"
+    services_running: []
+
+# ----------------------------------------------------------------------------
+# Service Equivalents Map
+# ----------------------------------------------------------------------------
+# Maps systemd service names to their sysvinit/openrc/runit equivalents.
+# Use condition: init_system to select the right service.
+# ----------------------------------------------------------------------------
+
+# SysVInit service commands
+._cmd_sysvinit_enable: &cmd_sysvinit_enable
+  - "update-rc.d {{ name }} defaults"
+
+._cmd_sysvinit_start: &cmd_sysvinit_start
+  - "service {{ name }} start"
+
+._cmd_sysvinit_stop: &cmd_sysvinit_stop
+  - "service {{ name }} stop"
+
+._cmd_sysvinit_restart: &cmd_sysvinit_restart
+  - "service {{ name }} restart"
+
+._cmd_sysvinit_status: &cmd_sysvinit_status
+  - "service {{ name }} status"
+
+# OpenRC service commands
+._cmd_openrc_enable: &cmd_openrc_enable
+  - "rc-update add {{ name }} default"
+
+._cmd_openrc_start: &cmd_openrc_start
+  - "rc-service {{ name }} start"
+
+._cmd_openrc_status: &cmd_openrc_status
+  - "rc-service {{ name }} status"
+
+# Runit service commands
+._cmd_runit_enable: &cmd_runit_enable
+  - "ln -sf /etc/sv/{{ name }} /etc/runit/runsvdir/default/{{ name }}"
+
+._cmd_runit_start: &cmd_runit_start
+  - "sv {{ name }} start"
+
+._cmd_runit_status: &cmd_runit_status
+  - "sv {{ name }} status"
+
+# ----------------------------------------------------------------------------
+# Common Service Name Equivalents
+# ----------------------------------------------------------------------------
+# Maps to legacy SysVinit script locations
+._sysvinit_scripts: &sysvinit_scripts
+  apache2: /etc/init.d/apache2
+  nginx: /etc/init.d/nginx
+  mysql: /etc/init.d/mysql
+  mariadb: /etc/init.d/mariadb
+  postgresql: /etc/init.d/postgresql
+  redis-server: /etc/init.d/redis-server
+  ssh: /etc/init.d/ssh
+  cron: /etc/init.d/cron
+  rsyslog: /etc/init.d/rsyslog
+  acpid: /etc/init.d/acpid
+  dbus: /etc/init.d/dbus
+  networking: /etc/init.d/networking
+  resolvconf: /etc/init.d/resolvconf
+
+# ----------------------------------------------------------------------------
+# Cron Alternatives (no systemd-cron)
+# ----------------------------------------------------------------------------
+# Packages that work without systemd-cron on sysvinit
+._cron_alternatives: &cron_alternatives
+  - cron
+  - anacron
+  - fcron
+
+# ----------------------------------------------------------------------------
+# Logging Alternatives (no systemd-journald)
+# ----------------------------------------------------------------------------
+# Packages that work without systemd-journald
+._logging_alternatives: &logging_alternatives
+  - rsyslog
+  - syslog-ng
+  - socklog
+  - metallog
+
+# ----------------------------------------------------------------------------
+# Network Management Alternatives
+# ----------------------------------------------------------------------------
+# Network managers compatible with sysvinit
+._network_managers: &network_managers
+  - network-manager
+  - wicd
+  - connman
+  - dhcpcd5
+  - ifupdown
+
+# ----------------------------------------------------------------------------
+# Init Runlevels
+# ----------------------------------------------------------------------------
+# SysVinit runlevels mapped to systemd targets
+._runlevels: &runlevels
+  # SysVinit runlevel -> equivalent description
+  S: "Single user / boot"
+  1: "Single user"
+  2: "Multi-user (default on Devuan)"
+  3: "Multi-user with networking"
+  4: "Multi-user (alternate)"
+  5: "Multi-user with display manager"
+  6: "Reboot"

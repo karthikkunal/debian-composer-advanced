@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`debian-devuan` distro recipe**: Full Devuan/systemd-free workstation with sysvinit, OpenRC, and runit support
+- **`devuan-backend` component**: Devuan APT sources, apt.conf, and sysvinit service equivalents
+- **`devuan-init` fragment**: SysVInit/OpenRC/Runit service templates and runlevel mappings
+- **Production readiness checklist** (`docs/PRODUCTION-CHECKLIST.md`): pre-flight checks, backup, dry-run, snapper, schema validation, init system checks, rollback procedures, and periodic health checks
+- **Devuan support documentation** (`docs/DEVuan.md`): init system detection, service equivalents, APT configuration, known issues
+- **`template-example` recipe**: Config file templating with `template:` hook type and Sprig functions
+- **Cross-blend composability** for Pure Blend recipes using `include/extend/layer` composition
+- **Go text/template hooks**: `template:` hook type uses `text/template` with Sprig functions for config file generation at installation time
+- **`debian-edu` and `debian-science` blends**: Refactored to use `include/extend/layer` composition with shared anchors from `fragments/`
+- **Condition-based template categories**: Support for `condition:` on categories with `template:` hooks for conditional config generation
+
+### Changed
+- **`debian-devuan` as first-class target**: Supported alongside systemd-based Debian derivatives
+- **`internal/initsys.Detect()`**: Exposed `os_id`, `os_id_like`, and `init_system` variables for recipe conditionals
+- **Service management**: Gracefully falls back to sysvinit/openrc/runit equivalents when systemd is unavailable
+- **kitchen/README.md**: Added Devuan documentation section, config file templating examples, cross-blend composition guide
+
 ## [0.1.0-alpha.1] - 2026-04-24
 
 ### Added
