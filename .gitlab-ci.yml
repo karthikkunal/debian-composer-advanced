@@ -6,7 +6,7 @@
 # ============================================================================
 
 variables:
-  GO_VERSION: "1.21"
+  GO_VERSION: "1.26"
   CGO_ENABLED: "0"
   DEBIAN_VERSION: "bookworm"
   NFPM_VERSION: "2.45.0"
@@ -27,7 +27,7 @@ stages:
 
 golangci-lint:
   stage: lint
-  image: golangci/golangci-lint:v1.55-alpine
+  image: golangci/golangci-lint:latest
   script:
     - golangci-lint run --timeout 5m ./...
   allow_failure: false
@@ -47,7 +47,9 @@ go-fmt:
 
 yaml-lint:
   stage: lint
-  image: cytopia/yamllint:latest
+  image: python:3.12-alpine
+  before_script:
+    - pip install yamllint --quiet
   script:
     - yamllint -d relaxed kitchen/
 
