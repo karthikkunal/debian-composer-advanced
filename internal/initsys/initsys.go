@@ -97,6 +97,80 @@ func detect() InitSystem {
 	return Unknown
 }
 
+// SystemdFeatures enumerates which systemd features are available.
+type SystemdFeatures struct {
+	Systemd          bool // systemd is running
+	SystemdJournal   bool // journald logging
+	SystemdNetworkd  bool // networkd (systemd-networkd)
+	SystemdResolved  bool // resolved (systemd-resolved)
+	SystemdLogind    bool // logind (systemd-logind)
+	SystemdTimedated bool // timedated (systemd-timedated)
+}
+
+// DetectSystemdFeatures probes which systemd features are available.
+func DetectSystemdFeatures() SystemdFeatures {
+	f := SystemdFeatures{Systemd: Detect() == Systemd}
+	if !f.Systemd {
+		return f
+	}
+	if _, err := exec.LookPath("journalctl"); err == nil {
+		f.SystemdJournal = true
+	}
+	if _, err := os.Stat("/run/systemd/netif"); err == nil {
+		f.SystemdNetworkd = true
+	}
+	if _, err := os.Stat("/run/systemd/resolve"); err == nil {
+		f.SystemdResolved = true
+	}
+	out, _ := exec.Command("loginctl", "show-session", "self").Output()
+	f.SystemdLogind = strings.Contains(string(out), "Leader=")
+	if _, err := exec.LookPath("timedatectl"); err == nil {
+		f.SystemdTimedated = true
+	}
+	return f
+}
+
+// HasFeature returns true if the named systemd feature is available.
+func HasFeature(name string) bool {
+	f := DetectSystemdFeatures()
+	switch name {
+	case "systemd", "systemd-journald", "journald":
+		return f.SystemdJournal
+	case "systemd-networkd", "networkd":
+		return f.SystemdNetworkd
+	case "systemd-resolved", "resolved":
+		return f.SystemdResolved
+	case "systemd-logind", "logind":
+		return f.SystemdLogind
+	case "systemd-timedated", "timedated":
+		return f.SystemdTimedated
+	default:
+		return false
+	}
+}
+
+// SystemdFeatureNames returns the list of available systemd feature names.
+func SystemdFeatureNames() []string {
+	f := DetectSystemdFeatures()
+	var names []string
+	if f.SystemdJournal {
+		names = append(names, "journald")
+	}
+	if f.SystemdNetworkd {
+		names = append(names, "networkd")
+	}
+	if f.SystemdResolved {
+		names = append(names, "resolved")
+	}
+	if f.SystemdLogind {
+		names = append(names, "logind")
+	}
+	if f.SystemdTimedated {
+		names = append(names, "timedated")
+	}
+	return names
+}
+
 // ServiceStatus describes the state of a service.
 type ServiceStatus struct {
 	Name    string
@@ -124,16 +198,14 @@ func Status(name string) (ServiceStatus, error) {
 
 	case Runit:
 		st.Active = IsActive(name)
-		rundir := "/etc/runit/runsvdir/default"
-		if fi, err := os.Lstat(rundir + "/" + name); err == nil {
+		if fi, err := os.Lstat("/etc/runit/runsvdir/default/" + name); err == nil {
 			st.Enabled = !fi.Mode().IsRegular()
 		}
 
 	default:
 		st.Active = IsActive(name)
 		for _, rl := range []string{"2", "3", "4", "5"} {
-			link := fmt.Sprintf("/etc/rc%s.d/S??%s", rl, name)
-			if _, err := os.Lstat(link); err == nil {
+			if _, err := os.Lstat(fmt.Sprintf("/etc/rc%s.d/S??%s", rl, name)); err == nil {
 				st.Enabled = true
 				break
 			}
@@ -250,7 +322,7 @@ func IsActive(name string) bool {
 }
 
 // ReloadDaemon reloads the init daemon configuration.
-// No-op on non-systemd systems (sysvinit/openrc/runit have no equivalent).
+// No-op on non-systemd systems.
 func ReloadDaemon() error {
 	if Detect() == Systemd {
 		return run("systemctl", "daemon-reload")
@@ -306,7 +378,6 @@ func ListServices(pattern string) ([]string, error) {
 }
 
 // ServiceCommand returns the command slice for a service operation.
-// Use this to build custom command sequences without executing.
 func ServiceCommand(op string, name string) []string {
 	switch Detect() {
 	case Systemd:
@@ -321,7 +392,6 @@ func ServiceCommand(op string, name string) []string {
 }
 
 // ServiceCommandWithUpdateRCD returns the command slice for update-rc.d-based operations.
-// Use for enable/disable on sysvinit.
 func ServiceCommandWithUpdateRCD(op string, name string) []string {
 	switch Detect() {
 	case Systemd:
