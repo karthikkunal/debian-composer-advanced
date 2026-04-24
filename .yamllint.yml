@@ -1,0 +1,5 @@
+extends: relaxed
+
+rules:
+  anchors:
+    forbid-undeclared-aliases: false

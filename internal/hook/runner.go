@@ -10,12 +10,12 @@ import (
 
 // RecipeRunner orchestrates recipe installation with full hook support
 type RecipeRunner struct {
-	executor    *Executor
-	serviceMgr  *service.Manager
-	dryRun      bool
-	verbose     bool
+	executor     *Executor
+	serviceMgr   *service.Manager
+	dryRun       bool
+	verbose      bool
 	withSnapshot bool
-	skipSSH     bool
+	skipSSH      bool
 	skipFirewall bool
 	skipFail2ban bool
 }
@@ -52,11 +52,11 @@ func NewRecipeRunner(config RunnerConfig, aptRunner APTRunner) *RecipeRunner {
 
 // InstallResult contains the result of a recipe installation
 type InstallResult struct {
-	RecipeName    string
-	Success       bool
-	Phases        []PhaseResult
-	TotalTime     time.Duration
-	Error         error
+	RecipeName        string
+	Success           bool
+	Phases            []PhaseResult
+	TotalTime         time.Duration
+	Error             error
 	PackagesInstalled []string
 }
 

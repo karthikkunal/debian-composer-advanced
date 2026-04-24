@@ -16,6 +16,7 @@ func TestNew(t *testing.T) {
 	mgr := New(false)
 	if mgr == nil {
 		t.Error("Expected manager, got nil")
+		return
 	}
 	if mgr.config != "root" {
 		t.Errorf("Expected default config 'root', got '%s'", mgr.config)

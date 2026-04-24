@@ -502,9 +502,9 @@ func (f *Fail2banChecker) createJailLocal(cfg *Fail2banConfig) error {
 
 	if cfg.SSHEnabled {
 		sb.WriteString("[sshd]\nenabled = true\n")
-		sb.WriteString(fmt.Sprintf("maxretry = %d\n", cfg.SSHMaxRetry))
-		sb.WriteString(fmt.Sprintf("findtime = %d\n", cfg.SSHFindTime))
-		sb.WriteString(fmt.Sprintf("bantime = %d\n", cfg.SSHBanTime))
+		fmt.Fprintf(&sb, "maxretry = %d\n", cfg.SSHMaxRetry)
+		fmt.Fprintf(&sb, "findtime = %d\n", cfg.SSHFindTime)
+		fmt.Fprintf(&sb, "bantime = %d\n", cfg.SSHBanTime)
 		sb.WriteString("port = ssh\n")
 		sb.WriteString("logpath = %(sshd_log)s\n")
 		sb.WriteString("backend = %(sshd_backend)s\n\n")
@@ -512,7 +512,7 @@ func (f *Fail2banChecker) createJailLocal(cfg *Fail2banConfig) error {
 
 	// Add other jails
 	for _, jail := range cfg.OtherJails {
-		sb.WriteString(fmt.Sprintf("[%s]\nenabled = true\n\n", jail))
+		fmt.Fprintf(&sb, "[%s]\nenabled = true\n\n", jail)
 	}
 
 	// Ensure directory exists

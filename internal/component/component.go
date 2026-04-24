@@ -89,7 +89,7 @@ func (r *Registry) ListByTag(tag string) []Component {
 
 	for _, comp := range all {
 		for _, t := range comp.Tags {
-			if strings.ToLower(t) == strings.ToLower(tag) {
+			if strings.EqualFold(t, tag) {
 				results = append(results, comp)
 				break
 			}

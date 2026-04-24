@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -52,7 +51,7 @@ func runValidate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Read file
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read recipe: %w", err)
 	}
@@ -111,7 +110,7 @@ func runValidateAll(cmd *cobra.Command, args []string) error {
 		name := filepath.Base(path)
 		name = name[:len(name)-len(filepath.Ext(name))]
 
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		if err != nil {
 			logger.Error("%s: failed to read", name)
 			failed++

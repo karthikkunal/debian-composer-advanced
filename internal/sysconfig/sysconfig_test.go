@@ -319,11 +319,11 @@ func TestRestartServiceDryRun(t *testing.T) {
 func TestSecurityConfigCustomValues(t *testing.T) {
 	cfg := &SecurityConfig{
 		SSH: &SSHConfig{
-			PermitRootLogin:     "prohibit-password",
-			PasswordAuth:        "no",
+			PermitRootLogin:      "prohibit-password",
+			PasswordAuth:         "no",
 			PermitEmptyPasswords: "no",
-			X11Forwarding:       "no",
-			MaxAuthTries:        "2",
+			X11Forwarding:        "no",
+			MaxAuthTries:         "2",
 		},
 		UFW: &UFWConfig{
 			DefaultIncoming: "deny",
@@ -421,7 +421,7 @@ func TestSSHCheckerNotInstalled(t *testing.T) {
 
 	// In test environment, SSH might be detected via path lookup
 	// So we just test the configure behavior when not installed
-	
+
 	// Configure should succeed (no-op) when not installed and verbose
 	err := checker.Configure(DefaultSSHConfig(), false, true)
 	// If SSH is not installed, it should return nil (no-op)

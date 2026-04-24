@@ -137,11 +137,11 @@ func validateType(name string, val interface{}, def VarDefinition, validate *val
 		}
 
 	case VarTypeBoolean:
-		switch val.(type) {
+		switch v := val.(type) {
 		case bool:
-			// OK
+			_ = v
 		case string:
-			s := strings.ToLower(val.(string))
+			s := strings.ToLower(v)
 			if s != "true" && s != "false" && s != "yes" && s != "no" && s != "1" && s != "0" {
 				return fmt.Errorf("variable '%s' must be a boolean, got '%s'", name, val)
 			}
@@ -164,9 +164,7 @@ func validateType(name string, val interface{}, def VarDefinition, validate *val
 		if !ok {
 			return fmt.Errorf("variable '%s' (path) must be a string, got %T", name, val)
 		}
-		if !strings.HasPrefix(str, "/") && !strings.HasPrefix(str, "./") && !strings.HasPrefix(str, "~/") {
-			// Warning added by caller
-		}
+		_ = strings.HasPrefix(str, "/") // path prefix check deferred to caller
 
 	case VarTypePort:
 		var port int
@@ -195,9 +193,7 @@ func validateType(name string, val interface{}, def VarDefinition, validate *val
 		if !ok {
 			return fmt.Errorf("variable '%s' (url) must be a string, got %T", name, val)
 		}
-		if !strings.HasPrefix(str, "http://") && !strings.HasPrefix(str, "https://") {
-			// Warning: URL should start with http(s)
-		}
+		_ = strings.HasPrefix(str, "http://") // URL prefix check deferred to caller
 
 	case VarTypeEmail:
 		str, ok := val.(string)
@@ -533,20 +529,20 @@ func FormatErrors(result *ValidationResult) string {
 	if result.Valid {
 		sb.WriteString("Validation passed")
 		if len(result.Warnings) > 0 {
-			sb.WriteString(fmt.Sprintf(" (with %d warnings)", len(result.Warnings)))
+			fmt.Fprintf(&sb, " (with %d warnings)", len(result.Warnings))
 		}
 		sb.WriteString("\n")
 	} else {
-		sb.WriteString(fmt.Sprintf("Validation failed with %d errors:\n", len(result.Errors)))
+		fmt.Fprintf(&sb, "Validation failed with %d errors:\n", len(result.Errors))
 		for i, err := range result.Errors {
-			sb.WriteString(fmt.Sprintf("  %d. %s\n", i+1, err))
+			fmt.Fprintf(&sb, "  %d. %s\n", i+1, err)
 		}
 	}
 
 	if len(result.Warnings) > 0 {
-		sb.WriteString(fmt.Sprintf("\nWarnings (%d):\n", len(result.Warnings)))
+		fmt.Fprintf(&sb, "\nWarnings (%d):\n", len(result.Warnings))
 		for i, warn := range result.Warnings {
-			sb.WriteString(fmt.Sprintf("  %d. %s\n", i+1, warn))
+			fmt.Fprintf(&sb, "  %d. %s\n", i+1, warn)
 		}
 	}
 

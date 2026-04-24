@@ -11,10 +11,8 @@ import (
 )
 
 var (
-	titleStyle        = lipgloss.NewStyle().MarginLeft(2).Bold(true).Foreground(lipgloss.Color("205"))
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
-	helpStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	titleStyle = lipgloss.NewStyle().MarginLeft(2).Bold(true).Foreground(lipgloss.Color("205"))
+	helpStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 )
 
 // ListItem represents a selectable item
@@ -252,7 +250,7 @@ func (m ProgressModel) View() string {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("\n%s\n\n", m.title))
+	fmt.Fprintf(&sb, "\n%s\n\n", m.title)
 
 	checkStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("42"))
 	activeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
@@ -260,16 +258,16 @@ func (m ProgressModel) View() string {
 
 	for i, step := range m.steps {
 		if i < m.current {
-			sb.WriteString(fmt.Sprintf("  %s %s\n", checkStyle.Render("✓"), step))
+			fmt.Fprintf(&sb, "  %s %s\n", checkStyle.Render("✓"), step)
 		} else if i == m.current {
-			sb.WriteString(fmt.Sprintf("  %s %s\n", activeStyle.Render("▶"), step))
+			fmt.Fprintf(&sb, "  %s %s\n", activeStyle.Render("▶"), step)
 		} else {
-			sb.WriteString(fmt.Sprintf("  %s %s\n", pendingStyle.Render("○"), step))
+			fmt.Fprintf(&sb, "  %s %s\n", pendingStyle.Render("○"), step)
 		}
 	}
 
 	if m.message != "" {
-		sb.WriteString(fmt.Sprintf("\n  %s\n", m.message))
+		fmt.Fprintf(&sb, "\n  %s\n", m.message)
 	}
 
 	return sb.String()

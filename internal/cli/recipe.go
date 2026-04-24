@@ -223,7 +223,7 @@ func runInstall(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-// Validate phase
+	// Validate phase
 	validPhases := map[string]bool{
 		"install":   true,
 		"configure": true,
@@ -261,7 +261,7 @@ func runInstall(cmd *cobra.Command, args []string) error {
 			if len(packages) > 10 {
 				fmt.Printf("  ... and %d more\n", len(packages)-10)
 			}
-			if !(installPhase || configurePhase || verifyPhase) {
+			if !installPhase && !configurePhase && !verifyPhase {
 				continue
 			}
 		}
@@ -373,7 +373,7 @@ func runInstall(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-// Save state for this recipe
+		// Save state for this recipe
 		if st != nil {
 			st.SaveRecipe(rec)
 		}

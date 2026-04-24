@@ -51,7 +51,7 @@ yaml-lint:
   before_script:
     - pip install yamllint --quiet
   script:
-    - yamllint -d relaxed kitchen/
+    - yamllint -c .yamllint.yml kitchen/
 
 # ============================================================================
 # TEST STAGE

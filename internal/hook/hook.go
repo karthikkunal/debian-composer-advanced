@@ -63,7 +63,7 @@ type Executor struct {
 	verbose   bool
 	aptCmd    APTRunner
 	envVars   map[string]string
-	kitchen   string // Path to kitchen directory for script resolution
+	kitchen   string                 // Path to kitchen directory for script resolution
 	hookCache map[string]*HookResult // Cache for hook execution results
 }
 
@@ -333,7 +333,7 @@ func (e *Executor) executeCommandHook(hook Hook, variables map[string]interface{
 
 	cmd := exec.CommandContext(ctx, "/bin/sh", "-c", cmdStr)
 	cmd.Env = e.buildEnv()
-	
+
 	// Capture output if verbose
 	var stdout, stderr bytes.Buffer
 	if e.verbose {
@@ -389,7 +389,7 @@ func (e *Executor) executeScriptHook(hook Hook, variables map[string]interface{}
 	cmd := exec.CommandContext(ctx, "/bin/sh", scriptPath)
 	cmd.Env = e.buildEnv()
 	cmd.Dir = filepath.Dir(scriptPath)
-	
+
 	// Capture output if verbose
 	var stdout, stderr bytes.Buffer
 	if e.verbose {
@@ -546,21 +546,20 @@ func (e *Executor) describeHook(hook Hook) string {
 func FormatSummary(summary *ExecutionSummary) string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf("Phase: %s (%v)\n", summary.Phase, summary.TotalTime.Round(time.Millisecond)))
+	fmt.Fprintf(&sb, "Phase: %s (%v)\n", summary.Phase, summary.TotalTime.Round(time.Millisecond))
 
 	for _, result := range summary.Results {
 		status := "✓"
 		if !result.Success {
 			status = "✗"
 		}
-		sb.WriteString(fmt.Sprintf("  %s %s [%s]\n", status,
-			result.Phase, result.Timing))
+		fmt.Fprintf(&sb, "  %s %s [%s]\n", status, result.Phase, result.Timing)
 	}
 
 	if !summary.Success {
 		sb.WriteString("Errors:\n")
 		for _, err := range summary.Errors {
-			sb.WriteString(fmt.Sprintf("  - %v\n", err))
+			fmt.Fprintf(&sb, "  - %v\n", err)
 		}
 	}
 

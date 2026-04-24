@@ -97,9 +97,7 @@ func (p *Parser) parseFile(path string) (*types.Recipe, error) {
 	if err := yaml.Unmarshal(content, &recipe); err != nil {
 		// If direct parse failed, try YQResolver as last resort
 		if expanded, yqErr := p.hybridResolver.yqResolver.Resolve(data, path); yqErr == nil {
-			if err := yaml.Unmarshal(expanded, &recipe); err == nil {
-				content = expanded
-			}
+			yaml.Unmarshal(expanded, &recipe) //nolint:errcheck
 		}
 		// If still failing, extract packages from raw YAML
 		if len(recipe.Packages) == 0 {
@@ -134,119 +132,6 @@ func extractPackagesFromRaw(data []byte, recipe *types.Recipe) {
 			} else if trimmed != "" && !strings.HasPrefix(trimmed, "#") {
 				break
 			}
-		}
-	}
-}
-
-// resolveAnchorReferences replaces *anchor references with their values
-func resolveAnchorReferences(content []byte) ([]byte, error) {
-	// Collect all anchor definitions
-	anchorMap := make(map[string]string)
-	collectAnchorsFromContent(string(content), anchorMap)
-
-	if len(anchorMap) == 0 {
-		return content, nil
-	}
-
-	result := string(content)
-
-	// Replace anchor references
-	for name, value := range anchorMap {
-		ref := " * " + name
-		result = strings.ReplaceAll(result, ref, " "+value)
-
-		// Also try without spaces
-		ref2 := "*" + name
-		if value != "" {
-			result = strings.ReplaceAll(result, ref2, value)
-		}
-	}
-
-	return []byte(result), nil
-}
-
-// collectAnchorsFromContent extracts anchor definitions from content
-func collectAnchorsFromContent(content string, anchors map[string]string) {
-	lines := strings.Split(content, "\n")
-
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		trimmed := strings.TrimSpace(line)
-
-		// Skip comments
-		if strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-
-		// Look for patterns like: key: &name value
-		if !strings.Contains(line, "&") {
-			continue
-		}
-
-		// Split on & to find anchor name
-		parts := strings.SplitN(line, "&", 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		// Extract anchor name
-		afterAnchor := strings.TrimSpace(parts[1])
-		var anchorName string
-
-		for _, ch := range afterAnchor {
-			if ch == ' ' || ch == ':' || ch == '\t' || ch == '[' || ch == ',' {
-				break
-			}
-			anchorName += string(ch)
-		}
-
-		if anchorName == "" || strings.HasPrefix(anchorName, "*") {
-			continue
-		}
-
-		// Get the value after &name
-		valuePart := afterAnchor[len(anchorName):]
-		valuePart = strings.TrimSpace(valuePart)
-
-		// If value is empty, it might be on the next line (array or nested)
-		if valuePart == "" && i+1 < len(lines) {
-			nextLine := strings.TrimSpace(lines[i+1])
-			if strings.HasPrefix(nextLine, "-") || strings.HasPrefix(nextLine, "[") {
-				// Collect array value
-				var arrayLines []string
-				for j := i + 1; j < len(lines); j++ {
-					nl := strings.TrimSpace(lines[j])
-					if nl == "" && j > i+2 {
-						break
-					}
-					if strings.HasPrefix(nl, "-") || strings.HasPrefix(nl, "[") || strings.HasPrefix(nl, "]") {
-						arrayLines = append(arrayLines, nl)
-					} else if nl == "" {
-						continue
-					} else {
-						break
-					}
-				}
-				if len(arrayLines) > 0 {
-					// Convert array to inline format
-					var items []string
-					for _, al := range arrayLines {
-						al = strings.TrimPrefix(al, "- ")
-						al = strings.Trim(al, "[]")
-						al = strings.TrimSpace(al)
-						if al != "" {
-							items = append(items, al)
-						}
-					}
-					if len(items) > 0 {
-						valuePart = "[" + strings.Join(items, ", ") + "]"
-					}
-				}
-			}
-		}
-
-		if anchorName != "" && valuePart != "" {
-			anchors[anchorName] = valuePart
 		}
 	}
 }
@@ -423,4 +308,3 @@ func (p *Parser) ParseBatch(names []string) (map[string]*types.Recipe, error) {
 
 	return recipes, firstErr
 }
-

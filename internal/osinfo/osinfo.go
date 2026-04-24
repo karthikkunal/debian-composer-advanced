@@ -9,10 +9,10 @@ import (
 
 // OSInfo holds information parsed from /etc/os-release
 type OSInfo struct {
-	ID       string // e.g. "debian", "devuan", "ubuntu"
-	IDLike   string // e.g. "debian" (for Devuan)
-	Name     string // e.g. "Devuan GNU/Linux"
-	Version  string // e.g. "5 (daedalus)"
+	ID        string // e.g. "debian", "devuan", "ubuntu"
+	IDLike    string // e.g. "debian" (for Devuan)
+	Name      string // e.g. "Devuan GNU/Linux"
+	Version   string // e.g. "5 (daedalus)"
 	VersionID string // e.g. "5"
 }
 

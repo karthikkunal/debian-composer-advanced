@@ -27,14 +27,12 @@ var (
 	green  = "\033[0;32m"
 	red    = "\033[0;31m"
 	yellow = "\033[1;33m"
-	blue   = "\033[0;34m"
 	cyan   = "\033[0;36m"
 	nc     = "\033[0m"
 
 	// Icons
 	iconPass = "✓"
 	iconFail = "✗"
-	iconWarn = "⚠"
 	iconSkip = "⊘"
 	iconInfo = "ℹ"
 )
@@ -44,7 +42,6 @@ func init() {
 		green = ""
 		red = ""
 		yellow = ""
-		blue = ""
 		cyan = ""
 		nc = ""
 	}

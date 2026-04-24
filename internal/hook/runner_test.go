@@ -41,9 +41,9 @@ func (m *MockAPTRunnerForRunner) BatchInstall(packages []string) error {
 func TestNewRecipeRunner(t *testing.T) {
 	mock := &MockAPTRunnerForRunner{}
 	config := RunnerConfig{
-		DryRun:   true,
-		Verbose:  true,
-		Kitchen:  "/test/kitchen",
+		DryRun:  true,
+		Verbose: true,
+		Kitchen: "/test/kitchen",
 	}
 
 	runner := NewRecipeRunner(config, mock)

@@ -412,31 +412,31 @@ func (i *Info) String() string {
 
 	sb.WriteString("CPU: ")
 	if i.CPU.Model != "" {
-		sb.WriteString(fmt.Sprintf("%s (%d cores, %d threads)\n", i.CPU.Model, i.CPU.Cores, i.CPU.Threads))
+		fmt.Fprintf(&sb, "%s (%d cores, %d threads)\n", i.CPU.Model, i.CPU.Cores, i.CPU.Threads)
 	} else {
 		sb.WriteString("unknown\n")
 	}
 
 	sb.WriteString("Memory: ")
 	if i.Memory.TotalMB > 0 {
-		sb.WriteString(fmt.Sprintf("%d MB total, %d MB available\n", i.Memory.TotalMB, i.Memory.AvailableMB))
+		fmt.Fprintf(&sb, "%d MB total, %d MB available\n", i.Memory.TotalMB, i.Memory.AvailableMB)
 	} else {
 		sb.WriteString("unknown\n")
 	}
 
-	sb.WriteString(fmt.Sprintf("GPUs: %d detected\n", len(i.GPUs)))
+	fmt.Fprintf(&sb, "GPUs: %d detected\n", len(i.GPUs))
 	for _, gpu := range i.GPUs {
-		sb.WriteString(fmt.Sprintf("  - %s %s\n", gpu.Vendor, gpu.Model))
+		fmt.Fprintf(&sb, "  - %s %s\n", gpu.Vendor, gpu.Model)
 	}
 
-	sb.WriteString(fmt.Sprintf("Disks: %d detected\n", len(i.Disks)))
+	fmt.Fprintf(&sb, "Disks: %d detected\n", len(i.Disks))
 	for _, disk := range i.Disks {
-		sb.WriteString(fmt.Sprintf("  - %s (%d GB)\n", disk.Device, disk.SizeGB))
+		fmt.Fprintf(&sb, "  - %s (%d GB)\n", disk.Device, disk.SizeGB)
 	}
 
-	sb.WriteString(fmt.Sprintf("Network: %d interfaces\n", len(i.Network)))
+	fmt.Fprintf(&sb, "Network: %d interfaces\n", len(i.Network))
 	for _, net := range i.Network {
-		sb.WriteString(fmt.Sprintf("  - %s (%s)\n", net.Interface, net.Type))
+		fmt.Fprintf(&sb, "  - %s (%s)\n", net.Interface, net.Type)
 	}
 
 	return sb.String()

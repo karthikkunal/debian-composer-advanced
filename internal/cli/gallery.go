@@ -11,6 +11,8 @@ import (
 	"github.com/debian-composer/debian-composer-go/internal/recipe"
 	"github.com/debian-composer/debian-composer-go/internal/ux"
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // recipeInfo holds recipe metadata for display
@@ -178,7 +180,7 @@ func runGallery(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if !found && len(items) > 0 {
-			fmt.Printf("┌─ %s (%d)\n", strings.Title(kind), len(items))
+			fmt.Printf("┌─ %s (%d)\n", cases.Title(language.Und).String(kind), len(items))
 			for _, r := range items {
 				desc := truncate(r.Description, 50)
 				fmt.Printf("│  %-25s %s\n", r.Name, desc)

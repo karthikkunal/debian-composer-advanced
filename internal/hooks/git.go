@@ -230,7 +230,7 @@ func FormatHookStatus(hooks []GitHook) string {
 		if hook.Enabled {
 			status = "enabled"
 		}
-		sb.WriteString(fmt.Sprintf("  %-20s %s\n", hook.Type, status))
+		fmt.Fprintf(&sb, "  %-20s %s\n", hook.Type, status)
 	}
 
 	return sb.String()
