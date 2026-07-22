@@ -1,0 +1,9 @@
+registries:
+  - name: official
+    url: https://recipes.example.org/index.yaml
+    enabled: true
+    priority: 100
+  - name: community
+    url: https://community.example.org/index.yaml
+    enabled: true
+    priority: 50
