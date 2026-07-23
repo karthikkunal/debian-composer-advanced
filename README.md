@@ -2,9 +2,9 @@
 
 > **Compose your ideal Debian system with modular, reusable recipes.**
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/debian-composer/debian-composer-go)](https://golang.org/)
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/debian-composer/debian-composer-go)](https://github.com/debian-composer/debian-composer-go/releases)
+
 
 ## 🚀 Overview
 
